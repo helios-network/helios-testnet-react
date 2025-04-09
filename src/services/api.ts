@@ -90,6 +90,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify({ wallet, signature }),
     });
+    console.log("Sign", response);
 
     if (!response.ok) {
       const error = await response.json();

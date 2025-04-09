@@ -91,31 +91,36 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#E6EBFD] py-5 px-10">
+    <div className="min-h-screen bg-[#E6EBFD] py-5 px-5">
       <img src="/images/Helios-Testnet.png" alt="logo" className="mb-10" />
       <div className="mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
           <div className="lg:col-span-3 space-y-6">
             <section className="bg-[#F2F4FE] p-10 rounded-3xl">
-              <div className="flex items-center justify-between">
-                <img src="/images/Avatar.svg" alt="logo" />
-                <div className="flex-1 ml-5">
-                  <div className="flex items-center gap-1">
+              <div className="flex">
+                <div>
+                  <img src="/images/Avatar.svg" alt="logo" />
+                </div>
+                <div className="grid grid-cols-2 w-full">
+                  <div className="flex flex-col items-start gap-1">
                     <span className="text-2xl text-[#060F32] custom-font font-bold">
                       Welcome Back
                     </span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-sm text-[#828DB3]">
                       {shortenedAddress}
                     </span>
-                    <div>
-                      <span className="ml-2 px-3 py-1 bg-[#E2EBFF] text-[#002DCB] rounded-full text-sm font-medium">
+                  </div>
+                  <div className="grid place-items-end">
+                    <div className="text-xl text-[#828DB3] custom-font font-bold">
+                      35 Points
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-1">
+                      <div className="ml-2 px-2 py-0.5 bg-[#E2EBFF] text-[#002DCB] rounded-full text-sm font-medium">
                         Developer
-                      </span>
-                      <span className="ml-2 px-3 py-1 bg-[#E2EBFF] text-[#002DCB] rounded-full text-sm font-medium">
+                      </div>
+                      <div className="ml-2 px-2 py-0.5 bg-[#E2EBFF] text-[#002DCB] rounded-full text-sm font-medium">
                         Rising Star
-                      </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -163,7 +168,7 @@ const Dashboard = () => {
                   <img src="/images/Icon2.svg" alt="logo" className="w-8 h-8" />
                   <div className="flex-1 ml-3">
                     <div className="flex justify-between">
-                      <span className="text-base text-[#060F32] custom-font font-bold">
+                      <span className="text-base sm:text- text-[#060F32] custom-font font-bold">
                         Connected to Helios
                       </span>
                       <div>

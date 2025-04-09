@@ -60,13 +60,13 @@ const OnboardingFlow = () => {
   const checkNetworkExists = async () => {
     try {
       const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      if (chainId === "0x1092") {
+      if (chainId === "0xa410") {
         return true;
       }
 
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x1092" }],
+        params: [{ chainId: "0xa410" }],
       });
       return true;
     } catch (error: any) {
@@ -78,6 +78,7 @@ const OnboardingFlow = () => {
   };
 
   const handleAddNetwork = async () => {
+    console.log("handleAddNetwork");
     try {
       setIsLoading(true);
       const progress = await api.getOnboardingProgress();
@@ -96,7 +97,7 @@ const OnboardingFlow = () => {
           method: "wallet_addEthereumChain",
           params: [
             {
-              chainId: "0x1092",
+              chainId: "0xa410",
               chainName: "Helios Testnet",
               nativeCurrency: {
                 name: "Helios",

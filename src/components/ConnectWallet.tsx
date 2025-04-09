@@ -9,6 +9,7 @@ import type { Container, Engine } from "tsparticles-engine";
 import { Sparkles } from "lucide-react";
 import { api } from "../services/api";
 import { ethers } from "ethers";
+import { sign } from "crypto";
 
 const ConnectWallet = () => {
   const { connect } = useConnect();
@@ -40,6 +41,7 @@ const ConnectWallet = () => {
       try {
         // Try to register first
         const registerResponse = await api.register(walletAddress, signature);
+        console.log("Sign Message", registerResponse);
         setUser(registerResponse.user);
         setStep(2);
       } catch (registerError: any) {
