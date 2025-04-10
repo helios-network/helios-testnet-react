@@ -9,6 +9,7 @@ import type { Container, Engine } from "tsparticles-engine";
 import { Sparkles } from "lucide-react";
 import { api } from "../services/api";
 import { ethers } from "ethers";
+import { Video } from "@/components/video/video";
 import { sign } from "crypto";
 
 const ConnectWallet = () => {
@@ -90,18 +91,23 @@ const ConnectWallet = () => {
   };
 
   return (
-    // <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#040F34] via-[#002DCB] to-[#E2EBFF]">
     <div className="bg-[#F2F5FF]">
-      <div className="bg-cover bg-center h-screen bg-[url(/images/Background.png)] bg-no-repeat">
-        <div className="bg-[url(/images/Gradient.png)]">
-          <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+      <div className="bg-cover bg-center h-screen">
+        <div className="relative w-full h-full">
+          <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-0 pointer-events-none">
+            <div className="min-w-300 w-400 h-50 object-none">
+              <Video id="helios-home-hero" />
+            </div>
+          </div>
+
+          <div className="relative z-10 min-h-screen flex items-center justify-center px-4 bg-[url(/images/Gradient.png)] bg-no-repeat bg-cover bg-center w-full h-full">
             <div className="text-center max-w-4xl mx-auto">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <h1 className="text-7xl text-[#002DCB] mb-10 leading-tight italic -my-20">
+                <h1 className="text-3xl xl:text-7xl lg:text-6xl md:text-5xl sm:text-4xl text-[#002DCB] mb-10 leading-tight italic -my-20">
                   Welcome to the
                   <span className="block bg-clip-text text-[#060F32] not-italic">
                     Helios&nbsp;
