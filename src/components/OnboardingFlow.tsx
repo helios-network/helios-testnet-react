@@ -5,6 +5,7 @@ import Mascot from "./Mascot";
 import XPToast from "./XPToast";
 import { api } from "../services/api";
 import Dashboard from "./Dashboard";
+import { Video } from "@/components/video/video";
 
 const TOTAL_STEPS = 5;
 
@@ -228,11 +229,24 @@ const OnboardingFlow = () => {
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-b from-[#040F34] via-[#002DCB] to-[#E2EBFF] p-8"
+      className="min-h-screen bg-[#F2F5FF] p-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <div className="max-w-4xl mx-auto pt-32">
+      <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-0 pointer-events-none">
+        <div className="min-w-300 w-400 h-50 object-none">
+          <Video id="helios-home-hero" className="opacity-30" />
+        </div>
+      </div>
+      {/* Overlay Mask Image */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center">
+        <img
+          src="/images/Gradient.png"
+          alt="Video Mask"
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="relative max-w-4xl mx-auto pt-32 ">
         {step === 2 && (
           <>
             <Mascot
@@ -240,20 +254,9 @@ const OnboardingFlow = () => {
               onTypingComplete={handleTypingComplete}
               currentStep={1}
               totalSteps={TOTAL_STEPS}
+              onNext={() => setStep(3)}
+              buttonText="Let's Begin"
             />
-            <motion.button
-              onClick={() => setStep(3)}
-              disabled={!isTypingComplete}
-              className={`w-full max-w-md mx-auto px-8 py-4 bg-white text-[#002DCB] rounded-full text-lg font-semibold transition-all duration-200 shadow-lg flex items-center justify-center gap-2 ${
-                isTypingComplete
-                  ? "hover:bg-opacity-90 hover:scale-105 hover:shadow-xl"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
-              whileHover={isTypingComplete ? { scale: 1.05 } : {}}
-              whileTap={isTypingComplete ? { scale: 0.95 } : {}}
-            >
-              Let's Begin
-            </motion.button>
           </>
         )}
 
@@ -264,20 +267,11 @@ const OnboardingFlow = () => {
               onTypingComplete={handleTypingComplete}
               currentStep={2}
               totalSteps={TOTAL_STEPS}
+              onNext={handleAddNetwork}
+              buttonText="Add Helios Network"
+              loadingText="Adding Network..."
+              isLoading={isLoading}
             />
-            <motion.button
-              onClick={handleAddNetwork}
-              disabled={!isTypingComplete || isLoading}
-              className={`w-full max-w-md mx-auto px-8 py-4 bg-white text-[#002DCB] rounded-full text-lg font-semibold transition-all duration-200 shadow-lg flex items-center justify-center gap-2 ${
-                isTypingComplete && !isLoading
-                  ? "hover:bg-opacity-90 hover:scale-105 hover:shadow-xl"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
-              whileHover={isTypingComplete && !isLoading ? { scale: 1.05 } : {}}
-              whileTap={isTypingComplete && !isLoading ? { scale: 0.95 } : {}}
-            >
-              {isLoading ? "Adding Network..." : "Add Helios Network"}
-            </motion.button>
           </>
         )}
 
@@ -288,20 +282,11 @@ const OnboardingFlow = () => {
               onTypingComplete={handleTypingComplete}
               currentStep={3}
               totalSteps={TOTAL_STEPS}
+              onNext={handleClaimTokens}
+              buttonText="Claim from Faucet"
+              loadingText="Claiming..."
+              isLoading={isLoading}
             />
-            <motion.button
-              onClick={handleClaimTokens}
-              disabled={!isTypingComplete || isLoading}
-              className={`w-full max-w-md mx-auto px-8 py-4 bg-white text-[#002DCB] rounded-full text-lg font-semibold transition-all duration-200 shadow-lg flex items-center justify-center gap-2 ${
-                isTypingComplete && !isLoading
-                  ? "hover:bg-opacity-90 hover:scale-105 hover:shadow-xl"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
-              whileHover={isTypingComplete && !isLoading ? { scale: 1.05 } : {}}
-              whileTap={isTypingComplete && !isLoading ? { scale: 0.95 } : {}}
-            >
-              {isLoading ? "Claiming..." : "Claim from Faucet"}
-            </motion.button>
           </>
         )}
 
@@ -312,20 +297,11 @@ const OnboardingFlow = () => {
               onTypingComplete={handleTypingComplete}
               currentStep={4}
               totalSteps={TOTAL_STEPS}
+              onNext={handleMintNFT}
+              buttonText="Mint Testnet NFT"
+              loadingText="Minting..."
+              isLoading={isLoading}
             />
-            <motion.button
-              onClick={handleMintNFT}
-              disabled={!isTypingComplete || isLoading}
-              className={`w-full max-w-md mx-auto px-8 py-4 bg-white text-[#002DCB] rounded-full text-lg font-semibold transition-all duration-200 shadow-lg flex items-center justify-center gap-2 ${
-                isTypingComplete && !isLoading
-                  ? "hover:bg-opacity-90 hover:scale-105 hover:shadow-xl"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
-              whileHover={isTypingComplete && !isLoading ? { scale: 1.05 } : {}}
-              whileTap={isTypingComplete && !isLoading ? { scale: 0.95 } : {}}
-            >
-              {isLoading ? "Minting..." : "Mint Testnet NFT"}
-            </motion.button>
           </>
         )}
 
@@ -336,20 +312,9 @@ const OnboardingFlow = () => {
               onTypingComplete={handleTypingComplete}
               currentStep={5}
               totalSteps={TOTAL_STEPS}
+              onNext={() => setStep(7)}
+              buttonText="Enter My Dashboard"
             />
-            <motion.button
-              onClick={() => setStep(7)}
-              disabled={!isTypingComplete}
-              className={`w-full max-w-md mx-auto px-8 py-4 bg-white text-[#002DCB] rounded-full text-lg font-semibold transition-all duration-200 shadow-lg flex items-center justify-center gap-2 ${
-                isTypingComplete
-                  ? "hover:bg-opacity-90 hover:scale-105 hover:shadow-xl"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
-              whileHover={isTypingComplete ? { scale: 1.05 } : {}}
-              whileTap={isTypingComplete ? { scale: 0.95 } : {}}
-            >
-              Enter My Dashboard
-            </motion.button>
           </>
         )}
       </div>

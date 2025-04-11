@@ -35,7 +35,7 @@ export default function RootLayout({
             <body>
               {/* You can render the current page (children) here */}
               {step === 0 && <ConnectWallet />}
-              {step >= 2 && step <= 6 && <OnboardingFlow />}
+              {step >= 2 && step < 7 && <OnboardingFlow />}
               {step === 7 && <Dashboard />}
               {children}
             </body>

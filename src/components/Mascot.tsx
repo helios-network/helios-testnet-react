@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Sun } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface MascotProps {
@@ -7,6 +6,10 @@ interface MascotProps {
   onTypingComplete: () => void;
   currentStep: number;
   totalSteps: number;
+  onNext: () => void;
+  buttonText: string;
+  loadingText?: string;
+  isLoading?: boolean;
 }
 
 const Mascot: React.FC<MascotProps> = ({
@@ -14,6 +17,10 @@ const Mascot: React.FC<MascotProps> = ({
   onTypingComplete,
   currentStep,
   totalSteps,
+  onNext,
+  buttonText,
+  loadingText,
+  isLoading,
 }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -58,98 +65,85 @@ const Mascot: React.FC<MascotProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute -top-28 text-[#002DCB] font-medium"
+          className="absolute -top-28 text-black font-bold text-xl"
         >
-          Step {currentStep}/{totalSteps}
+          Step {currentStep}
+          <span className="text-gray-400"> / {totalSteps}</span>
         </motion.div>
 
-        {/* Floating Mascot */}
-        <motion.div
-          initial={{ scale: 0.8 }}
-          animate={{
-            scale: 1,
-            y: [0, -10, 0],
-          }}
-          transition={{
-            scale: { duration: 0.5 },
-            y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-          }}
-          className="relative"
-        >
-          <div className="w-32 h-32 bg-gradient-to-br from-[#002DCB] to-[#0045FF] rounded-full flex items-center justify-center shadow-lg shadow-[#002DCB]/20">
-            <Sun className="w-16 h-16 text-white" />
-          </div>
-
-          {/* Orbiting particles */}
+        <div className="flex flex-col sm:flex-row items-center gap-5">
+          {/* Floating Mascot */}
           <motion.div
+            initial={{ scale: 0.8 }}
             animate={{
-              rotate: 360,
+              scale: 1,
+              y: [0, -10, 0],
             }}
             transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "linear",
+              scale: { duration: 0.1 },
+              y: { duration: 1, repeat: Infinity, ease: "easeInOut" },
             }}
-            className="absolute inset-0"
+            className="relative"
           >
-            {[0, 120, 240].map((degree) => (
-              <motion.div
-                key={degree}
-                className="absolute w-3 h-3 bg-white rounded-full"
-                style={{
-                  top: "50%",
-                  left: "50%",
-                  transform: `rotate(${degree}deg) translate(60px) rotate(-${degree}deg)`,
-                }}
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  delay: degree / 360,
-                }}
-              />
-            ))}
+            <img
+              src="/images/Avatar.png"
+              alt="logo"
+              className="w-60 aspect-auto text-white"
+            />
           </motion.div>
-        </motion.div>
 
-        {/* Message Bubble */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-xl w-full mx-auto mt-8 relative"
-        >
-          <div className="bg-white rounded-2xl p-6 shadow-xl relative z-10">
-            <div className="relative">
-              <p className="text-[#040F34] text-lg leading-relaxed">
-                {displayedText}
-              </p>
-              {currentIndex < text.length && (
-                <motion.span
-                  className="inline-block w-2 h-5 bg-[#002DCB] ml-1"
-                  animate={{ opacity: [0, 1] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Decorative elements */}
+          {/* Message Bubble */}
           <motion.div
-            className="absolute -z-10 inset-0 bg-gradient-to-r from-[#002DCB]/10 to-[#0045FF]/10 rounded-2xl blur-xl"
-            animate={{
-              scale: [1, 1.02, 1],
-              opacity: [0.5, 0.8, 0.5],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </motion.div>
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-sm mx-auto sm:mt-5 -mt-20 relative"
+          >
+            <div className="bg-white rounded-2xl p-6 shadow-xl relative z-10 min-h-52">
+              <div className="relative">
+                <div className="text-[#040F34] text-lg leading-relaxed">
+                  {displayedText}
+                  {currentIndex < text.length ? (
+                    <motion.span
+                      className="inline-block w-2 h-5 bg-[#002DCB] ml-1"
+                      animate={{ opacity: [0, 1] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                    />
+                  ) : (
+                    <div>
+                      <motion.button
+                        onClick={onNext}
+                        disabled={isLoading}
+                        className={`mt-6 px-6 py-3 bg-[#002DCB] text-white rounded-full text-base font-semibold transition-all duration-200 shadow-md flex items-center justify-center gap-2 ${
+                          !isLoading
+                            ? "hover:bg-opacity-90 hover:scale-105 hover:shadow-xl"
+                            : "opacity-50 cursor-not-allowed"
+                        }`}
+                        whileHover={!isLoading ? { scale: 1.05 } : {}}
+                        whileTap={!isLoading ? { scale: 0.95 } : {}}
+                      >
+                        {isLoading ? loadingText || "Loading..." : buttonText}
+                      </motion.button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Decorative elements */}
+            <motion.div
+              className="absolute -z-10 inset-0 bg-gradient-to-r from-[#002DCB]/10 to-[#0045FF]/10 rounded-2xl blur-xl"
+              animate={{
+                scale: [1, 1.02, 1],
+                opacity: [0.5, 0.8, 0.5],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.div>
+        </div>
       </div>
     </div>
   );
