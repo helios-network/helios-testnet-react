@@ -42,7 +42,6 @@ const ConnectWallet = () => {
       try {
         // Try to register first
         const registerResponse = await api.register(walletAddress, signature);
-        console.log("Sign Message", registerResponse);
         setUser(registerResponse.user);
         setStep(2);
       } catch (registerError: any) {

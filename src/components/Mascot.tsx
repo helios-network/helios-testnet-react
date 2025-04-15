@@ -86,7 +86,7 @@ const Mascot: React.FC<MascotProps> = ({
             className="relative"
           >
             <img
-              src="/images/Avatar.png"
+              src="/images/Avatar1.png"
               alt="logo"
               className="w-60 aspect-auto text-white"
             />
