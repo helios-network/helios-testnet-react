@@ -99,7 +99,7 @@ const Dashboard = () => {
             <section className="bg-[#F2F4FE] p-10 rounded-3xl">
               <div className="flex">
                 <div>
-                  <img src="/images/Avatar1.svg" alt="logo" />
+                  <img src="/images/Avatar.svg" alt="logo" />
                 </div>
                 <div className="grid grid-cols-2 w-full">
                   <div className="flex flex-col items-start gap-1">

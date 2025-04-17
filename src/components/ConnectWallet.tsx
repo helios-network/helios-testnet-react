@@ -38,16 +38,23 @@ const ConnectWallet = () => {
   const handleSignAndLogin = async (walletAddress: string) => {
     try {
       const signature = await signMessage(walletAddress);
-
+      console.log("handleSignAndLogin", signature);
       try {
         // Try to register first
         const registerResponse = await api.register(walletAddress, signature);
+        console.log(
+          "handleSignAndLogin registerResponse",
+          signature,
+          registerResponse
+        );
         setUser(registerResponse.user);
         setStep(2);
       } catch (registerError: any) {
         // If registration fails with 400 (wallet already registered), try login
         if (registerError.message === "Wallet already registered") {
+          console.log("Wallet Registered");
           const loginResponse = await api.login(walletAddress, signature);
+          console.log("Wallet Registered", loginResponse);
           setUser(loginResponse.user);
           setStep(2);
         } else {
@@ -66,11 +73,13 @@ const ConnectWallet = () => {
       setError(null);
       setIsLoading(true);
 
+      console.log("success1");
       // If already connected, proceed with signing
       if (isConnected && address) {
         await handleSignAndLogin(address);
         return;
       }
+      console.log("success2");
 
       // Connect wallet
       const connector = metaMask();

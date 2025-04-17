@@ -66,7 +66,6 @@ class ApiClient {
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "1",
     };
 
     if (this.token) {
@@ -90,7 +89,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: JSON.stringify({ wallet, signature }),
     });
-    console.log("Sign", response);
+    console.log("Register Result", response);
 
     if (!response.ok) {
       const error = await response.json();

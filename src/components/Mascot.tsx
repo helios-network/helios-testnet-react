@@ -98,7 +98,7 @@ const Mascot: React.FC<MascotProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             className="w-sm mx-auto sm:mt-5 -mt-20 relative"
           >
-            <div className="bg-white rounded-2xl p-6 shadow-xl relative z-10 min-h-52">
+            <div className="bg-white rounded-2xl p-6 shadow-xl relative z-10 min-h-52 mx-4">
               <div className="relative">
                 <div className="text-[#040F34] text-lg leading-relaxed">
                   {displayedText}
