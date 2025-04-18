@@ -71,26 +71,13 @@ const Mascot: React.FC<MascotProps> = ({
           <span className="text-gray-400"> / {totalSteps}</span>
         </motion.div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-5">
+        <div className="flex flex-col sm:flex-row items-center">
           {/* Floating Mascot */}
-          <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{
-              scale: 1,
-              y: [0, -10, 0],
-            }}
-            transition={{
-              scale: { duration: 0.1 },
-              y: { duration: 1, repeat: Infinity, ease: "easeInOut" },
-            }}
-            className="relative"
-          >
-            <img
-              src="/images/Avatar1.png"
-              alt="logo"
-              className="w-60 aspect-auto text-white"
-            />
-          </motion.div>
+          <img
+            src="/images/Avatar1.png"
+            alt="logo"
+            className="w-60 aspect-auto text-white"
+          />
 
           {/* Message Bubble */}
           <motion.div

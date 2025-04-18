@@ -55,7 +55,7 @@ const Dashboard = () => {
           api.getUserXPHistory(),
           api.getUserXPLevel(),
         ]);
-
+        console.log("getUserXPHistory", historyResponse, levelResponse);
         if (historyResponse.success) {
           setXPHistory(historyResponse.xpHistory);
         }
@@ -163,52 +163,32 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
+
               <div className="mt-4 mb-15">
-                <div className="flex items-center justify-between bg-[#F9FAFF] rounded-3xl mt-2 px-1 py-1">
-                  <img src="/images/Icon2.svg" alt="logo" className="w-8 h-8" />
-                  <div className="flex-1 ml-3">
-                    <div className="flex justify-between">
-                      <span className="text-base sm:text- text-[#060F32] custom-font font-bold">
-                        Connected to Helios
-                      </span>
-                      <div>
-                        <span className="ml-2 px-3 py-1 text-[#002DCB] text-sm font-medium">
-                          + 20 XP
+                {xpHistory?.map((item, index) => (
+                  <div
+                    key={item._id}
+                    className="flex items-center justify-between bg-[#F9FAFF] rounded-3xl mt-2 px-1 py-1"
+                  >
+                    <img
+                      src={`/images/Icon3.svg`} // Cycle through Icon2, Icon3, Icon4...
+                      alt="logo"
+                      className="w-8 h-8"
+                    />
+                    <div className="flex-1 ml-3">
+                      <div className="flex justify-between">
+                        <span className="text-base text-[#060F32] custom-font font-bold">
+                          {item.description}
                         </span>
+                        <div>
+                          <span className="ml-2 px-3 py-1 text-[#002DCB] text-sm font-medium">
+                            + {item.amount} XP
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between bg-[#F9FAFF] rounded-3xl mt-2 px-1 py-1">
-                  <img src="/images/Icon3.svg" alt="logo" className="w-8 h-8" />
-                  <div className="flex-1 ml-3">
-                    <div className="flex justify-between">
-                      <span className="text-base text-[#060F32] custom-font font-bold">
-                        Claimed Faucet
-                      </span>
-                      <div>
-                        <span className="ml-2 px-3 py-1 text-[#002DCB] text-sm font-medium">
-                          + 10 XP
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between bg-[#F9FAFF] rounded-3xl mt-2 px-1 py-1">
-                  <img src="/images/Icon3.svg" alt="logo" className="w-8 h-8" />
-                  <div className="flex-1 ml-3">
-                    <div className="flex justify-between">
-                      <span className="text-base text-[#060F32] custom-font font-bold">
-                        Minted NFT
-                      </span>
-                      <div>
-                        <span className="ml-2 px-3 py-1 text-[#002DCB] text-sm font-medium">
-                          + 5 XP
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </section>
           </div>
