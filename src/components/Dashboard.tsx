@@ -22,6 +22,12 @@ interface XPHistoryItem {
   timestamp: string;
 }
 
+interface DailyMissionItem {
+  mission: string;
+  completed: boolean;
+  description: string;
+}
+
 interface XPLevelInfo {
   currentLevel: number;
   totalXP: number;
@@ -42,22 +48,55 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
+const formatMissionName = (key: string) => {
+  switch (key) {
+    case "delegate_consensus":
+      return "Delegate your tokens to a validator";
+    case "claim_rewards":
+      return "Claim your staking rewards";
+    case "vote_proposal":
+      return "Vote on a governance proposal";
+    default:
+      return key.replace(/_/g, " ");
+  }
+};
+
+const getButtonText = (key: string) => {
+  switch (key) {
+    case "delegate_consensus":
+      return "Stake";
+    case "claim_rewards":
+      return "Claim";
+    case "vote_proposal":
+      return "Vote";
+    default:
+      return "Start";
+  }
+};
+
 const Dashboard = () => {
   const { address } = useAccount();
   const [xpHistory, setXPHistory] = useState<XPHistoryItem[]>([]);
+  const [dailyMission, setDailyMission] = useState<DailyMissionItem[]>([]);
   const [xpLevelInfo, setXPLevelInfo] = useState<XPLevelInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [historyResponse, levelResponse] = await Promise.all([
-          api.getUserXPHistory(),
-          api.getUserXPLevel(),
-        ]);
+        const [historyResponse, levelResponse, dailyMissionResponse] =
+          await Promise.all([
+            api.getUserXPHistory(),
+            api.getUserXPLevel(),
+            api.getUserDailyMission(),
+          ]);
         console.log("getUserXPHistory", historyResponse, levelResponse);
         if (historyResponse.success) {
           setXPHistory(historyResponse.xpHistory);
+        }
+        if (dailyMissionResponse.success) {
+          setDailyMission(dailyMissionResponse.data.missions);
+          console.log("dailyMission", dailyMissionResponse);
         }
         if (levelResponse.success) {
           setXPLevelInfo({
@@ -103,7 +142,7 @@ const Dashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 w-full">
                   <div className="flex flex-col items-start gap-1">
-                    <span className="text-2xl text-[#060F32] custom-font font-bold">
+                    <span className=" ml-2 text-2xl text-[#060F32] custom-font font-bold">
                       Welcome Back
                     </span>
                     <span className="text-sm text-[#828DB3]">
@@ -315,7 +354,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
           <div className="lg:col-span-3 space-y-6">
-            <section className="bg-[#F2F4FE] p-10 rounded-3xl">
+            {/* <section className="bg-[#F2F4FE] p-10 rounded-3xl">
               <div className="flex items-center justify-between">
                 <img src="/images/Icon5.svg" alt="logo" />
                 <div className="flex-1 ml-3">
@@ -432,6 +471,61 @@ const Dashboard = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+            </section> */}
+            <section className="bg-[#F2F4FE] p-10 rounded-3xl">
+              <div className="flex items-center justify-between">
+                <img src="/images/Icon5.svg" alt="logo" />
+                <div className="flex-1 ml-3">
+                  <div className="flex items-center gap-1">
+                    <span className="text-2xl text-[#060F32] custom-font font-bold">
+                      Daily Missions
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[#828DB3]">
+                      Complete these tasks to earn more XP
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-row space-x-3 mt-4 overflow-x-auto max-w-full">
+                {dailyMission?.map(
+                  (missionObj, index) => (
+                    console.log("missionObj", missionObj),
+                    (
+                      <div
+                        key={index}
+                        className="rounded-2xl bg-[#F9FAFF] max-w-57 p-8 flex-shrink-0"
+                      >
+                        <img src="/images/Icon6.svg" alt="logo" />
+                        <div className="mt-2">
+                          <div className="text-base text-[#060F32] custom-font font-bold capitalize">
+                            {missionObj.mission}
+                          </div>
+                          <div className="text-sm text-[#828DB3] custom-font">
+                            {missionObj.description}
+                          </div>
+                          <button
+                            className="px-4 py-4 bg-[#002DCB] text-white custom-font font-bold rounded-full text-sm mt-4
+              hover:bg-opacity-90 transform hover:scale-105 transition-all duration-200 
+              shadow-[0_0_30px_rgba(226,235,255,0.3)] hover:shadow-[0_0_50px_rgba(226,235,255,0.5)]"
+                          >
+                            <div className="flex items-center">
+                              {getButtonText(missionObj.mission)}
+                              <img
+                                src="/images/arrow.svg"
+                                className="ml-2 w-4 h-4"
+                                alt="Arrow"
+                              />
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )
+                )}
               </div>
             </section>
           </div>

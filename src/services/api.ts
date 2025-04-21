@@ -39,6 +39,20 @@ export interface XPHistoryResponse {
   };
 }
 
+export interface DailyMissionResponse {
+  success: boolean;
+  data: {
+    missions: Array<{
+      mission: string;
+      completed: boolean;
+      description: string;
+    }>;
+    allMissionsCompleted: boolean;
+    bonusAvailable: boolean;
+    bonusXP: number;
+  };
+}
+
 export interface XPLevelResponse {
   success: boolean;
   currentLevel: number;
@@ -103,6 +117,7 @@ class ApiClient {
     }
 
     const data = await response.json();
+    console.log("register jwt token", data.token);
     this.setToken(data.token);
     return data;
   }
@@ -122,6 +137,7 @@ class ApiClient {
     }
 
     const data = await response.json();
+    console.log("login jwt token", data.token);
     this.setToken(data.token);
     return data;
   }
@@ -197,6 +213,18 @@ class ApiClient {
 
     if (!response.ok) {
       throw new Error("Failed to fetch XP history");
+    }
+
+    return response.json();
+  }
+
+  async getUserDailyMission(): Promise<DailyMissionResponse> {
+    const response = await fetch(`${API_URL}/users/daily-missions`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch Daily Mission");
     }
 
     return response.json();
