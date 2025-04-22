@@ -53,6 +53,31 @@ export interface DailyMissionResponse {
   };
 }
 
+export interface LeaderboardResponse {
+  success: boolean;
+  leaderboard: Array<{
+    _id: string;
+    wallet: string;
+    xp: number;
+    level: number;
+    discordUsername: string;
+  }>;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalUsers: number;
+  };
+}
+
+export interface UserRankResponse {
+  success: boolean;
+  globalRank: number;
+  contributorRank: number;
+  userXP: number;
+  userContributionXP: number;
+  discordUsername: string;
+}
+
 export interface XPLevelResponse {
   success: boolean;
   currentLevel: number;
@@ -220,6 +245,30 @@ class ApiClient {
 
   async getUserDailyMission(): Promise<DailyMissionResponse> {
     const response = await fetch(`${API_URL}/users/daily-missions`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch Daily Mission");
+    }
+
+    return response.json();
+  }
+
+  async getLeaderboard(): Promise<LeaderboardResponse> {
+    const response = await fetch(`${API_URL}/leaderboard/global`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch Daily Mission");
+    }
+
+    return response.json();
+  }
+
+  async getUserRank(): Promise<UserRankResponse> {
+    const response = await fetch(`${API_URL}/leaderboard/user-rank`, {
       headers: this.getHeaders(),
     });
 
