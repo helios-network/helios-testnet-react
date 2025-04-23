@@ -77,48 +77,42 @@ const Dashboard = () => {
   const [Leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
   const [xpLevelInfo, setXPLevelInfo] = useState<XPLevelInfo | null>(null);
   const [currentUserItem, setCurrentUserItem] = useState<LeaderboardItem>();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1); // From API response
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
         const [
-          historyResponse,
           levelResponse,
           dailyMissionResponse,
           LeaderboardResponse,
           UserRankResponse,
         ] = await Promise.all([
-          api.getUserXPHistory(),
           api.getUserXPLevel(),
           api.getUserDailyMission(),
           api.getLeaderboard(),
           api.getUserRank(),
         ]);
-        console.log("getUserXPHistory", historyResponse, levelResponse);
-        if (historyResponse.success) {
-          setXPHistory(historyResponse.xpHistory);
-        }
+
         if (dailyMissionResponse.success) {
           setDailyMission(dailyMissionResponse.data.missions);
-          console.log("dailyMission", dailyMissionResponse);
         }
-        if (LeaderboardResponse.success) {
-          // setLeaderboard(LeaderboardResponse.leaderboard);
-          console.log("LeaderboardResponse", LeaderboardResponse.leaderboard);
-          const leaderboard = LeaderboardResponse.leaderboard;
 
+        if (LeaderboardResponse.success) {
+          const leaderboard = LeaderboardResponse.leaderboard;
           const top7 = leaderboard.slice(0, 10);
           const displayList = top7.map((item, index) => ({
             ...item,
-            rank: index + 1, // rank starts at 1
+            rank: index + 1,
           }));
+
           const currentUser = displayList.find(
             (user) =>
               user.wallet.toLowerCase() === address?.toString().toLowerCase()
           );
 
-          // Ensure current user is included in 8th slot if not already in top 7
           if (!currentUser && address && UserRankResponse.success) {
             setCurrentUserItem({
               _id: "",
@@ -129,11 +123,11 @@ const Dashboard = () => {
               rank: UserRankResponse.globalRank,
             });
           }
+
           setLeaderboard(displayList);
-          console.log("LeaderBoard", LeaderboardResponse);
         }
+
         if (levelResponse.success) {
-          console.log("levelResponse", levelResponse);
           setXPLevelInfo({
             currentLevel: levelResponse.currentLevel,
             totalXP: levelResponse.totalXP,
@@ -145,14 +139,34 @@ const Dashboard = () => {
           });
         }
       } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error("Failed to fetch initial data:", error);
+      }
+    };
+
+    fetchInitialData();
+  }, []); // <- run only once on mount
+
+  useEffect(() => {
+    const fetchXPHistory = async () => {
+      try {
+        const XPHistoryPageResponse = await api.getXPHistoryPage(
+          currentPage,
+          5,
+          "alltime"
+        );
+        if (XPHistoryPageResponse?.success) {
+          setXPHistory(XPHistoryPageResponse.xpHistory);
+          setTotalPages(XPHistoryPageResponse.pagination?.totalPages || 1);
+        }
+      } catch (error) {
+        console.error("Failed to fetch XP history:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchXPHistory();
+  }, [currentPage]); // <- runs every time currentPage changes
 
   const shortenedAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -166,6 +180,91 @@ const Dashboard = () => {
 
   const abbreviateAddress = (addr: string) =>
     `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+
+  const Pagination = ({ currentPage, totalPages, setCurrentPage }) => {
+    const generatePages = () => {
+      const pages = [];
+
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        if (currentPage <= 4) {
+          pages.push(1, 2, 3, 4, 5, "...", totalPages);
+        } else if (currentPage > totalPages - 4) {
+          pages.push(
+            1,
+            "...",
+            totalPages - 4,
+            totalPages - 3,
+            totalPages - 2,
+            totalPages - 1,
+            totalPages
+          );
+        } else {
+          pages.push(
+            1,
+            "...",
+            currentPage - 1,
+            currentPage,
+            currentPage + 1,
+            "...",
+            totalPages
+          );
+        }
+      }
+
+      return pages;
+    };
+
+    return (
+      <div className="flex items-center justify-center py-3">
+        {/* Prev Button */}
+        <button
+          onClick={() =>
+            setCurrentPage((prev: number) => Math.max(prev - 1, 1))
+          }
+          disabled={currentPage === 1}
+          className="mx-1 px-3 py-2 text-sm text-gray-800 hover:text-gray-950 disabled:cursor-not-allowed  rounded-2xl hover:bg-gray-300 cursor-pointer"
+        >
+          &lt; Previous
+        </button>
+
+        {/* Page Buttons */}
+        {generatePages().map((page, index) =>
+          page === "..." ? (
+            <span key={index} className="mx-1 text-sm text-black">
+              . . .
+            </span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`mx-1 h-9 w-9 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                currentPage === page
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-900 hover:bg-gray-700 hover:text-gray-200"
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+
+        {/* Next Button */}
+        <button
+          onClick={() =>
+            setCurrentPage((prev: number) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="mx-1 px-3 py-2 text-sm text-gray-800 hover:text-gray-950 disabled:cursor-not-allowed rounded-2xl hover:bg-gray-300 cursor-pointer"
+        >
+          Next &gt;
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className="bg-[#E6EBFD] py-5 px-5">
@@ -227,7 +326,7 @@ const Dashboard = () => {
               </section>
             </div>
             <div className="flex-grow">
-              <section className="bg-[#F2F4FE] p-10 rounded-3xl overflow-hidden h-full">
+              <section className="bg-[#F2F4FE] p-10 rounded-3xl overflow-hidden h-full flex flex-col">
                 <div className="flex items-center justify-between">
                   <img src="/images/Icon1.svg" alt="logo" />
                   <div className="flex-1 ml-3">
@@ -244,11 +343,11 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 mb-15">
+                <div className="mt-4 mb-15 h-60">
                   {xpHistory?.map((item, index) => (
                     <div
                       key={item._id}
-                      className="flex items-center justify-between bg-[#F9FAFF] rounded-3xl mt-2 px-1 py-1"
+                      className="flex items-center justify-between bg-[#F9FAFF] rounded-3xl mt-2 px-1 py-2"
                     >
                       <img
                         src={`/images/Icon3.svg`} // Cycle through Icon2, Icon3, Icon4...
@@ -269,6 +368,14 @@ const Dashboard = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+                <hr className="border-1 border-[#D7E0FF] mx-7 mt-auto" />
+                <div className="mt-1">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    setCurrentPage={setCurrentPage}
+                  />
                 </div>
               </section>
             </div>
@@ -328,7 +435,7 @@ const Dashboard = () => {
                           <div className="flex-1">
                             <div className="flex items-center">
                               <span
-                                className={`text-sm custom-font font-bold ${
+                                className={`text-base custom-font font-bold ${
                                   isCurrentUser
                                     ? "text-[#002DCB]"
                                     : "text-[#060F32]"

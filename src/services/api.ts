@@ -255,6 +255,35 @@ class ApiClient {
     return response.json();
   }
 
+  getXPHistoryPage = async (
+    page: number = 1,
+    limit: number = 50,
+    timeframe: string = "alltime"
+  ): Promise<XPHistoryResponse | null> => {
+    try {
+      const res = await fetch(
+        `${API_URL}/users/xp/history?timeframe=${timeframe}&page=${page}&limit=${limit}`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!res.ok) {
+        console.error(
+          `Failed to fetch leaderboard page ${page}:`,
+          res.statusText
+        );
+        return null;
+      }
+
+      const data: XPHistoryResponse = await res.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      return null;
+    }
+  };
+
   async getLeaderboard(): Promise<LeaderboardResponse> {
     const response = await fetch(`${API_URL}/leaderboard/global`, {
       headers: this.getHeaders(),
