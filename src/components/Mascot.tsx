@@ -102,7 +102,7 @@ const Mascot: React.FC<MascotProps> = ({
                         disabled={isLoading}
                         className={`mt-6 px-6 py-3 bg-[#002DCB] text-white rounded-full text-base font-semibold transition-all duration-200 shadow-md flex items-center justify-center gap-2 ${
                           !isLoading
-                            ? "hover:bg-opacity-90 hover:scale-105 hover:shadow-xl"
+                            ? "hover:opacity-90 hover:scale-105 hover:shadow-xl"
                             : "opacity-50 cursor-not-allowed"
                         }`}
                         whileHover={!isLoading ? { scale: 1.05 } : {}}

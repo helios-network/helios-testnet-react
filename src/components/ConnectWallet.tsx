@@ -1,27 +1,92 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useConnect, useAccount } from "wagmi";
+import { useConnect, useAccount, useDisconnect } from "wagmi";
 import { useStore } from "../store/onboardingStore";
 import { metaMask } from "wagmi/connectors";
-import Particles from "react-particles";
-import { loadSlim } from "tsparticles-slim";
-import type { Container, Engine } from "tsparticles-engine";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Wallet, ShieldCheck, ArrowRightCircle, AlertTriangle } from "lucide-react";
 import { api } from "../services/api";
 import { ethers } from "ethers";
 import { Video } from "@/components/video/video";
-import { sign } from "crypto";
 
 const ConnectWallet = () => {
   const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
-  const { setStep, setUser } = useStore();
+  const { setStep, setUser, resetStore } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsInviteCode, setNeedsInviteCode] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [pendingSignature, setPendingSignature] = useState<string | null>(null);
+  const [pendingWallet, setPendingWallet] = useState<string | null>(null);
+  const [previousConnectionState, setPreviousConnectionState] = useState<boolean | null>(null);
 
-  const particlesInit = async (engine: Engine) => {
-    await loadSlim(engine);
+  // Track connection state changes and handle disconnections
+  useEffect(() => {
+    // If we had a connection and now we don't, handle the disconnect
+    if (previousConnectionState === true && !isConnected) {
+      handleDisconnect();
+    }
+    
+    // Update previous connection state
+    setPreviousConnectionState(isConnected);
+  }, [isConnected]);
+
+  // Handle wallet disconnection - this runs when the wallet gets disconnected directly from metamask
+  const handleDisconnect = () => {
+    console.log("Wallet disconnected, clearing session data");
+    
+    // Clear JWT token from localStorage
+    localStorage.removeItem("jwt_token");
+    
+    // Reset all state
+    resetStore();
+    setUser(null);
+    setStep(0);
+    setError(null);
+    setNeedsInviteCode(false);
+    setPendingSignature(null);
+    setPendingWallet(null);
+    setInviteCode("");
+    setInviteError(null);
   };
+
+  // Explicitly check token on mount
+  useEffect(() => {
+    // Double-check to ensure we're not showing the connect UI when no token exists
+    if (isConnected) {
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        console.log("No token found but wallet connected, resetting to initial state");
+        handleDisconnect();
+      }
+    }
+  }, []);
+
+  // Automatically trigger signing when wallet is connected
+  useEffect(() => {
+    const checkAndSignMessage = async () => {
+      if (isConnected && address && !isLoading && !needsInviteCode) {
+        // Check if we have a valid JWT token
+        const token = localStorage.getItem("jwt_token");
+        if (!token) {
+          // No token found, trigger the sign and login flow
+          try {
+            setIsLoading(true);
+            await handleSignAndAuthenticate();
+          } catch (error: any) {
+            console.error("Auto-sign error:", error);
+            setError(error.message || "Failed to authenticate automatically");
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      }
+    };
+    
+    checkAndSignMessage();
+  }, [isConnected, address]);
 
   const signMessage = async (address: string): Promise<string> => {
     try {
@@ -32,6 +97,62 @@ const ConnectWallet = () => {
     } catch (error) {
       console.error("Signing error:", error);
       throw new Error("Failed to sign message");
+    }
+  };
+
+  const handleSignAndAuthenticate = async () => {
+    if (!address) {
+      setError("Wallet not connected");
+      return;
+    }
+    
+    try {
+      setError(null);
+      setIsLoading(true);
+      
+      let signature;
+      try {
+        signature = await signMessage(address);
+      } catch (signError: any) {
+        // Check for user rejection errors and display a friendly message
+        console.error("Signature error:", signError);
+        if (
+          signError.code === 4001 || // Standard MetaMask rejection code
+          signError.message?.includes("rejected") ||
+          signError.message?.includes("denied")
+        ) {
+          throw new Error("You declined the signature request");
+        }
+        throw signError; // Re-throw if it's not a user rejection
+      }
+      
+      try {
+        // Try login first for existing users
+        const loginResponse = await api.login(address, signature);
+        console.log("Login successful:", loginResponse);
+        
+        // Ensure we're using the user object correctly
+        const user = loginResponse.user;
+        if (!user) {
+          throw new Error("No user data received from login");
+        }
+        
+        setUser(user);
+        setStep(2);
+      } catch (loginError: any) {
+        // If login fails, the wallet is not registered
+        console.log("Login failed, new user:", loginError);
+        
+        // Store signature and wallet for later invite code submission
+        setPendingSignature(signature);
+        setPendingWallet(address);
+        setNeedsInviteCode(true);
+      }
+    } catch (error: any) {
+      console.error("Failed to sign and authenticate:", error);
+      setError(error.message || "Failed to authenticate");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -47,7 +168,14 @@ const ConnectWallet = () => {
           signature,
           registerResponse
         );
-        setUser(registerResponse.user);
+        
+        // Ensure we're using the user object correctly
+        const user = registerResponse.user;
+        if (!user) {
+          throw new Error("No user data received from registration");
+        }
+        
+        setUser(user);
         setStep(2);
       } catch (registerError: any) {
         // If registration fails with 400 (wallet already registered), try login
@@ -55,7 +183,14 @@ const ConnectWallet = () => {
           console.log("Wallet Registered");
           const loginResponse = await api.login(walletAddress, signature);
           console.log("Wallet Registered", loginResponse);
-          setUser(loginResponse.user);
+          
+          // Ensure we're using the user object correctly
+          const user = loginResponse.user;
+          if (!user) {
+            throw new Error("No user data received from login");
+          }
+          
+          setUser(user);
           setStep(2);
         } else {
           throw registerError;
@@ -68,28 +203,73 @@ const ConnectWallet = () => {
     }
   };
 
+  const handleRegisterWithInvite = async () => {
+    if (!inviteCode.trim()) {
+      setInviteError("Invite code is required");
+      return;
+    }
+
+    if (!pendingWallet || !pendingSignature) {
+      setInviteError("Authentication error. Please try again.");
+      return;
+    }
+
+    setIsLoading(true);
+    setInviteError(null);
+
+    try {
+      // Use a modified register endpoint that accepts an invite code
+      const registerResponse = await api.register(
+        pendingWallet,
+        pendingSignature,
+        inviteCode.trim()
+      );
+      
+      console.log("Register with invite response:", registerResponse);
+      
+      // Ensure we're using the user object correctly
+      const user = registerResponse.user;
+      if (!user) {
+        throw new Error("No user data received from registration");
+      }
+      
+      setUser(user);
+      setNeedsInviteCode(false);
+      setStep(2);
+    } catch (error: any) {
+      console.error("Failed to register with invite:", error);
+      setInviteError(error.message || "Invalid invite code");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleConnect = async () => {
     try {
       setError(null);
       setIsLoading(true);
 
-      console.log("success1");
-      // If already connected, proceed with signing
-      if (isConnected && address) {
-        await handleSignAndLogin(address);
+      // Connect wallet first if not connected
+      if (!isConnected) {
+        const connector = metaMask();
+        await connect({ connector });
+        // Wallet connection will trigger the useEffect which will handle signing
+        setIsLoading(false);
         return;
       }
-      console.log("success2");
-
-      // Connect wallet
-      const connector = metaMask();
-      const result = connect({ connector }) as unknown as { account?: string };
-
-      if (!result?.account) {
-        throw new Error("No account found");
+      
+      // If we have a wallet address but need invite code
+      if (needsInviteCode) {
+        handleRegisterWithInvite();
+        return;
       }
-
-      await handleSignAndLogin(result.account);
+      
+      // If already connected, proceed with signing
+      if (address) {
+        await handleSignAndAuthenticate();
+      } else {
+        throw new Error("No wallet address found");
+      }
     } catch (error: any) {
       console.error("Failed to connect wallet:", error);
       setError(error.message || "Failed to connect wallet");
@@ -98,9 +278,27 @@ const ConnectWallet = () => {
     }
   };
 
+  const clearInviteState = () => {
+    setNeedsInviteCode(false);
+    setPendingSignature(null);
+    setPendingWallet(null);
+    setInviteCode("");
+    setInviteError(null);
+  };
+
+  const renderButtonText = () => {
+    if (isLoading) {
+      if (needsInviteCode) return "Verifying code...";
+      return "Processing...";
+    }
+    if (!isConnected) return "Connect Wallet";
+    if (needsInviteCode) return "Submit Invite";
+    return "Connect"; // Changed from "Processing..." to "Connect" for clarity
+  };
+
   return (
-    <div className="bg-[#F2F5FF]">
-      <div className="bg-cover bg-center h-screen">
+    <div className="bg-[#F2F5FF] min-h-screen">
+      <div className="bg-cover bg-center min-h-screen">
         <div className="relative w-full h-full">
           <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-0 pointer-events-none">
             <div className="min-w-300 w-400 h-50 object-none">
@@ -115,16 +313,20 @@ const ConnectWallet = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <h1 className="text-3xl xl:text-7xl lg:text-6xl md:text-5xl sm:text-4xl text-[#002DCB] mb-10 leading-tight italic -my-20">
+                <div className="mb-6">
+                  <img src="/images/Helios-Testnet.png" alt="Helios Testnet" className="h-24 mx-auto mb-4" />
+                </div>
+                
+                <h1 className="text-4xl xl:text-7xl lg:text-6xl md:text-5xl sm:text-4xl text-[#002DCB] mb-6 leading-tight">
                   Welcome to the
-                  <span className="block bg-clip-text text-[#060F32] not-italic">
-                    Helios&nbsp;
-                    <span className="relative inline-block">
-                      <span>Testnet</span>
-                      <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#002DCB] transform rotate-[-1.5deg]"></span>
-                    </span>
+                  <span className="block font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#002DCB] to-[#4F6BFF]">
+                    Helios Testnet
                   </span>
                 </h1>
+                
+                <p className="text-lg text-[#5C6584] max-w-2xl mx-auto mb-10">
+                  Join the next generation blockchain infrastructure powered by decentralized consensus.
+                </p>
               </motion.div>
 
               <motion.div
@@ -133,30 +335,166 @@ const ConnectWallet = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="flex flex-col items-center gap-4"
               >
-                <button
+                {isConnected && needsInviteCode ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 max-w-md w-full"
+                  >
+                    <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[#002DCB]/10">
+                      <div className="flex items-center mb-4">
+                        <span className="w-10 h-10 rounded-full bg-[#E2EBFF] flex items-center justify-center mr-3">
+                          <ShieldCheck className="h-5 w-5 text-[#002DCB]" />
+                        </span>
+                        <div>
+                          <h2 className="text-xl font-bold text-[#002DCB]">
+                            Exclusive Access
+                          </h2>
+                          <p className="text-[#5C6584] text-sm">Enter your invite code to continue</p>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-4">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={inviteCode}
+                            onChange={(e) => setInviteCode(e.target.value)}
+                            placeholder="Enter your invite code"
+                            className={`w-full px-4 py-3 pl-10 border ${inviteError ? 'border-red-400 bg-red-50/50' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002DCB] transition-all duration-200`}
+                          />
+                          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#002DCB]">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          {inviteCode && !isLoading && !inviteError && (
+                            <motion.div 
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </motion.div>
+                          )}
+                        </div>
+                        
+                        {inviteError && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="flex items-center gap-2 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg"
+                          >
+                            <AlertTriangle className="h-5 w-5 text-red-500" />
+                            <p className="text-red-600 text-sm font-medium">{inviteError}</p>
+                          </motion.div>
+                        )}
+                        
+                        <p className="text-xs text-gray-500 mt-3 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-[#002DCB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Need an invite code? <a href="https://discord.com/invite/AjpJnJxt5e" target="_blank" rel="noopener noreferrer" className="text-[#002DCB] hover:underline ml-1">Contact us on Discord</a>
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : null}
+
+                <motion.button
                   onClick={handleConnect}
                   disabled={isLoading}
-                  className={`px-6 py-4 bg-[#002DCB] text-white rounded-full text-xl font-semibold mt-4
-                       hover:bg-opacity-90 transform hover:scale-105 transition-all duration-200 
-                       shadow-[0_0_30px_rgba(226,235,255,0.3)] hover:shadow-[0_0_50px_rgba(226,235,255,0.5)]
-                       ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`web3-button py-4 px-8 text-xl
+                       ${isLoading ? "opacity-80 cursor-not-allowed" : ""}
+                       flex items-center justify-center gap-3`}
                 >
-                  {isLoading
-                    ? "Connecting..."
-                    : isConnected
-                    ? "Sign Message"
-                    : "Connect Wallet"}
-                </button>
+                  {isLoading ? (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : isConnected ? (
+                    <>
+                      {needsInviteCode ? (
+                        <>
+                          <ShieldCheck className="h-5 w-5" />
+                          <span>{renderButtonText()}</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRightCircle className="h-5 w-5" />
+                          <span>Continue to Testnet</span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="h-5 w-5" />
+                      <span>Connect Wallet</span>
+                    </>
+                  )}
+                </motion.button>
+
+                {isConnected && needsInviteCode && (
+                  <button
+                    onClick={clearInviteState}
+                    className="mt-2 text-sm text-[#002DCB] hover:underline flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back
+                  </button>
+                )}
 
                 {error && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-red-400 bg-red-400/10 px-4 py-2 rounded-lg"
+                    className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl max-w-md shadow-sm"
                   >
-                    {error}
+                    <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-bold text-red-700 mb-1">Connection Error</h3>
+                      <p className="text-sm">{error}</p>
+                    </div>
                   </motion.div>
                 )}
+                
+                <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl">
+                  <div className="glass-effect p-4 rounded-xl text-center hover-float">
+                    <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
+                      <Sparkles className="h-6 w-6 text-[#002DCB]" />
+                    </div>
+                    <h3 className="text-[#060F32] font-bold mb-1">Test Network</h3>
+                    <p className="text-sm text-[#5C6584]">Experience the future of blockchain with zero risk</p>
+                  </div>
+                  
+                  <div className="glass-effect p-4 rounded-xl text-center hover-float">
+                    <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#002DCB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-[#060F32] font-bold mb-1">Earn Rewards</h3>
+                    <p className="text-sm text-[#5C6584]">Complete missions and earn XP with testnet tokens</p>
+                  </div>
+                  
+                  <div className="glass-effect p-4 rounded-xl text-center hover-float">
+                    <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#002DCB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                    </div>
+                    <h3 className="text-[#060F32] font-bold mb-1">Contribute</h3>
+                    <p className="text-sm text-[#5C6584]">Help build the next generation of decentralized apps</p>
+                  </div>
+                </div>
               </motion.div>
             </div>
           </div>

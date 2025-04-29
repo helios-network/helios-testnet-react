@@ -1,11 +1,12 @@
 import { ethers } from "ethers";
 
-const API_URL = "https://testnet-api.helioschain.network/api";
+const API_URL = "http://localhost:3000/api";
 
 export interface User {
   wallet: string;
   xp: number;
   completedSteps: string[];
+  referralCode?: string;
 }
 
 export interface OnboardingProgress {
@@ -89,6 +90,49 @@ export interface XPLevelResponse {
   isMaxLevel: boolean;
 }
 
+export interface UserReferralsResponse {
+  success: boolean;
+  referrals: Array<{
+    _id: string;
+    wallet: string;
+    username?: string;
+    avatar?: string;
+    xp?: number;
+    level?: number;
+    tags?: string[];
+    referralCode?: string;
+    createdAt: string;
+  }>;
+  pagination: {
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalCount: number;
+  };
+  referralCode: string;
+  referralCount: number;
+  referralXP: number;
+}
+
+export interface GlobalReferralStatsResponse {
+  success: boolean;
+  stats: {
+    totalUsers: number;
+    totalReferrals: number;
+    totalReferralXP: number;
+    referredUsers: number;
+    activeReferrers: number;
+  };
+  topReferrers: Array<{
+    _id: string;
+    wallet: string;
+    username?: string;
+    referralCode: string;
+    actualReferralCount: number;
+    referralXP: number;
+  }>;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -121,12 +165,22 @@ class ApiClient {
 
   async register(
     wallet: string,
-    signature: string
+    signature: string,
+    inviteCode?: string
   ): Promise<{ token: string; user: User }> {
+    const payload: { wallet: string; signature: string; inviteCode?: string } = { 
+      wallet, 
+      signature 
+    };
+    
+    if (inviteCode) {
+      payload.inviteCode = inviteCode;
+    }
+    
     const response = await fetch(`${API_URL}/users/register`, {
       method: "POST",
       headers: this.getHeaders(),
-      body: JSON.stringify({ wallet, signature }),
+      body: JSON.stringify(payload),
     });
     console.log("Register Result", response);
 
@@ -138,13 +192,27 @@ class ApiClient {
       ) {
         throw new Error("Wallet already registered");
       }
-      throw new Error("Registration failed");
+      throw new Error(error.message || "Registration failed");
     }
 
     const data = await response.json();
-    console.log("register jwt token", data.token);
-    this.setToken(data.token);
-    return data;
+    
+    // Get token either from data.token or from data.user.token
+    const token = data.token || (data.user && data.user.token);
+    
+    if (token) {
+      console.log("register jwt token", token);
+      this.setToken(token);
+      
+      // Create a standardized response structure
+      return {
+        token: token,
+        user: data.user || data
+      };
+    } else {
+      console.error("No token received from registration response");
+      throw new Error("Authentication failed: No token received");
+    }
   }
 
   async login(
@@ -162,9 +230,23 @@ class ApiClient {
     }
 
     const data = await response.json();
-    console.log("login jwt token", data.token);
-    this.setToken(data.token);
-    return data;
+    
+    // Get token either from data.token or from data.user.token
+    const token = data.token || (data.user && data.user.token);
+    
+    if (token) {
+      console.log("login jwt token", token);
+      this.setToken(token);
+      
+      // Create a standardized response structure
+      return {
+        token: token,
+        user: data.user || data
+      };
+    } else {
+      console.error("No token received from login response");
+      throw new Error("Authentication failed: No token received");
+    }
   }
 
   async getOnboardingProgress(): Promise<OnboardingProgress> {
@@ -315,6 +397,47 @@ class ApiClient {
 
     if (!response.ok) {
       throw new Error("Failed to fetch XP level");
+    }
+
+    return response.json();
+  }
+
+  async getUserProfile(wallet: string): Promise<User> {
+    const response = await fetch(`${API_URL}/users/profile/${wallet}`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user profile");
+    }
+
+    const data = await response.json();
+    if (data.user) {
+      return data.user;
+    } else {
+      throw new Error("Failed to fetch user profile");
+    }
+  }
+
+  async getUserReferrals(page: number = 1, limit: number = 10): Promise<UserReferralsResponse> {
+    const response = await fetch(`${API_URL}/users/referrals?page=${page}&limit=${limit}`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user referrals");
+    }
+
+    return response.json();
+  }
+
+  async getGlobalReferralStats(): Promise<GlobalReferralStatsResponse> {
+    const response = await fetch(`${API_URL}/users/referrals/stats`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch global referral statistics");
     }
 
     return response.json();

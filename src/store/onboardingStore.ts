@@ -9,10 +9,11 @@ interface OnboardingState {
   onboardingProgress: OnboardingProgress | null;
   setStep: (step: number) => void;
   addXP: (amount: number) => void;
-  setUser: (user: User) => void;
+  setUser: (user: User | null) => void;
   setOnboardingProgress: (progress: OnboardingProgress) => void;
   fetchOnboardingProgress: () => Promise<void>;
   initialize: () => Promise<void>;
+  resetStore: () => void;
 }
 
 export const useStore = create<OnboardingState>((set, get) => ({
@@ -25,6 +26,13 @@ export const useStore = create<OnboardingState>((set, get) => ({
   addXP: (amount) => set((state) => ({ xp: state.xp + amount })),
   setUser: (user) => set({ user }),
   setOnboardingProgress: (progress) => set({ onboardingProgress: progress }),
+  
+  resetStore: () => set({
+    step: 0,
+    xp: 0,
+    user: null,
+    onboardingProgress: null
+  }),
 
   fetchOnboardingProgress: async () => {
     try {
