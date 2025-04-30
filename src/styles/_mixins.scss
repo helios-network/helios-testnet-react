@@ -1,0 +1,189 @@
+@use "sass:list";
+@use "sass:meta";
+
+$responsiveNav: 1200px;
+$responsiveMobile: 700px;
+
+@mixin max($width) {
+  @media screen and (max-width: $width) {
+    @content;
+  }
+}
+
+@mixin min($width) {
+  @media screen and (min-width: ($width + 1px)) {
+    @content;
+  }
+}
+
+@mixin min-max($min, $max) {
+  @media screen and (max-width: $max) and (min-width: ($min + 1px)) {
+    @content;
+  }
+}
+
+@mixin max-min($max, $min) {
+  @media screen and (max-width: $max) and (min-width: ($min + 1px)) {
+    @content;
+  }
+}
+
+@mixin is-hover {
+  @media (hover: hover) {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+@mixin transition(
+  $transition,
+  $properties,
+  $timing-function: null,
+  $delay: null
+) {
+  $transition-time: if(
+    meta.type-of($transition) == number,
+    #{$transition}s,
+    var(--transition-#{$transition})
+  );
+
+  $transitions: ();
+  @each $property in $properties {
+    $transitions: list.append(
+      $transitions,
+      #{$property} $transition-time $timing-function $delay,
+      comma
+    );
+  }
+
+  transition: $transitions;
+}
+
+@mixin backdrop($px: var(--size-2)) {
+  backdrop-filter: blur($px);
+  -webkit-backdrop-filter: blur($px);
+  will-change: backdrop-filter;
+  /* Performance optimizations */
+  perspective: 1000;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+@mixin blur($px: var(--size-6)) {
+  filter: blur($px);
+  -webkit-filter: blur($px);
+  /* Performance optimizations */
+  perspective: 1000;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+@mixin ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@mixin clamp($line: 3) {
+  display: -webkit-box;
+  -webkit-line-clamp: $line;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@mixin translate-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin translate-x {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@mixin translate-y {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@mixin no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@mixin mask($gradient) {
+  mask: $gradient;
+  -webkit-mask: $gradient;
+}
+
+@mixin auto-alpha($alpha) {
+  opacity: $alpha;
+  visibility: if($alpha == 0, hidden, visible);
+}
+
+@mixin user-select($value: none) {
+  user-select: $value;
+  -webkit-user-select: $value;
+  -moz-user-select: $value;
+  -ms-user-select: $value;
+}
+
+@mixin border-gradient($gradient, $radius: inherit, $width: 1px) {
+  border: $width solid transparent;
+  background: $gradient border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  border-radius: $radius;
+}
+
+@mixin backdrop($px: 8px) {
+  backdrop-filter: blur($px);
+  -webkit-backdrop-filter: blur($px);
+  will-change: backdrop-filter;
+  perspective: 1000;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0); // force GPU for performance on Safari
+}
+
+@mixin text-vertical($direction: vertical-lr) {
+  writing-mode: $direction;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+@mixin selection($bg, $color) {
+  *::selection {
+    background-color: $bg;
+    color: $color;
+    -webkit-text-fill-color: $color;
+  }
+
+  *::-moz-selection {
+    background-color: $bg;
+    color: $color;
+    -webkit-text-fill-color: $color;
+  }
+}
+
+@mixin card($padding: var(--size-10)) {
+  background-color: var(--card-bg, var(--background-low));
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap, calc(var(--card-padding, #{$padding}) / 1.5));
+  padding: var(--card-padding, #{$padding});
+  border-radius: var(--card-radius, var(--radius-l));
+
+  @include max(700px) {
+    padding: var(--size-4);
+    gap: calc(var(--size-8) / 1.5);
+  }
+}

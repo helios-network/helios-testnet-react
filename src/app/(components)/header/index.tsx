@@ -1,7 +1,17 @@
+import { Link } from "@/components/link";
+import { Logotype } from "@/components/logotype";
+import { Chains } from "../chains";
+import { Wallet } from "../wallet";
+import { Users, Copy } from "lucide-react";
+import s from "./header.module.scss";
 import React from "react";
 import { Home, Trophy } from "lucide-react";
-import { ViewContext } from "./LayoutClientWrapper";
-import InviteCodeDisplay from "./InviteCodeDisplay";
+import { ViewContext } from "@/components/LayoutClientWrapper";
+import InviteCodeDisplay from "@/components/InviteCodeDisplay";
+
+// export const Header = () => {
+//   return <header className={s.header}></header>;
+// };
 
 interface HeaderProps {
   currentView: string;
@@ -54,6 +64,10 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
           <div className="mt-0 flex items-center min-h-[40px]">
             <InviteCodeDisplay />
           </div>
+          {/* <div className={s.right}>
+            <Chains />
+            <Wallet />
+          </div> */}
         </div>
       </div>
     </header>

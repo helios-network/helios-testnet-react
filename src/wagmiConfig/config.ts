@@ -1,6 +1,6 @@
 import { createConfig, http } from "wagmi";
 
-const heliosTestnet = {
+export const heliosTestnet = {
   id: 42000,
   name: "Helios Testnet",
   network: "helios-testnet",

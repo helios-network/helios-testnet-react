@@ -1,0 +1,146 @@
+$primitive: (
+  blue: (
+    50: oklch(92.99% 0.033 272.79),
+    100: oklch(86.07% 0.068 273.05),
+    200: oklch(72.37% 0.143 271.02),
+    300: oklch(59.68% 0.218 267.47),
+    400: oklch(50.08% 0.28 264.38),
+    500: oklch(41.66% 0.24 263.96),
+    600: oklch(35.52% 0.203 263.93),
+    700: oklch(29.29% 0.161 263.71),
+    800: oklch(22.73% 0.118 263.29),
+    900: oklch(15.64% 0.069 261.28),
+    950: oklch(11.28% 0.043 258.66)
+  ),
+  light: (
+    50: oklch(100% 0 0),
+    100: oklch(98.58% 0.0067 277.17),
+    200: oklch(96.81% 0.015 273.85),
+    300: oklch(93.93% 0.028757 266.368),
+    400: oklch(92.08% 0.0364 272.07),
+    500: oklch(90.95% 0.0435 272.69),
+    600: oklch(84.5% 0.0504 271.54),
+    700: oklch(85.2% 0.051 267.9),
+    800: oklch(72.6% 0.023 267.5),
+    900: oklch(64.3% 0.032 267.8),
+    950: oklch(41.2% 0.018 268.1)
+  ),
+  dark: (
+    50: oklch(50.2% 0.05 262.3),
+    100: oklch(42.8% 0.09 265.5),
+    200: oklch(35.4% 0.12 267.2),
+    300: oklch(28.9% 0.14 268.1),
+    400: oklch(28.9% 0.14 268.1),
+    500: oklch(18.2% 0.11 267.8),
+    600: oklch(12.4% 0.08 268.3),
+    700: oklch(6.2% 0.04 267.9),
+    800: oklch(4.1% 0.02 267.5),
+    900: oklch(2.3% 0.01 267.8),
+    950: oklch(0% 0 0)
+  ),
+  orange: (
+    50: oklch(96.35% 0.02 58.07),
+    100: oklch(93.53% 0.037 56.93),
+    200: oklch(86.85% 0.08 56.57),
+    300: oklch(80.9% 0.118 55.55),
+    400: oklch(75.19% 0.157 53.19),
+    500: oklch(70.49% 0.187 47.6),
+    600: oklch(60.97% 0.169 46.22),
+    700: oklch(50.11% 0.136 47.33),
+    800: oklch(37.31% 0.098 48.91),
+    900: oklch(24.98% 0.061 54.46),
+    950: oklch(16.71% 0.035 63.53)
+  ),
+  red: (
+    50: oklch(95.66% 0.018 17.48),
+    100: oklch(91.45% 0.039 17.89),
+    200: oklch(83.42% 0.081 18.91),
+    300: oklch(75.61% 0.125 20.43),
+    400: oklch(68.97% 0.169 22.57),
+    500: oklch(63.68% 0.208 25.33),
+    600: oklch(57.64% 0.229 28.56),
+    700: oklch(46.71% 0.184 28.31),
+    800: oklch(35.1% 0.135 27.88),
+    900: oklch(22.22% 0.08 26.68),
+    950: oklch(14.95% 0.051 25.98)
+  ),
+  emerald: (
+    50: oklch(97.27% 0.03 172.89),
+    100: oklch(94.52% 0.057 172.7),
+    200: oklch(89.79% 0.109 170.46),
+    300: oklch(86.07% 0.149 167.24),
+    400: oklch(75% 0.177 162.78),
+    500: oklch(69.59% 0.149 162.48),
+    600: oklch(59.63% 0.127 162.48),
+    700: oklch(48.65% 0.103 162.73),
+    800: oklch(36.69% 0.075 163.98),
+    900: oklch(23.98% 0.046 165.91),
+    950: oklch(16.82% 0.029 169.76)
+  )
+);
+
+$colors: (
+  background: (
+    lowest: var(--color-light-50),
+    lower: var(--color-light-100),
+    low: var(--color-light-200),
+    medium: var(--color-light-300),
+    high: var(--color-light-400),
+    higher: var(--color-light-500),
+    highest: var(--color-light-600)
+  ),
+  primary: (
+    lowest: var(--color-blue-200),
+    lower: var(--color-blue-300),
+    low: var(--color-blue-400),
+    medium: var(--color-blue-500),
+    high: var(--color-blue-600),
+    higher: var(--color-blue-700),
+    highest: var(--color-blue-800)
+  ),
+  danger: (
+    lowest: var(--color-red-200),
+    lower: var(--color-red-300),
+    low: var(--color-red-400),
+    medium: var(--color-red-500),
+    high: var(--color-red-600)
+  ),
+  success: (
+    lowest: var(--color-emerald-200),
+    lower: var(--color-emerald-300),
+    low: var(--color-emerald-400),
+    medium: var(--color-emerald-500),
+    high: var(--color-emerald-600)
+  ),
+  warning: (
+    lowest: var(--color-orange-200),
+    lower: var(--color-orange-300),
+    low: var(--color-orange-400),
+    medium: var(--color-orange-500),
+    high: var(--color-orange-600)
+  ),
+  text: (
+    primary: var(--color-dark-600),
+    secondary: var(--color-dark-50),
+    tertiary: #828db3
+  )
+);
+
+:root {
+  --white: #fff;
+  --black: #000;
+  --dark-rgb: 0, 0, 8;
+  --light-rgb: 255, 255, 255;
+
+  @each $name, $shades in $primitive {
+    @each $shade, $color in $shades {
+      --color-#{"" + $name}-#{$shade}: #{$color};
+    }
+  }
+
+  @each $name, $shades in $colors {
+    @each $shade, $color in $shades {
+      --#{"" + $name}-#{$shade}: #{$color};
+    }
+  }
+}

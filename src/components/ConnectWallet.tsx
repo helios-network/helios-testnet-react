@@ -3,7 +3,13 @@ import { motion } from "framer-motion";
 import { useConnect, useAccount, useDisconnect } from "wagmi";
 import { useStore } from "../store/onboardingStore";
 import { metaMask } from "wagmi/connectors";
-import { Sparkles, Wallet, ShieldCheck, ArrowRightCircle, AlertTriangle } from "lucide-react";
+import {
+  Sparkles,
+  Wallet,
+  ShieldCheck,
+  ArrowRightCircle,
+  AlertTriangle,
+} from "lucide-react";
 import { api } from "../services/api";
 import { ethers } from "ethers";
 import { Video } from "@/components/video/video";
@@ -20,7 +26,9 @@ const ConnectWallet = () => {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [pendingSignature, setPendingSignature] = useState<string | null>(null);
   const [pendingWallet, setPendingWallet] = useState<string | null>(null);
-  const [previousConnectionState, setPreviousConnectionState] = useState<boolean | null>(null);
+  const [previousConnectionState, setPreviousConnectionState] = useState<
+    boolean | null
+  >(null);
 
   // Track connection state changes and handle disconnections
   useEffect(() => {
@@ -28,7 +36,7 @@ const ConnectWallet = () => {
     if (previousConnectionState === true && !isConnected) {
       handleDisconnect();
     }
-    
+
     // Update previous connection state
     setPreviousConnectionState(isConnected);
   }, [isConnected]);
@@ -36,10 +44,10 @@ const ConnectWallet = () => {
   // Handle wallet disconnection - this runs when the wallet gets disconnected directly from metamask
   const handleDisconnect = () => {
     console.log("Wallet disconnected, clearing session data");
-    
+
     // Clear JWT token from localStorage
     localStorage.removeItem("jwt_token");
-    
+
     // Reset all state
     resetStore();
     setUser(null);
@@ -58,7 +66,9 @@ const ConnectWallet = () => {
     if (isConnected) {
       const token = localStorage.getItem("jwt_token");
       if (!token) {
-        console.log("No token found but wallet connected, resetting to initial state");
+        console.log(
+          "No token found but wallet connected, resetting to initial state"
+        );
         handleDisconnect();
       }
     }
@@ -84,7 +94,7 @@ const ConnectWallet = () => {
         }
       }
     };
-    
+
     checkAndSignMessage();
   }, [isConnected, address]);
 
@@ -93,6 +103,7 @@ const ConnectWallet = () => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = provider.getSigner();
       const message = `Welcome to Helios! Please sign this message to verify your wallet ownership.\n\nWallet: ${address}`;
+      console.log("--signMessage--", message);
       return (await signer).signMessage(message);
     } catch (error) {
       console.error("Signing error:", error);
@@ -105,11 +116,11 @@ const ConnectWallet = () => {
       setError("Wallet not connected");
       return;
     }
-    
+
     try {
       setError(null);
       setIsLoading(true);
-      
+
       let signature;
       try {
         signature = await signMessage(address);
@@ -125,24 +136,24 @@ const ConnectWallet = () => {
         }
         throw signError; // Re-throw if it's not a user rejection
       }
-      
+
       try {
         // Try login first for existing users
         const loginResponse = await api.login(address, signature);
         console.log("Login successful:", loginResponse);
-        
+
         // Ensure we're using the user object correctly
         const user = loginResponse.user;
         if (!user) {
           throw new Error("No user data received from login");
         }
-        
+
         setUser(user);
         setStep(2);
       } catch (loginError: any) {
         // If login fails, the wallet is not registered
         console.log("Login failed, new user:", loginError);
-        
+
         // Store signature and wallet for later invite code submission
         setPendingSignature(signature);
         setPendingWallet(address);
@@ -168,13 +179,13 @@ const ConnectWallet = () => {
           signature,
           registerResponse
         );
-        
+
         // Ensure we're using the user object correctly
         const user = registerResponse.user;
         if (!user) {
           throw new Error("No user data received from registration");
         }
-        
+
         setUser(user);
         setStep(2);
       } catch (registerError: any) {
@@ -183,13 +194,13 @@ const ConnectWallet = () => {
           console.log("Wallet Registered");
           const loginResponse = await api.login(walletAddress, signature);
           console.log("Wallet Registered", loginResponse);
-          
+
           // Ensure we're using the user object correctly
           const user = loginResponse.user;
           if (!user) {
             throw new Error("No user data received from login");
           }
-          
+
           setUser(user);
           setStep(2);
         } else {
@@ -224,15 +235,15 @@ const ConnectWallet = () => {
         pendingSignature,
         inviteCode.trim()
       );
-      
+
       console.log("Register with invite response:", registerResponse);
-      
+
       // Ensure we're using the user object correctly
       const user = registerResponse.user;
       if (!user) {
         throw new Error("No user data received from registration");
       }
-      
+
       setUser(user);
       setNeedsInviteCode(false);
       setStep(2);
@@ -257,13 +268,13 @@ const ConnectWallet = () => {
         setIsLoading(false);
         return;
       }
-      
+
       // If we have a wallet address but need invite code
       if (needsInviteCode) {
         handleRegisterWithInvite();
         return;
       }
-      
+
       // If already connected, proceed with signing
       if (address) {
         await handleSignAndAuthenticate();
@@ -314,18 +325,23 @@ const ConnectWallet = () => {
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
                 <div className="mb-6">
-                  <img src="/images/Helios-Testnet.png" alt="Helios Testnet" className="h-24 mx-auto mb-4" />
+                  <img
+                    src="/images/Helios-Testnet.png"
+                    alt="Helios Testnet"
+                    className="h-24 mx-auto mb-4"
+                  />
                 </div>
-                
+
                 <h1 className="text-4xl xl:text-7xl lg:text-6xl md:text-5xl sm:text-4xl text-[#002DCB] mb-6 leading-tight">
                   Welcome to the
                   <span className="block font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#002DCB] to-[#4F6BFF]">
                     Helios Testnet
                   </span>
                 </h1>
-                
+
                 <p className="text-lg text-[#5C6584] max-w-2xl mx-auto mb-10">
-                  Join the next generation blockchain infrastructure powered by decentralized consensus.
+                  Join the next generation blockchain infrastructure powered by
+                  decentralized consensus.
                 </p>
               </motion.div>
 
@@ -350,10 +366,12 @@ const ConnectWallet = () => {
                           <h2 className="text-xl font-bold text-[#002DCB]">
                             Exclusive Access
                           </h2>
-                          <p className="text-[#5C6584] text-sm">Enter your invite code to continue</p>
+                          <p className="text-[#5C6584] text-sm">
+                            Enter your invite code to continue
+                          </p>
                         </div>
                       </div>
-                      
+
                       <div className="mb-4">
                         <div className="relative">
                           <input
@@ -361,43 +379,86 @@ const ConnectWallet = () => {
                             value={inviteCode}
                             onChange={(e) => setInviteCode(e.target.value)}
                             placeholder="Enter your invite code"
-                            className={`w-full px-4 py-3 pl-10 border ${inviteError ? 'border-red-400 bg-red-50/50' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002DCB] transition-all duration-200`}
+                            className={`w-full px-4 py-3 pl-10 border ${
+                              inviteError
+                                ? "border-red-400 bg-red-50/50"
+                                : "border-gray-300"
+                            } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002DCB] transition-all duration-200`}
                           />
                           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#002DCB]">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clipRule="evenodd"
+                              />
                             </svg>
                           </div>
                           {inviteCode && !isLoading && !inviteError && (
-                            <motion.div 
+                            <motion.div
                               initial={{ opacity: 0, scale: 0.5 }}
                               animate={{ opacity: 1, scale: 1 }}
                               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             </motion.div>
                           )}
                         </div>
-                        
+
                         {inviteError && (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
                             className="flex items-center gap-2 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg"
                           >
                             <AlertTriangle className="h-5 w-5 text-red-500" />
-                            <p className="text-red-600 text-sm font-medium">{inviteError}</p>
+                            <p className="text-red-600 text-sm font-medium">
+                              {inviteError}
+                            </p>
                           </motion.div>
                         )}
-                        
+
                         <p className="text-xs text-gray-500 mt-3 flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-[#002DCB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1 text-[#002DCB]"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                           </svg>
-                          Need an invite code? <a href="https://discord.com/invite/AjpJnJxt5e" target="_blank" rel="noopener noreferrer" className="text-[#002DCB] hover:underline ml-1">Contact us on Discord</a>
+                          Need an invite code?{" "}
+                          <a
+                            href="https://discord.com/invite/AjpJnJxt5e"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#002DCB] hover:underline ml-1"
+                          >
+                            Contact us on Discord
+                          </a>
                         </p>
                       </div>
                     </div>
@@ -414,9 +475,25 @@ const ConnectWallet = () => {
                        flex items-center justify-center gap-3`}
                 >
                   {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                   ) : isConnected ? (
                     <>
@@ -445,8 +522,19 @@ const ConnectWallet = () => {
                     onClick={clearInviteState}
                     className="mt-2 text-sm text-[#002DCB] hover:underline flex items-center"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                      />
                     </svg>
                     Back
                   </button>
@@ -460,39 +548,75 @@ const ConnectWallet = () => {
                   >
                     <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
                     <div>
-                      <h3 className="font-bold text-red-700 mb-1">Connection Error</h3>
+                      <h3 className="font-bold text-red-700 mb-1">
+                        Connection Error
+                      </h3>
                       <p className="text-sm">{error}</p>
                     </div>
                   </motion.div>
                 )}
-                
+
                 <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl">
                   <div className="glass-effect p-4 rounded-xl text-center hover-float">
                     <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
                       <Sparkles className="h-6 w-6 text-[#002DCB]" />
                     </div>
-                    <h3 className="text-[#060F32] font-bold mb-1">Test Network</h3>
-                    <p className="text-sm text-[#5C6584]">Experience the future of blockchain with zero risk</p>
+                    <h3 className="text-[#060F32] font-bold mb-1">
+                      Test Network
+                    </h3>
+                    <p className="text-sm text-[#5C6584]">
+                      Experience the future of blockchain with zero risk
+                    </p>
                   </div>
-                  
+
                   <div className="glass-effect p-4 rounded-xl text-center hover-float">
                     <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#002DCB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-[#002DCB]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                     </div>
-                    <h3 className="text-[#060F32] font-bold mb-1">Earn Rewards</h3>
-                    <p className="text-sm text-[#5C6584]">Complete missions and earn XP with testnet tokens</p>
+                    <h3 className="text-[#060F32] font-bold mb-1">
+                      Earn Rewards
+                    </h3>
+                    <p className="text-sm text-[#5C6584]">
+                      Complete missions and earn XP with testnet tokens
+                    </p>
                   </div>
-                  
+
                   <div className="glass-effect p-4 rounded-xl text-center hover-float">
                     <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#002DCB]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-[#002DCB]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                        />
                       </svg>
                     </div>
-                    <h3 className="text-[#060F32] font-bold mb-1">Contribute</h3>
-                    <p className="text-sm text-[#5C6584]">Help build the next generation of decentralized apps</p>
+                    <h3 className="text-[#060F32] font-bold mb-1">
+                      Contribute
+                    </h3>
+                    <p className="text-sm text-[#5C6584]">
+                      Help build the next generation of decentralized apps
+                    </p>
                   </div>
                 </div>
               </motion.div>

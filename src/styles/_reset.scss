@@ -1,0 +1,174 @@
+:root {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+  text-rendering: optimizeSpeed;
+  -webkit-tap-highlight-color: transparent;
+  height: 100%;
+  font-synthesis: none !important;
+}
+
+body {
+  min-height: 100%;
+}
+
+html,
+body {
+  scroll-behavior: smooth;
+  overscroll-behavior-x: none;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+// input,
+// button,
+// textarea,
+// select {
+//   font: inherit;
+//   color: inherit;
+// }
+
+// button {
+//   background: none;
+//   border: none;
+//   cursor: pointer;
+//   padding: 0;
+// }
+
+a {
+  color: inherit;
+  text-decoration: none;
+
+  &:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+input {
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type="search"] {
+    &::-ms-clear,
+    &::-ms-reveal {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+
+    &::-webkit-search-decoration,
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-results-button,
+    &::-webkit-search-results-decoration {
+      display: none;
+    }
+  }
+
+  &[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+a,
+a:hover,
+button,
+button:hover,
+*:focus,
+*:active {
+  text-decoration: none;
+  outline: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+strong {
+  font-weight: bold;
+}
+
+img,
+svg {
+  vertical-align: bottom;
+  height: auto;
+}
+
+input,
+textarea {
+  all: unset;
+}
+
+textarea {
+  resize: none;
+  width: 100%;
+  background-color: transparent;
+  color: inherit;
+}
+
+picture {
+  display: block;
+
+  img {
+    max-width: 100%;
+    width: 100%;
+    user-select: none;
+  }
+}
+
+small {
+  font-size: 0.95em;
+}
+
+address {
+  font: inherit;
+}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Users, Copy } from "lucide-react";
 import {
   Sun,
   Award,
@@ -13,8 +14,8 @@ import {
 import { useStore } from "../store/onboardingStore";
 import { useAccount } from "wagmi";
 import { api } from "../services/api";
-import { ViewContext } from "../app/layout";
-import Header from "./Header";
+import { ViewContext } from "./LayoutClientWrapper";
+import Header from "../app/(components)/header";
 import Footer from "./Footer";
 
 interface XPHistoryItem {
@@ -185,13 +186,13 @@ const Dashboard = () => {
   const abbreviateAddress = (addr: string) =>
     `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-  const Pagination = ({ 
-    currentPage, 
-    totalPages, 
-    setCurrentPage 
-  }: { 
-    currentPage: number; 
-    totalPages: number; 
+  const Pagination = ({
+    currentPage,
+    totalPages,
+    setCurrentPage,
+  }: {
+    currentPage: number;
+    totalPages: number;
     setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   }) => {
     const generatePages = () => {
@@ -263,10 +264,14 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8 h-full">
             <div className="lg:col-span-3 flex flex-col space-y-6">
               <div className="shrink-0">
-                <section className="bg-white rounded-2xl shadow-md p-8">
+                <section className="bg-white rounded-2xl shadow-md p-8 web3-card">
                   <div className="flex">
                     <div className="hover-float">
-                      <img src="/images/Avatar.svg" alt="Profile" className="w-16 h-16" />
+                      <img
+                        src="/images/Avatar.svg"
+                        alt="Profile"
+                        className="w-16 h-16"
+                      />
                     </div>
                     <div className="grid grid-cols-2 w-full">
                       <div className="flex flex-col items-start gap-1 ml-4">
@@ -286,12 +291,8 @@ const Dashboard = () => {
                           35 Points
                         </div>
                         <div className="flex flex-col sm:flex-row gap-1 mt-1">
-                          <div className="blur-badge">
-                            Developer
-                          </div>
-                          <div className="blur-badge">
-                            Rising Star
-                          </div>
+                          <div className="blur-badge">Developer</div>
+                          <div className="blur-badge">Rising Star</div>
                         </div>
                       </div>
                     </div>
@@ -313,13 +314,16 @@ const Dashboard = () => {
                     </span>
                     {!xpLevelInfo?.isMaxLevel && (
                       <span className="text-[#5C6584]">
-                        <span className="text-[#002DCB] font-medium">{xpLevelInfo?.xpNeededForNextLevel || 0} XP</span> to next level
+                        <span className="text-[#002DCB] font-medium">
+                          {xpLevelInfo?.xpNeededForNextLevel || 0} XP
+                        </span>{" "}
+                        to next level
                       </span>
                     )}
                   </div>
                 </section>
               </div>
-              
+
               <div className="flex-grow">
                 <section className="web3-card p-8 flex flex-col h-full">
                   <div className="flex items-center justify-between">
@@ -378,7 +382,7 @@ const Dashboard = () => {
                       </motion.div>
                     ))}
                   </div>
-                  
+
                   <hr className="border-1 border-[#D7E0FF] my-3" />
                   <div className="mt-1">
                     <Pagination
@@ -393,7 +397,7 @@ const Dashboard = () => {
 
             {/* Right Column (1/3 width on large screens) */}
             <div className="lg:col-span-2 space-y-6">
-              <section className="bg-[#F2F4FE] p-10 rounded-3xl h-full">
+              <section className="bg-white rounded-2xl shadow-md p-8 web3-card h-full">
                 <div className="flex items-center justify-between">
                   <img src="/images/Icon4.svg" alt="logo" />
                   <div className="flex-1 ml-3">
@@ -422,7 +426,7 @@ const Dashboard = () => {
                     return (
                       <div
                         key={user.wallet}
-                        className={`flex items-center justify-between rounded-4xl mt-1.5 px-2 ${
+                        className={`flex items-center justify-between rounded-4xl shadow-xs mt-1.5 px-2 transition-all duration-150 hover:shadow-sm hover:bg-[#F2F4FE] ${
                           isCurrentUser
                             ? "bg-[#D7E0FF] border border-[#002DCB]"
                             : "bg-[#F9FAFF]"
@@ -433,7 +437,9 @@ const Dashboard = () => {
                         ) : (
                           <span
                             className={`mx-1 custom-font font-medium w-3 text-sm${
-                              isCurrentUser ? "text-[#002DCB]" : "text-[#060F32]"
+                              isCurrentUser
+                                ? "text-[#002DCB]"
+                                : "text-[#060F32]"
                             }`}
                           >
                             {user.rank}
@@ -480,7 +486,8 @@ const Dashboard = () => {
                   {/* Spacer between top7 and current user */}
                   <div className="h-2" />
                   {Leaderboard.some(
-                    (user) => user.wallet.toLowerCase() !== address?.toLowerCase()
+                    (user) =>
+                      user.wallet.toLowerCase() !== address?.toLowerCase()
                   ) &&
                     currentUserItem && (
                       <hr className="my-4 border-1 border-[#D7E0FF]" />
@@ -493,7 +500,7 @@ const Dashboard = () => {
                     ) && (
                       <div
                         key={currentUserItem.wallet}
-                        className="flex items-center justify-between bg-[#D7E0FF] border border-[#002DCB] rounded-[28px] mt-2 px-3 py-1"
+                        className="flex items-center justify-between bg-[#F2F4FE] border transition-all duration-150 border-[#002DCB] rounded-[28px] mt-2 px-3 py-1 hover:shadow-sm hover:bg-[#D7E0FF]"
                       >
                         <span className="mx-1 custom-font font-bold text-sm text-[#002DCB]">
                           {currentUserItem.rank}
@@ -504,7 +511,8 @@ const Dashboard = () => {
                             <div className="flex-1">
                               <div className="flex items-center gap-1">
                                 <span className="text-base custom-font font-bold text-[#002DCB]">
-                                  {currentUserItem.discordUsername || "Anonymous"}
+                                  {currentUserItem.discordUsername ||
+                                    "Anonymous"}
                                 </span>
                                 <span className="text-sm text-[#002DCB] font-medium">
                                   (You)
@@ -532,7 +540,7 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
             <div className="lg:col-span-3 space-y-6">
-              <section className="bg-[#F2F4FE] p-10 rounded-3xl">
+              <section className="bg-white rounded-2xl shadow-md p-8">
                 <div className="flex items-center justify-between">
                   <img src="/images/Icon5.svg" alt="logo" />
                   <div className="flex-1 ml-3">
@@ -550,48 +558,43 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex flex-row space-x-3 mt-4 overflow-x-auto max-w-full">
-                  {dailyMission?.map(
-                    (missionObj, index) => (
-                      console.log("missionObj", missionObj),
-                      (
-                        <div
-                          key={index}
-                          className="rounded-2xl bg-[#F9FAFF] max-w-57 p-8 flex-shrink-0"
-                        >
-                          <img src="/images/Icon6.svg" alt="logo" />
-                          <div className="mt-2">
-                            <div className="text-base text-[#060F32] custom-font font-bold capitalize">
-                              {missionObj.mission}
-                            </div>
-                            <div className="text-sm text-[#828DB3] custom-font">
-                              {missionObj.description}
-                            </div>
-                            <button
-                              className="px-4 py-4 bg-[#002DCB] text-white custom-font font-bold rounded-full text-sm mt-4
+                  {dailyMission?.map((missionObj, index) => (
+                    <div
+                      key={index}
+                      className="rounded-2xl bg-[#F9FAFF] max-w-57 p-8 flex-shrink-0"
+                    >
+                      <img src="/images/Icon6.svg" alt="logo" />
+                      <div className="mt-2">
+                        <div className="text-base text-[#060F32] custom-font font-bold capitalize">
+                          {missionObj.mission}
+                        </div>
+                        <div className="text-sm text-[#828DB3] custom-font">
+                          {missionObj.description}
+                        </div>
+                        <button
+                          className="px-4 py-4 bg-[#002DCB] text-white custom-font font-bold rounded-full text-sm mt-4
               hover:opacity-90 transform hover:scale-105 transition-all duration-200 
               shadow-[0_0_30px_rgba(226,235,255,0.3)] hover:shadow-[0_0_50px_rgba(226,235,255,0.5)]"
-                            >
-                              <div className="flex items-center">
-                                {getButtonText(missionObj.mission)}
-                                <img
-                                  src="/images/arrow.svg"
-                                  className="ml-2 w-4 h-4"
-                                  alt="Arrow"
-                                />
-                              </div>
-                            </button>
+                        >
+                          <div className="flex items-center">
+                            {getButtonText(missionObj.mission)}
+                            <img
+                              src="/images/arrow.svg"
+                              className="ml-2 w-4 h-4"
+                              alt="Arrow"
+                            />
                           </div>
-                        </div>
-                      )
-                    )
-                  )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
             </div>
 
             {/* Right Column (1/3 width on large screens) */}
             <div className="lg:col-span-2 space-y-6">
-              <section className="bg-[#F2F4FE] p-10 rounded-3xl h-full">
+              <section className="bg-white rounded-2xl shadow-md p-8 h-full">
                 <div className="flex items-center justify-between">
                   <img src="/images/Icon9.svg" alt="logo" />
                   <div className="flex-1 ml-3">
@@ -653,7 +656,7 @@ const Dashboard = () => {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
             <div className="lg:col-span-5 space-y-6">
-              <section className="bg-[#F2F4FE] p-10 rounded-3xl">
+              <section className="bg-white rounded-2xl shadow-md p-8">
                 <div className="flex items-center justify-between">
                   <img src="/images/Icon5.svg" alt="logo" />
                   <div className="flex-1 ml-3">
@@ -664,7 +667,8 @@ const Dashboard = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-[#828DB3]">
-                        Collect badges and NFTs by completing tasks and earning XP
+                        Collect badges and NFTs by completing tasks and earning
+                        XP
                       </span>
                     </div>
                   </div>
@@ -791,7 +795,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Use the new Footer component */}
       <Footer />
     </div>

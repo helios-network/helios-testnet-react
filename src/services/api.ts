@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://testnet-api.helioschain.network/api";
 
 export interface User {
   wallet: string;
@@ -168,15 +168,16 @@ class ApiClient {
     signature: string,
     inviteCode?: string
   ): Promise<{ token: string; user: User }> {
-    const payload: { wallet: string; signature: string; inviteCode?: string } = { 
-      wallet, 
-      signature 
-    };
-    
+    const payload: { wallet: string; signature: string; inviteCode?: string } =
+      {
+        wallet,
+        signature,
+      };
+
     if (inviteCode) {
       payload.inviteCode = inviteCode;
     }
-    
+
     const response = await fetch(`${API_URL}/users/register`, {
       method: "POST",
       headers: this.getHeaders(),
@@ -196,18 +197,18 @@ class ApiClient {
     }
 
     const data = await response.json();
-    
+
     // Get token either from data.token or from data.user.token
     const token = data.token || (data.user && data.user.token);
-    
+
     if (token) {
       console.log("register jwt token", token);
       this.setToken(token);
-      
+
       // Create a standardized response structure
       return {
         token: token,
-        user: data.user || data
+        user: data.user || data,
       };
     } else {
       console.error("No token received from registration response");
@@ -230,18 +231,18 @@ class ApiClient {
     }
 
     const data = await response.json();
-    
+
     // Get token either from data.token or from data.user.token
     const token = data.token || (data.user && data.user.token);
-    
+
     if (token) {
       console.log("login jwt token", token);
       this.setToken(token);
-      
+
       // Create a standardized response structure
       return {
         token: token,
-        user: data.user || data
+        user: data.user || data,
       };
     } else {
       console.error("No token received from login response");
@@ -419,10 +420,16 @@ class ApiClient {
     }
   }
 
-  async getUserReferrals(page: number = 1, limit: number = 10): Promise<UserReferralsResponse> {
-    const response = await fetch(`${API_URL}/users/referrals?page=${page}&limit=${limit}`, {
-      headers: this.getHeaders(),
-    });
+  async getUserReferrals(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<UserReferralsResponse> {
+    const response = await fetch(
+      `${API_URL}/users/referrals?page=${page}&limit=${limit}`,
+      {
+        headers: this.getHeaders(),
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch user referrals");

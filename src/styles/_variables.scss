@@ -1,0 +1,89 @@
+@use "mixins" as *;
+
+:root {
+  /* Transition */
+  --transition-link: 0.25s var(--cubic);
+  --transition-nav: 0.2s;
+  --transition-scale: 0.1s;
+
+  /* Sizes */
+  --size-0: 0;
+  --size-px: 1px;
+  --size-0-5: 0.125rem; /* 2px */
+  --size-1: 0.25rem; /* 4px */
+  --size-1-5: 0.375rem; /* 6px */
+  --size-2: 0.5rem; /* 8px */
+  --size-2-5: 0.625rem; /* 10px */
+  --size-3: 0.75rem; /* 12px */
+  --size-3-5: 0.875rem; /* 14px */
+  --size-4: 1rem; /* 16px */
+  --size-5: 1.25rem; /* 20px */
+  --size-6: 1.5rem; /* 24px */
+  --size-7: 1.75rem; /* 28px */
+  --size-8: 2rem; /* 32px */
+  --size-9: 2.25rem; /* 36px */
+  --size-10: 2.5rem; /* 40px */
+  --size-11: 2.75rem; /* 44px */
+  --size-12: 3rem; /* 48px */
+  --size-13: 3.25rem; /* 52px */
+  --size-14: 3.5rem; /* 56px */
+  --size-16: 4rem; /* 64px */
+  --size-20: 5rem; /* 80px */
+  --size-24: 6rem; /* 96px */
+  --size-28: 7rem; /* 112px */
+  --size-32: 8rem; /* 128px */
+  --size-36: 9rem; /* 144px */
+  --size-40: 10rem; /* 160px */
+  --size-44: 11rem; /* 176px */
+  --size-48: 12rem; /* 192px */
+  --size-52: 13rem; /* 208px */
+  --size-56: 14rem; /* 224px */
+  --size-60: 15rem; /* 240px */
+  --size-64: 16rem; /* 256px */
+  --size-72: 18rem; /* 288px */
+  --size-80: 20rem; /* 320px */
+  --size-96: 24rem; /* 384px */
+
+  /* Spacing */
+  --spacing-2xs: var(--size-2-5);
+  --spacing-xs: var(--size-4);
+  --spacing-s: var(--size-7);
+  --spacing-m: var(--size-11);
+
+  /* Main */
+  --main-padding: var(--spacing-m);
+
+  /* Button */
+  --button-xsmall-height: var(--size-9);
+  --button-xsmall-size: var(--size-2-5);
+  --button-small-height: var(--size-8);
+  --button-small-size: var(--size-3);
+  --button-medium-height: var(--size-10);
+  --button-medium-size: var(--size-3-5);
+  --button-large-height: var(--size-14);
+  --button-large-size: var(--size-5);
+
+  /* Radius */
+  --radius-0: var(--size-0);
+  --radius-3xs: var(--size-2);
+  --radius-2xs: var(--size-3);
+  --radius-xs: var(--size-3-5);
+  --radius-s: var(--size-4);
+  --radius-m: var(--size-6);
+  --radius-l: var(--size-7);
+  --radius-xl: var(--size-8);
+  --radius-2xl: var(--size-10);
+  --radius-3xl: var(--size-11);
+  --radius-rounded: 9999px;
+
+  /* Shadows */
+  --shadow-m: 0 16px 32px rgba(var(--dark-rgb), 0.01);
+
+  @include max(700px) {
+    --main-padding: var(--spacing-s);
+  }
+
+  @include max(500px) {
+    --main-padding: var(--spacing-xs);
+  }
+}

@@ -1,0 +1,13 @@
+.symbol {
+  font-size: var(--symbol-size, 1em);
+  background-color: var(--color);
+  color: var(--white);
+  width: 1em;
+  min-width: 1em;
+  height: 1em;
+  padding: 0.15em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5em;
+}

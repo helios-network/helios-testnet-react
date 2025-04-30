@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
-import { ViewContext } from "../app/layout";
+import { ViewContext } from "./LayoutClientWrapper";
 import { api } from "../services/api";
 import { Share2, Users, Copy, CheckCircle2 } from "lucide-react";
 
@@ -18,7 +18,7 @@ const InviteCodeDisplay = () => {
 
   useEffect(() => {
     console.log("InviteCodeDisplay: Fetching user profile");
-    
+
     // Don't attempt to fetch if we don't have a wallet address
     if (!address) {
       console.log("InviteCodeDisplay: No wallet address available");
@@ -26,25 +26,33 @@ const InviteCodeDisplay = () => {
       setError("No wallet connected");
       return;
     }
-    
+
     const fetchUserData = async () => {
       try {
         setLoading(true);
         // Fallback code for testing if API doesn't return a code
-        const fallbackCode = "HELIOS" + Math.random().toString(36).substring(2, 8).toUpperCase();
-        
+        const fallbackCode =
+          "HELIOS" + Math.random().toString(36).substring(2, 8).toUpperCase();
+        // setReferralCode(fallbackCode);
+
         // Fetch both profile and referrals
         try {
-          console.log("InviteCodeDisplay: Fetching profile for wallet", address);
+          console.log(
+            "InviteCodeDisplay: Fetching profile for wallet",
+            address
+          );
           const [userProfile, referralsResponse] = await Promise.all([
             api.getUserProfile(address),
-            api.getUserReferrals(1, 1)
+            api.getUserReferrals(1, 1),
           ]);
-          
+
           console.log("InviteCodeDisplay: User profile", userProfile);
           // If we got a referral code from profile API, use it
           if (userProfile && userProfile.referralCode) {
-            console.log("InviteCodeDisplay: Referral code found in profile", userProfile.referralCode);
+            console.log(
+              "InviteCodeDisplay: Referral code found in profile",
+              userProfile.referralCode
+            );
             setReferralCode(userProfile.referralCode);
           }
 
@@ -61,6 +69,8 @@ const InviteCodeDisplay = () => {
           }
         } catch (fetchError) {
           console.error("InviteCodeDisplay: Error fetching data:", fetchError);
+          console.log("fallbackCode", fallbackCode);
+          setReferralCode(fallbackCode);
         }
       } catch (error) {
         console.error("InviteCodeDisplay: Error in data fetch:", error);
@@ -74,35 +84,36 @@ const InviteCodeDisplay = () => {
 
   const handleCopy = () => {
     if (!referralCode) return;
-    
-    navigator.clipboard.writeText(referralCode)
+
+    navigator.clipboard
+      .writeText(referralCode)
       .then(() => {
         setCopied(true);
         console.log("InviteCodeDisplay: Code copied", referralCode);
-        
+
         // Clear existing timeout if any
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
-        
+
         // Reset copied state after 2 seconds
         timeoutRef.current = setTimeout(() => {
           setCopied(false);
         }, 2000);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Failed to copy:", err);
       });
   };
 
   const handleShareOnX = () => {
     if (!referralCode) return;
-    
+
     const tweetText = `Join me on Helios Testnet! Use my invite code: ${referralCode} to get started. #Helios #Blockchain #Testnet`;
     const encodedText = encodeURIComponent(tweetText);
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
-    
-    window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+
+    window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
 
   // Mobile-optimized display
@@ -119,22 +130,27 @@ const InviteCodeDisplay = () => {
       ) : referralCode ? (
         <>
           <button
-            onClick={() => setCurrentView('referrals')}
+            onClick={() => setCurrentView("referrals")}
             className="bg-[#002DCB] text-white rounded-full px-3 py-1.5 flex items-center hover:bg-[#0025B3] transition-colors shadow-sm active:shadow-inner"
             title="View Referral Leaderboard"
           >
             <Users className="w-3.5 h-3.5 mr-1.5" />
             <div className="flex flex-col items-start">
               <span className="text-xs font-medium whitespace-nowrap">
-               {referralCount || 0} <span className="xs:inline">Referrals</span>
+                {referralCount || 0}{" "}
+                <span className="xs:inline">Referrals</span>
               </span>
             </div>
           </button>
-          
+
           <div className="bg-white/80 rounded-full px-2 py-1 flex items-center border border-[#002DCB]/10 shadow-sm">
-            <div className="text-xs font-medium text-[#002DCB] mr-1 hidden sm:block">Code:</div>
-            <div className="text-xs font-bold text-[#060F32] mr-1">{referralCode}</div>
-            <button 
+            <div className="text-xs font-medium text-[#002DCB] mr-1 hidden sm:block">
+              Code:
+            </div>
+            <div className="text-xs font-bold text-[#060F32] mr-1">
+              {referralCode}
+            </div>
+            <button
               onClick={handleCopy}
               className="text-[#002DCB] p-1 rounded-full hover:bg-[#E2EBFF] active:bg-[#D7E0FF] transition-colors"
               aria-label="Copy invite code"
@@ -157,4 +173,4 @@ const InviteCodeDisplay = () => {
   );
 };
 
-export default InviteCodeDisplay; 
+export default InviteCodeDisplay;
