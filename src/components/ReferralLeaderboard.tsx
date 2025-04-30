@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { api } from "../services/api";
 import { Users, Trophy, Award } from "lucide-react";
-import Header from "./Header";
 import Footer from "./Footer";
 
 interface ReferralStats {
@@ -77,9 +76,6 @@ export function ReferralLeaderboard() {
 
   return (
     <div className="bg-[#E6EBFD] min-h-screen flex flex-col">
-      {/* Use the new Header component */}
-      <Header currentView="referrals" />
-
       {/* Main content */}
       <div className="flex-grow py-8 px-6">
         <div className="max-w-7xl mx-auto">

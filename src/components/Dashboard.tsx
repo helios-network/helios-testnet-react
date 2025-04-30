@@ -6,17 +6,32 @@ import {
   Award,
   ArrowRight,
   Share2,
-  Github,
-  Twitter,
+  Code,
+  X,
   Clock,
   Zap,
+  Star,
+  Shield,
+  Leaf,
+  DollarSign,
+  Lightbulb,
+  Wallet,
+  MessageSquare,
+  UserPlus,
+  Building,
+  Megaphone,
+  Flag
 } from "lucide-react";
 import { useStore } from "../store/onboardingStore";
 import { useAccount } from "wagmi";
 import { api } from "../services/api";
 import { ViewContext } from "./LayoutClientWrapper";
-import Header from "../app/(components)/header";
 import Footer from "./Footer";
+import { User } from "../services/api";
+
+interface ExtendedUser extends User {
+  tags?: string[];
+}
 
 interface XPHistoryItem {
   _id: string;
@@ -51,6 +66,14 @@ interface XPLevelInfo {
   isMaxLevel: boolean;
 }
 
+interface Tag {
+  name: string;
+  xpMultiplier: number;
+  description: string;
+  autoAssigned: boolean;
+  verificationRequired: boolean;
+}
+
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("en-US", {
@@ -61,17 +84,40 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-const getButtonText = (key: string) => {
-  switch (key) {
-    case "delegate_consensus":
-      return "Stake";
-    case "claim_rewards":
-      return "Claim";
-    case "vote_proposal":
-      return "Vote";
-    default:
-      return "Start";
-  }
+// Custom tooltip component
+interface TooltipProps {
+  text: string;
+  children: React.ReactNode;
+  className?: string;
+  position?: 'top' | 'bottom';
+}
+
+const Tooltip = ({ text, children, className = "", position = 'top' }: TooltipProps) => {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  return (
+    <div 
+      className={`relative inline-block ${className}`}
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+    >
+      {children}
+      {isVisible && text && (
+        <div className={`absolute z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-md shadow-lg whitespace-normal max-w-xs transform ${
+          position === 'top' 
+            ? 'bottom-full left-0 -translate-y-2 mb-1' 
+            : 'top-full left-0 translate-y-2 mt-1'
+        }`}>
+          {text}
+          <div className={`absolute w-2 h-2 bg-gray-900 transform rotate-45 ${
+            position === 'top'
+              ? 'top-full left-4 -mt-1'
+              : 'bottom-full left-4 -mb-1'
+          }`}></div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const Dashboard = () => {
@@ -85,6 +131,8 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1); // From API response
   const [isLoading, setIsLoading] = useState(true);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [userTags, setUserTags] = useState<string[]>(["none"]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -94,11 +142,13 @@ const Dashboard = () => {
           dailyMissionResponse,
           LeaderboardResponse,
           UserRankResponse,
+          tagsResponse,
         ] = await Promise.all([
           api.getUserXPLevel(),
           api.getUserDailyMission(),
           api.getLeaderboard(),
           api.getUserRank(),
+          api.getAllTags(),
         ]);
 
         if (dailyMissionResponse.success) {
@@ -142,6 +192,21 @@ const Dashboard = () => {
             progressToNextLevel: levelResponse.progressToNextLevel,
             isMaxLevel: levelResponse.isMaxLevel,
           });
+        }
+
+        if (tagsResponse?.success) {
+          setAvailableTags(tagsResponse.tags);
+        }
+
+        if (address) {
+          try {
+            const userProfileResponse = await api.getUserProfile(address);
+            if (userProfileResponse && userProfileResponse.tags) {
+              setUserTags(userProfileResponse.tags);
+            }
+          } catch (error) {
+            console.error("Failed to fetch user profile:", error);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch initial data:", error);
@@ -253,11 +318,48 @@ const Dashboard = () => {
     );
   };
 
+  // Helper function to get icon for a tag
+  const getTagIcon = (tagName: string) => {
+    switch (tagName) {
+      case "none":
+        return <Shield className="w-6 h-6" />;
+      case "deployer":
+        return <Code className="w-6 h-6" />;
+      case "farmer":
+        return <Leaf className="w-6 h-6" />;
+      case "guardian":
+        return <Shield className="w-6 h-6" />;
+      case "researcher":
+        return <Lightbulb className="w-6 h-6" />;
+      case "liquidity_provider":
+        return <Wallet className="w-6 h-6" />;
+      case "proposal_master":
+        return <MessageSquare className="w-6 h-6" />;
+      case "contributor":
+        return <UserPlus className="w-6 h-6" />;
+      case "investor":
+        return <DollarSign className="w-6 h-6" />;
+      case "builder":
+        return <Building className="w-6 h-6" />;
+      case "marketer":
+        return <Megaphone className="w-6 h-6" />;
+      case "ambassador":
+        return <Flag className="w-6 h-6" />;
+      default:
+        return <Star className="w-6 h-6" />;
+    }
+  };
+
+  // Format tag name for display
+  const formatTagName = (name: string) => {
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <div className="bg-[#E6EBFD] min-h-screen flex flex-col">
-      {/* Use the new Header component */}
-      <Header currentView="dashboard" />
-
       {/* Main content */}
       <div className="flex-grow py-8 px-6">
         <div className="max-w-7xl mx-auto">
@@ -286,14 +388,11 @@ const Dashboard = () => {
                       <div className="grid place-items-end">
                         <div className="text-xl text-[#002DCB] custom-font font-bold flex items-center">
                           <span className="bg-[#E2EBFF] p-1.5 rounded-full mr-2 flex items-center justify-center">
-                            <Zap className="w-4 h-4 text-[#002DCB]" />
+                            <Star className="w-4 h-4 text-[#002DCB]" />
                           </span>
-                          35 Points
+                          Total XP: {xpLevelInfo?.totalXP || 0}
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-1 mt-1">
-                          <div className="blur-badge">Developer</div>
-                          <div className="blur-badge">Rising Star</div>
-                        </div>
+                      
                       </div>
                     </div>
                   </div>
@@ -348,39 +447,54 @@ const Dashboard = () => {
                   </div>
 
                   <div className="mt-4 flex-1 overflow-hidden">
-                    {xpHistory?.map((item, index) => (
-                      <motion.div
-                        key={item._id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05, duration: 0.3 }}
-                        className="flex items-center justify-between bg-[#F9FAFF] rounded-xl p-3 mt-2 transition-all duration-200 hover:shadow-sm hover:bg-[#F2F4FE]"
-                      >
-                        <div className="bg-[#E2EBFF] p-2 rounded-full">
-                          <img
-                            src={`/images/Icon3.svg`}
-                            alt="icon"
-                            className="w-5 h-5"
-                          />
-                        </div>
-                        <div className="flex-1 ml-3">
-                          <div className="flex justify-between">
-                            <span className="text-base text-[#060F32] custom-font font-bold">
-                              {item.description}
-                            </span>
-                            <div>
-                              <span className="ml-2 px-3 py-1 text-[#002DCB] text-base font-medium">
-                                + {item.amount} XP
+                    {xpHistory?.map((item, index) => {
+                      // Determine tooltip position based on index and total items
+                      const isFirstItem = index === 0;
+                      const isLastItem = index === xpHistory.length - 1;
+                      const tooltipPosition = isFirstItem || (xpHistory.length <= 3 && !isLastItem) ? 'bottom' : 'top';
+                      
+                      return (
+                        <motion.div
+                          key={item._id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05, duration: 0.3 }}
+                          className="flex items-center justify-between bg-[#F9FAFF] rounded-xl p-3 mt-2 transition-all duration-200 hover:shadow-sm hover:bg-[#F2F4FE]"
+                        >
+                          <div className="bg-[#E2EBFF] p-2 rounded-full flex-shrink-0">
+                            <img
+                              src={`/images/Icon3.svg`}
+                              alt="icon"
+                              className="w-5 h-5"
+                            />
+                          </div>
+                          <div className="flex-1 ml-3 min-w-0">
+                            <div className="flex flex-wrap justify-between items-center">
+                              <Tooltip 
+                                text={item.description} 
+                                className="max-w-[60%]"
+                                position={tooltipPosition}
+                              >
+                                <span className="text-base text-[#060F32] custom-font font-bold truncate block w-full">
+                                  {item.description}
+                                </span>
+                              </Tooltip>
+                              <div className="flex-shrink-0">
+                                <span className="ml-2 px-3 py-1 text-[#002DCB] text-base font-medium whitespace-nowrap">
+                                  + {item.amount} XP
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center text-xs text-[#828DB3]">
+                              <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">
+                                {formatDate(item.timestamp)}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center text-xs text-[#828DB3]">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {formatDate(item.timestamp)}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      );
+                    })}
                   </div>
 
                   <hr className="border-1 border-[#D7E0FF] my-3" />
@@ -561,30 +675,26 @@ const Dashboard = () => {
                   {dailyMission?.map((missionObj, index) => (
                     <div
                       key={index}
-                      className="rounded-2xl bg-[#F9FAFF] max-w-57 p-8 flex-shrink-0"
+                      className={`rounded-2xl ${missionObj.completed ? 'bg-[#E8EFFF] border-2 border-[#002DCB]' : 'bg-[#F9FAFF]'} max-w-57 p-8 flex-shrink-0 relative`}
                     >
+                      {missionObj.completed && (
+                        <div className="absolute top-4 right-4 bg-[#002DCB] text-white rounded-full p-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </div>
+                      )}
                       <img src="/images/Icon6.svg" alt="logo" />
                       <div className="mt-2">
-                        <div className="text-base text-[#060F32] custom-font font-bold capitalize">
-                          {missionObj.mission}
+                        <div className={`text-base ${missionObj.completed ? 'text-[#002DCB]' : 'text-[#060F32]'} custom-font font-bold capitalize`}>
+                          {missionObj.mission.replace(/_/g, ' ')}
                         </div>
                         <div className="text-sm text-[#828DB3] custom-font">
                           {missionObj.description}
                         </div>
-                        <button
-                          className="px-4 py-4 bg-[#002DCB] text-white custom-font font-bold rounded-full text-sm mt-4
-              hover:opacity-90 transform hover:scale-105 transition-all duration-200 
-              shadow-[0_0_30px_rgba(226,235,255,0.3)] hover:shadow-[0_0_50px_rgba(226,235,255,0.5)]"
-                        >
-                          <div className="flex items-center">
-                            {getButtonText(missionObj.mission)}
-                            <img
-                              src="/images/arrow.svg"
-                              className="ml-2 w-4 h-4"
-                              alt="Arrow"
-                            />
-                          </div>
-                        </button>
+                        <div className={`mt-4 text-sm ${missionObj.completed ? 'text-[#002DCB] font-medium' : 'text-[#828DB3]'}`}>
+                          {missionObj.completed ? 'Completed' : 'Not completed'}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -596,59 +706,105 @@ const Dashboard = () => {
             <div className="lg:col-span-2 space-y-6">
               <section className="bg-white rounded-2xl shadow-md p-8 h-full">
                 <div className="flex items-center justify-between">
-                  <img src="/images/Icon9.svg" alt="logo" />
+                  <div className="bg-[#E2EBFF] p-3 rounded-full relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#002DCB]/10 to-transparent rounded-full"></div>
+                    <Star className="w-6 h-6 text-[#002DCB]" />
+                  </div>
                   <div className="flex-1 ml-3">
                     <div className="flex items-center gap-1">
                       <span className="text-2xl text-[#060F32] custom-font font-bold">
-                        Badges & Contributions
+                        XP Multiplier Tags
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-[#828DB3]">
-                        Apply for a contributor role in the Helios ecosystem
+                        Earn multiplied XP with active tags
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-row space-x-3 mt-4 overflow-x-auto max-w-full">
-                  <div className="rounded-2xl bg-[#F9FAFF] max-w-35 min-w-35 p-8 place-items-center border-4 border-blue-800">
-                    <img src="/images/badge2.svg" alt="logo" />
-                    <div className="mt-2">
-                      <div className="text-base text-[#060F32] custom-font font-bold text-center">
-                        Connected to Helios
-                      </div>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-[#F9FAFF] max-w-35 min-w-35 p-8 place-items-center">
-                    <img src="/images/badge2.svg" alt="logo" />
-                    <div className="mt-2">
-                      <div className="text-base text-[#060F32] custom-font font-bold text-center">
-                        Claimed Faucet
-                      </div>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-[#F9FAFF] max-w-35 min-w-35 p-8 place-items-center">
-                    <img src="/images/badge1.svg" alt="logo" />
-                    <div className="mt-2">
-                      <div className="text-base text-[#060F32] custom-font font-bold text-center">
-                        Claimed Faucet
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex flex-row mt-4 space-x-3 overflow-x-auto pb-2">
+                  {availableTags
+                    .filter(tag => {
+                      // Hide the "none" tag if user has other tags
+                      if (tag.name === "none" && userTags.length > 1) {
+                        return false;
+                      }
+                      return true;
+                    })
+                    .sort((a, b) => {
+                      // Sort by active status first (active tags come first)
+                      const aActive = userTags.includes(a.name);
+                      const bActive = userTags.includes(b.name);
+                      
+                      if (aActive && !bActive) return -1;
+                      if (!aActive && bActive) return 1;
+                      
+                      // Then sort by multiplier (higher multipliers first)
+                      return b.xpMultiplier - a.xpMultiplier;
+                    })
+                    .map((tag) => {
+                      const isActive = userTags.includes(tag.name);
+                      return (
+                        <div 
+                          key={tag.name}
+                          className={`rounded-2xl min-w-[200px] p-6 flex-shrink-0 flex flex-col gap-2 ${
+                            isActive 
+                              ? "bg-[#F2F4FE] border-2 border-[#002DCB]" 
+                              : "bg-[#F9FAFF]"
+                          }`}
+                        >
+                          <div className={`rounded-full w-12 h-12 flex items-center justify-center ${
+                            isActive ? "bg-[#002DCB] text-white" : "bg-[#E2EBFF] text-[#828DB3]"
+                          }`}>
+                            {getTagIcon(tag.name)}
+                          </div>
+                          <div className="mt-2">
+                            <div className={`text-base custom-font font-bold ${
+                              isActive ? "text-[#002DCB]" : "text-[#060F32]"
+                            }`}>
+                              {formatTagName(tag.name)}
+                            </div>
+                            <div className="text-sm text-[#828DB3]">
+                              {tag.description}
+                            </div>
+                            <div className={`text-sm mt-1 font-medium ${
+                              isActive ? "text-[#002DCB]" : "text-[#828DB3]"
+                            }`}>
+                              {tag.xpMultiplier}x XP Multiplier
+                            </div>
+                            {tag.verificationRequired && (
+                              <div className="text-xs mt-1 italic text-[#828DB3]">
+                                Requires verification
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
-                <div className=" flex flex-row mt-4 bg-[#E2EBFF]/20 rounded-xl place-items-center">
-                  <div className="font-medium text-[#040F34] mx-4">
-                    Become a Contributor
+                <div className="flex flex-row mt-4 bg-[#E2EBFF]/20 rounded-xl place-items-center p-3">
+                  <div className="font-medium text-[#040F34] mx-4 flex-1">
+                    Contribute to earn special tags
                   </div>
                   <div className="flex gap-3">
-                    <button className="flex-1 px-4 py-2 bg-[#002DCB] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#0045FF] transition-colors duration-200">
-                      <Github className="w-4 h-4" />
-                      GitHub
-                    </button>
-                    <button className="flex-1 px-4 py-2 bg-[#002DCB] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#0045FF] transition-colors duration-200">
-                      <Twitter className="w-4 h-4" />
-                      Twitter
-                    </button>
+                    <a 
+                      href="https://github.com/helios-network" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-[#002DCB] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#0045FF] transition-colors duration-200"
+                    >
+                      <Code className="w-4 h-4 text-white" />
+                      <span className="text-white">GitHub</span>
+                    </a>
+                    <a 
+                      href="https://x.com/helios_layer1" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-[#002DCB] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#0045FF] transition-colors duration-200"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </a>
                   </div>
                 </div>
               </section>

@@ -1,0 +1,161 @@
+/* Remove the imports that contain global :root selectors */
+/* @import "../../styles/variables.scss"; */
+/* @import "../../styles/mixins.scss"; */
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  
+  .title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    font-size: 1.2rem;
+  }
+  
+  .loadingContainer {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    width: 100%;
+  }
+  
+  .message {
+    text-align: center;
+    margin: 2rem 0;
+    font-size: 1.2rem;
+  }
+  
+  .error {
+    background-color: rgba(255, 0, 0, 0.1);
+    color: #ff3333;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  .success {
+    background-color: rgba(0, 255, 0, 0.1);
+    color: #00cc00;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  .claimSection, 
+  .historySection {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.5rem;
+    }
+  }
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    
+    .formGroup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      label {
+        font-weight: 500;
+      }
+      
+      .select, 
+      .input {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 1rem;
+        
+        &:focus {
+          outline: none;
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+      }
+      
+      .amountRange {
+        font-size: 0.8rem;
+        opacity: 0.7;
+        margin-top: 0.2rem;
+      }
+    }
+  }
+  
+  .eligibility {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    
+    .eligible {
+      color: #00cc00;
+    }
+    
+    .ineligible {
+      color: #ff6666;
+    }
+  }
+  
+  .historyTable {
+    overflow-x: auto;
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      th, td {
+        text-align: left;
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      
+      th {
+        font-weight: 600;
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      
+      .completed {
+        color: #00cc00;
+      }
+      
+      .pending {
+        color: #ffcc00;
+      }
+      
+      .failed {
+        color: #ff6666;
+      }
+      
+      .txLink {
+        color: #3498db;
+        text-decoration: underline;
+        
+        &:hover {
+          color: #2980b9;
+        }
+      }
+    }
+  }
+} 

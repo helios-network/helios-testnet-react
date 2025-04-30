@@ -328,20 +328,19 @@ const ConnectWallet = () => {
                   <img
                     src="/images/Helios-Testnet.png"
                     alt="Helios Testnet"
-                    className="h-24 mx-auto mb-4"
+                    className="h-24 mx-auto mb-4 mt-8 md:mt-0"
                   />
                 </div>
 
                 <h1 className="text-4xl xl:text-7xl lg:text-6xl md:text-5xl sm:text-4xl text-[#002DCB] mb-6 leading-tight">
                   Welcome to the
                   <span className="block font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#002DCB] to-[#4F6BFF]">
-                    Helios Testnet
+                    Helios Mission Hub
                   </span>
                 </h1>
 
                 <p className="text-lg text-[#5C6584] max-w-2xl mx-auto mb-10">
-                  Join the next generation blockchain infrastructure powered by
-                  decentralized consensus.
+                Start testing Helios, a scalable blockchain network built for secure cross-chain interaction.
                 </p>
               </motion.div>
 
@@ -357,7 +356,7 @@ const ConnectWallet = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-6 max-w-md w-full"
                   >
-                    <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[#002DCB]/10">
+                     <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[#002DCB]/10">
                       <div className="flex items-center mb-4">
                         <span className="w-10 h-10 rounded-full bg-[#E2EBFF] flex items-center justify-center mr-3">
                           <ShieldCheck className="h-5 w-5 text-[#002DCB]" />
@@ -366,9 +365,7 @@ const ConnectWallet = () => {
                           <h2 className="text-xl font-bold text-[#002DCB]">
                             Exclusive Access
                           </h2>
-                          <p className="text-[#5C6584] text-sm">
-                            Enter your invite code to continue
-                          </p>
+                          <p className="text-[#5C6584] text-sm">Enter your invite code to continue</p>
                         </div>
                       </div>
 
@@ -379,11 +376,12 @@ const ConnectWallet = () => {
                             value={inviteCode}
                             onChange={(e) => setInviteCode(e.target.value)}
                             placeholder="Enter your invite code"
-                            className={`w-full px-4 py-3 pl-10 border ${
+                            className={`w-full px-4 py-3 pl-10 text-base font-mono tracking-wide border ${
                               inviteError
                                 ? "border-red-400 bg-red-50/50"
                                 : "border-gray-300"
                             } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002DCB] transition-all duration-200`}
+                            style={{ minWidth: "280px" }}
                           />
                           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#002DCB]">
                             <svg
@@ -499,13 +497,12 @@ const ConnectWallet = () => {
                     <>
                       {needsInviteCode ? (
                         <>
-                          <ShieldCheck className="h-5 w-5" />
                           <span>{renderButtonText()}</span>
                         </>
                       ) : (
                         <>
                           <ArrowRightCircle className="h-5 w-5" />
-                          <span>Continue to Testnet</span>
+                          <span>Continue</span>
                         </>
                       )}
                     </>
@@ -556,69 +553,71 @@ const ConnectWallet = () => {
                   </motion.div>
                 )}
 
-                <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl">
-                  <div className="glass-effect p-4 rounded-xl text-center hover-float">
-                    <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
-                      <Sparkles className="h-6 w-6 text-[#002DCB]" />
+                {(!isConnected || !needsInviteCode) && (
+                  <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl">
+                    <div className="backdrop-blur-sm bg-white/30 border border-white/50 p-6 rounded-2xl shadow-lg transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl hover:bg-white/40 text-center flex flex-col h-full">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#002DCB] to-[#4F6BFF] flex items-center justify-center mx-auto mb-4 shadow-md">
+                        <Sparkles className="h-7 w-7 text-white" />
+                      </div>
+                      <h3 className="text-[#002DCB] font-bold text-xl mb-3">
+                        Explore Helios
+                      </h3>
+                      <p className="text-[#002DCB] font-medium">
+                        Use the Helios Testnet to run real transactions, test cross-chain features, and interact directly with the network.
+                      </p>
                     </div>
-                    <h3 className="text-[#060F32] font-bold mb-1">
-                      Test Network
-                    </h3>
-                    <p className="text-sm text-[#5C6584]">
-                      Experience the future of blockchain with zero risk
-                    </p>
-                  </div>
 
-                  <div className="glass-effect p-4 rounded-xl text-center hover-float">
-                    <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-[#002DCB]"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
+                    <div className="backdrop-blur-sm bg-white/30 border border-white/50 p-6 rounded-2xl shadow-lg transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl hover:bg-white/40 text-center flex flex-col h-full">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#002DCB] to-[#4F6BFF] flex items-center justify-center mx-auto mb-4 shadow-md">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-7 w-7 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-[#002DCB] font-bold text-xl mb-3">
+                        Earn Rewards
+                      </h3>
+                      <p className="text-[#002DCB] font-medium">
+                        Earn XP by completing on-chain tasks, testing features, and helping improve the network.
+                      </p>
                     </div>
-                    <h3 className="text-[#060F32] font-bold mb-1">
-                      Earn Rewards
-                    </h3>
-                    <p className="text-sm text-[#5C6584]">
-                      Complete missions and earn XP with testnet tokens
-                    </p>
-                  </div>
 
-                  <div className="glass-effect p-4 rounded-xl text-center hover-float">
-                    <div className="w-12 h-12 rounded-full bg-[#002DCB]/10 flex items-center justify-center mx-auto mb-3">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-[#002DCB]"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                        />
-                      </svg>
+                    <div className="backdrop-blur-sm bg-white/30 border border-white/50 p-6 rounded-2xl shadow-lg transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl hover:bg-white/40 text-center flex flex-col h-full">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#002DCB] to-[#4F6BFF] flex items-center justify-center mx-auto mb-4 shadow-md">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-7 w-7 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-[#002DCB] font-bold text-xl mb-3">
+                        Contribute
+                      </h3>
+                      <p className="text-[#002DCB] font-medium">
+                        Share feedback, report issues, and play a role in shaping Helios ecosystem as it grows.
+                      </p>
                     </div>
-                    <h3 className="text-[#060F32] font-bold mb-1">
-                      Contribute
-                    </h3>
-                    <p className="text-sm text-[#5C6584]">
-                      Help build the next generation of decentralized apps
-                    </p>
                   </div>
-                </div>
+                )}
               </motion.div>
             </div>
           </div>

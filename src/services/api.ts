@@ -1,12 +1,13 @@
 import { ethers } from "ethers";
 
-const API_URL = "https://testnet-api.helioschain.network/api";
+const API_URL = "http://localhost:3000/api";
 
 export interface User {
   wallet: string;
   xp: number;
   completedSteps: string[];
   referralCode?: string;
+  tags?: string[];
 }
 
 export interface OnboardingProgress {
@@ -20,7 +21,7 @@ export interface OnboardingProgress {
       amount: number;
     }>;
   }>;
-  completedSteps: number;
+  completedSteps: string[];
   totalSteps: number;
 }
 
@@ -130,6 +131,74 @@ export interface GlobalReferralStatsResponse {
     referralCode: string;
     actualReferralCount: number;
     referralXP: number;
+  }>;
+}
+
+export interface TagsResponse {
+  success: boolean;
+  tags: Array<{
+    name: string;
+    xpMultiplier: number;
+    description: string;
+    autoAssigned: boolean;
+    verificationRequired: boolean;
+  }>;
+}
+
+export interface FaucetTokenResponse {
+  success: boolean;
+  message: string;
+  faucetClaim?: {
+    userId: string;
+    wallet: string;
+    amount: number;
+    token: string;
+    chain: string;
+    status: string;
+    transactionHash?: string;
+  };
+  xpReward?: number;
+  transactionHash?: string;
+}
+
+export interface FaucetClaimHistoryResponse {
+  success: boolean;
+  faucetClaims: Array<{
+    _id: string;
+    user: string;
+    wallet: string;
+    amount: number;
+    token: string;
+    chain: string;
+    status: string;
+    transactionHash?: string;
+    errorMessage?: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalClaims: number;
+  };
+}
+
+export interface FaucetEligibilityResponse {
+  success: boolean;
+  isEligible: boolean;
+  token: string;
+  chain: string;
+}
+
+export interface AvailableTokensResponse {
+  success: boolean;
+  tokens: Array<{
+    token: string;
+    chain: string;
+    maxClaimAmount: number;
+    cooldownHours: number;
+    nativeToken: boolean;
+    contractAddress?: string;
   }>;
 }
 
@@ -445,6 +514,80 @@ class ApiClient {
 
     if (!response.ok) {
       throw new Error("Failed to fetch global referral statistics");
+    }
+
+    return response.json();
+  }
+
+  async getAllTags(): Promise<TagsResponse> {
+    const response = await fetch(`${API_URL}/users/tags/all`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch tags");
+    }
+
+    return response.json();
+  }
+
+  async requestFaucetTokens(token: string, chain: string, amount: number): Promise<FaucetTokenResponse> {
+    const response = await fetch(`${API_URL}/faucet/request`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ token, chain, amount }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to request tokens from faucet");
+    }
+
+    return response.json();
+  }
+
+  async getFaucetClaimHistory(
+    page: number = 1,
+    limit: number = 50,
+    status?: string
+  ): Promise<FaucetClaimHistoryResponse> {
+    let url = `${API_URL}/faucet/history?page=${page}&limit=${limit}`;
+    if (status) {
+      url += `&status=${status}`;
+    }
+
+    const response = await fetch(url, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch faucet claim history");
+    }
+
+    return response.json();
+  }
+
+  async checkFaucetEligibility(token: string, chain: string): Promise<FaucetEligibilityResponse> {
+    const response = await fetch(`${API_URL}/faucet/check-eligibility`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ token, chain }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to check faucet eligibility");
+    }
+
+    return response.json();
+  }
+
+  async getAvailableFaucetTokens(): Promise<AvailableTokensResponse> {
+    const response = await fetch(`${API_URL}/faucet/available-tokens`, {
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch available faucet tokens");
     }
 
     return response.json();

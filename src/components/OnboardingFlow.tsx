@@ -9,6 +9,45 @@ import { Video } from "@/components/video/video";
 
 const TOTAL_STEPS = 5;
 
+// Transaction notification component for faucet claims
+const TransactionNotification = ({ txHash, amount, token, onClose }: { 
+  txHash: string; 
+  amount: number; 
+  token: string;
+  onClose: () => void; 
+}) => {
+  const explorerUrl = `https://explorer.helioschainlabs.org/tx/${txHash}`;
+  
+  return (
+    <div className="fixed bottom-8 right-8 bg-white shadow-lg rounded-lg p-4 max-w-md z-50 border-l-4 border-green-500">
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="font-bold text-green-700">Tokens Received!</h3>
+          <p className="text-gray-700 mt-1">
+            You received {amount} {token} tokens in your wallet
+          </p>
+          <a 
+            href={explorerUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-blue-600 hover:underline mt-2 inline-block"
+          >
+            View transaction on explorer
+          </a>
+        </div>
+        <button 
+          onClick={onClose} 
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const OnboardingFlow = () => {
   const { step, setStep, addXP, fetchOnboardingProgress, onboardingProgress } =
     useStore();
@@ -16,6 +55,12 @@ const OnboardingFlow = () => {
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingXP, setPendingXP] = useState(0);
+  const [txNotification, setTxNotification] = useState<{
+    show: boolean;
+    txHash?: string;
+    amount?: number;
+    token?: string;
+  }>({ show: false });
 
   useEffect(() => {
     const initializeProgress = async () => {
@@ -38,7 +83,7 @@ const OnboardingFlow = () => {
         if (progress.completedSteps && progress.completedSteps.length > 0) {
           const lastCompletedStep =
             progress.completedSteps[progress.completedSteps.length - 1];
-          const nextStep = stepMapping[lastCompletedStep] + 1;
+          const nextStep = stepMapping[lastCompletedStep as keyof typeof stepMapping] + 1;
 
           // If all steps are completed, go to dashboard
           if (nextStep > 5) {
@@ -60,12 +105,13 @@ const OnboardingFlow = () => {
 
   const checkNetworkExists = async () => {
     try {
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      const ethereum = window.ethereum as any;
+      const chainId = await ethereum?.request({ method: "eth_chainId" });
       if (chainId === "0xa410") {
         return true;
       }
 
-      await window.ethereum.request({
+      await ethereum?.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: "0xa410" }],
       });
@@ -94,7 +140,8 @@ const OnboardingFlow = () => {
       const exists = await checkNetworkExists();
 
       if (!exists) {
-        await window.ethereum.request({
+        const ethereum = window.ethereum as any;
+        await ethereum?.request({
           method: "wallet_addEthereumChain",
           params: [
             {
@@ -144,14 +191,25 @@ const OnboardingFlow = () => {
 
       await api.startOnboardingStep("claim_from_faucet");
 
-      const response = await api.completeOnboardingStep(
-        "claim_from_faucet",
-        "tokens_claimed"
-      );
-
-      if (response.success) {
-        setPendingXP((prev) => prev + 5);
-        setStep(5);
+      // Call faucet API to get tokens
+      const faucetResponse = await api.requestFaucetTokens("HLS", "helios-testnet", 0.1);
+      
+      // Show transaction notification
+      if (faucetResponse.success && faucetResponse.transactionHash) {
+        setTxNotification({
+          show: true,
+          txHash: faucetResponse.transactionHash,
+          amount: faucetResponse.faucetClaim?.amount || 0.1,
+          token: faucetResponse.faucetClaim?.token || "HLS"
+        });
+        
+        // Wait a bit before proceeding to next step (so user can see notification)
+        setTimeout(() => {
+          completeClaimStep(faucetResponse);
+        }, 2000);
+      } else {
+        // If no transaction hash, just complete the step
+        completeClaimStep(faucetResponse);
       }
     } catch (error: any) {
       if (error.message === "Onboarding step already started or completed") {
@@ -161,6 +219,25 @@ const OnboardingFlow = () => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const completeClaimStep = async (faucetResponse: any) => {
+    if (faucetResponse.success) {
+      const response = await api.completeOnboardingStep(
+        "claim_from_faucet",
+        "tokens_claimed"
+      );
+
+      if (response.success) {
+        // Add XP from the faucet if available
+        if (faucetResponse.xpReward) {
+          setPendingXP((prev) => prev + faucetResponse.xpReward);
+        } else {
+          setPendingXP((prev) => prev + 5); // Default XP if not provided by API
+        }
+        setStep(5);
+      }
     }
   };
 
@@ -323,6 +400,15 @@ const OnboardingFlow = () => {
         <XPToast
           amount={pendingXP}
           message="All steps completed! Rewards claimed successfully!"
+        />
+      )}
+      
+      {txNotification.show && txNotification.txHash && (
+        <TransactionNotification
+          txHash={txNotification.txHash}
+          amount={txNotification.amount || 0}
+          token={txNotification.token || ""}
+          onClose={() => setTxNotification({ show: false })}
         />
       )}
     </motion.div>
