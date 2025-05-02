@@ -9,6 +9,10 @@ export interface User {
   referralCode?: string;
   tags?: string[];
   discordUsername?: string;
+  discord?: {
+    username: string;
+    id?: string;
+  };
 }
 
 export interface OnboardingProgress {

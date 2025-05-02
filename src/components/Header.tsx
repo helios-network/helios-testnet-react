@@ -43,8 +43,19 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
     window.open("https://testnet-api.helioschain.network/wallet-connect", "_blank");
   };
 
-  // Check if user has discord connected
-  const hasDiscordLinked = user && user.discordUsername;
+  // Debug
+  React.useEffect(() => {
+    if (user) {
+      console.log("User data:", user);
+      console.log("Discord check paths:", {
+        discordUsername: user.discordUsername,
+        nestedDiscord: user.discord?.username
+      });
+    }
+  }, [user]);
+
+  // Check if user has discord connected - look for discord.username nested property
+  const hasDiscordLinked = user && (user.discordUsername || (user.discord && user.discord.username));
 
   return (
     <header className="border-b border-[#D7E0FF] bg-white/90 py-3 px-4 sticky top-0 z-50">
