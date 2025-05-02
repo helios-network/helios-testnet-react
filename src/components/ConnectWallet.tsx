@@ -125,6 +125,24 @@ const ConnectWallet = () => {
       setError(null);
       setIsLoading(true);
 
+      // First check if we already have a valid JWT token
+      const token = localStorage.getItem("jwt_token");
+      if (token) {
+        // Try to get user data with existing token
+        try {
+          const userProfile = await api.getUserProfile(address);
+          if (userProfile) {
+            console.log("User already authenticated with valid token");
+            setUser(userProfile);
+            setStep(2);
+            return; // Exit early, no need to sign again
+          }
+        } catch (profileError) {
+          console.log("Existing token invalid, proceeding with new signature");
+          // Token might be invalid or expired, continue with signing process
+        }
+      }
+
       let signature;
       try {
         signature = await signMessage(address);
