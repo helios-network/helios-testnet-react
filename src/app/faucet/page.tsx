@@ -3,8 +3,6 @@
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ViewContext } from "@/components/LayoutClientWrapper";
-import FaucetContent from "./FaucetContent";
-
 export default function FaucetPage() {
   const { setCurrentView } = React.useContext(ViewContext);
   const pathname = usePathname();
