@@ -81,8 +81,15 @@ const ConnectWallet = () => {
         // Check if we have a valid JWT token AND user data
         const token = localStorage.getItem("jwt_token");
         
-        // Only proceed with sign flow if no token exists OR we have a token but no user data
-        if (!token || (token && !user)) {
+        if (token) {
+          // If token exists, we should already have or will get user data from the initialize function
+          // So we don't need to do anything here - the LayoutClientWrapper will handle initialization
+          console.log("Token exists, letting initialization handle authentication");
+          return;
+        }
+        
+        // Only attempt to sign and authenticate if no token exists
+        if (!token) {
           try {
             setIsLoading(true);
             await handleSignAndAuthenticate();
@@ -92,15 +99,12 @@ const ConnectWallet = () => {
           } finally {
             setIsLoading(false);
           }
-        } else if (token && user) {
-          // If we already have both token and user data, just move to next step
-          setStep(2);
         }
       }
     };
 
     checkAndSignMessage();
-  }, [isConnected, address, user]);
+  }, [isConnected, address]);
 
   const signMessage = async (address: string): Promise<string> => {
     try {

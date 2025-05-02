@@ -53,15 +53,27 @@ function AppContent() {
     const checkAuthenticationStatus = async () => {
       const token = localStorage.getItem("jwt_token");
 
-      // If we have a token but no wallet connection, or in dashboard without token
-      if ((token && !isConnected) || (step > 0 && !token)) {
-        console.log("Authentication state mismatch: Clearing session");
+      // Only reset if wallet disconnected with token (user manually disconnected wallet)
+      if (token && !isConnected) {
+        console.log("Wallet disconnected but token exists: Clearing session");
         localStorage.removeItem("jwt_token");
         resetStore();
         setStep(0);
+      } else if (step > 0 && !token) {
+        // We're in an authenticated step but token is missing
+        console.log("Missing token but in authenticated step: Resetting to login");
+        resetStore();
+        setStep(0);
       } else if (token && isConnected && step === 0) {
-        // If we have token and wallet but showing connect screen, initialize
-        await initialize();
+        // If we have token and wallet but showing connect screen, try to initialize
+        try {
+          await initialize();
+        } catch (error) {
+          console.error("Failed to initialize with existing token:", error);
+          // Only clear token if initialization explicitly fails
+          localStorage.removeItem("jwt_token");
+          resetStore();
+        }
       }
       setIsInitializing(false);
     };
