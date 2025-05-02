@@ -16,6 +16,16 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  icons: {
+    icon: [
+      { url: '/images/Helios-Testnet.png' },
+      { url: '/images/Helios-Testnet.png', sizes: '32x32' },
+      { url: '/images/Helios-Testnet.png', sizes: '16x16' }
+    ],
+    apple: [
+      { url: '/images/Helios-Testnet.png' }
+    ]
+  },
   openGraph: {
     type: 'website',
     url: 'https://testnet.helioschain.network',

@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Home, Trophy, Droplet, Menu, X } from "lucide-react";
 import { ViewContext } from "./LayoutClientWrapper";
 import InviteCodeDisplay from "./InviteCodeDisplay";
 import { useRouter } from "next/navigation";
 import { useStore } from "../store/onboardingStore";
+import { api } from "../services/api";
 
 interface HeaderProps {
   currentView: string;
@@ -26,6 +27,8 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const user = useStore((state) => state.user);
+  const setUser = useStore((state) => state.setUser);
+  const [isPollingForDiscord, setIsPollingForDiscord] = useState(false);
 
   const navItems = [
     { key: "dashboard", label: "Home", icon: <Home className="w-4 h-4" />, path: "/" },
@@ -39,8 +42,53 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
     setMobileMenuOpen(false);
   };
 
+  // Function to refresh user data from the API
+  const refreshUserData = useCallback(async () => {
+    if (!user?.wallet) return;
+    
+    try {
+      const updatedUserData = await api.getUserProfile(user.wallet);
+      console.log("Refreshed user data:", updatedUserData);
+      setUser(updatedUserData);
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
+    }
+  }, [user?.wallet, setUser]);
+
+  // Poll for user data updates after Discord link is opened
+  useEffect(() => {
+    if (!isPollingForDiscord) return;
+    
+    console.log("Starting to poll for Discord connection updates...");
+    const intervalId = setInterval(async () => {
+      await refreshUserData();
+      
+      // If Discord is now connected, stop polling
+      if (user && (user.discordUsername || (user.discord && user.discord.username))) {
+        console.log("Discord connected, stopping poll");
+        setIsPollingForDiscord(false);
+      }
+    }, 5000); // Check every 5 seconds
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isPollingForDiscord, user, refreshUserData]);
+
   const handleLinkDiscord = () => {
-    window.open("https://testnet-api.helioschain.network/wallet-connect", "_blank");
+    const discordWindow = window.open("https://testnet-api.helioschain.network/wallet-connect", "_blank");
+    // Start polling for updates
+    setIsPollingForDiscord(true);
+    
+    // Also set up a listener for when the window closes
+    const checkWindowClosed = setInterval(() => {
+      if (discordWindow?.closed) {
+        console.log("Discord window closed, refreshing user data");
+        clearInterval(checkWindowClosed);
+        // Refresh user data immediately when window closes
+        refreshUserData();
+      }
+    }, 1000);
   };
 
   // Debug
