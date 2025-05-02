@@ -5,6 +5,7 @@ import InviteCodeDisplay from "./InviteCodeDisplay";
 import { useRouter } from "next/navigation";
 import { useStore } from "../store/onboardingStore";
 import { api } from "../services/api";
+import { useAccount } from "wagmi";
 
 interface HeaderProps {
   currentView: string;
@@ -29,6 +30,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const user = useStore((state) => state.user);
   const setUser = useStore((state) => state.setUser);
   const [isPollingForDiscord, setIsPollingForDiscord] = useState(false);
+  const { address } = useAccount();
 
   const navItems = [
     { key: "dashboard", label: "Home", icon: <Home className="w-4 h-4" />, path: "/" },
@@ -42,18 +44,44 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
     setMobileMenuOpen(false);
   };
 
+  // Initial user data fetch on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      // Check if we already have user data loaded
+      if (user) return;
+      
+      // Check if we have a JWT token but no user data
+      const token = localStorage.getItem("jwt_token");
+      if (!token || !address) return;
+      
+      try {
+        console.log("Fetching user profile on page load");
+        const userProfileData = await api.getUserProfile(address);
+        if (userProfileData) {
+          console.log("Found user profile:", userProfileData);
+          setUser(userProfileData);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile on page load:", error);
+      }
+    };
+    
+    fetchUserData();
+  }, [user, address, setUser]);
+
   // Function to refresh user data from the API
   const refreshUserData = useCallback(async () => {
-    if (!user?.wallet) return;
+    const walletAddress = user?.wallet || address;
+    if (!walletAddress) return;
     
     try {
-      const updatedUserData = await api.getUserProfile(user.wallet);
+      const updatedUserData = await api.getUserProfile(walletAddress);
       console.log("Refreshed user data:", updatedUserData);
       setUser(updatedUserData);
     } catch (error) {
       console.error("Error refreshing user data:", error);
     }
-  }, [user?.wallet, setUser]);
+  }, [user?.wallet, address, setUser]);
 
   // Poll for user data updates after Discord link is opened
   useEffect(() => {
@@ -64,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       await refreshUserData();
       
       // If Discord is now connected, stop polling
-      if (user && (user.discordUsername || (user.discord && user.discord.username))) {
+      if (isDiscordLinked(user)) {
         console.log("Discord connected, stopping poll");
         setIsPollingForDiscord(false);
       }
@@ -102,8 +130,19 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
     }
   }, [user]);
 
-  // Check if user has discord connected - look for discord.username nested property
-  const hasDiscordLinked = user && (user.discordUsername || (user.discord && user.discord.username));
+  // Helper function to check if Discord is linked
+  const isDiscordLinked = (userData: any) => {
+    if (!userData) return false;
+    
+    // Check all possible paths where Discord username might be stored
+    return Boolean(
+      userData.discordUsername || 
+      (userData.discord && userData.discord.username)
+    );
+  };
+
+  // Check if user has discord connected using the helper function
+  const hasDiscordLinked = isDiscordLinked(user);
 
   return (
     <header className="border-b border-[#D7E0FF] bg-white/90 py-3 px-4 sticky top-0 z-50">
