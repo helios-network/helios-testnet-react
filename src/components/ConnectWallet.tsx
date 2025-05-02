@@ -365,7 +365,7 @@ const ConnectWallet = () => {
               >
                 <div className="mb-6">
                   <img
-                    src="/images/Helios-Testnet.png"
+                    src="/images/Helios-Testnet-Logo.svg"
                     alt="Helios Testnet"
                     className="h-24 mx-auto mb-4 mt-8 md:mt-0"
                   />

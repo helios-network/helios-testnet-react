@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center">
           <div className="flex items-center mb-4 sm:mb-0">
-            <img src="/images/Helios-Testnet.png" alt="Helios Testnet" className="h-8" />
+            <img src="/images/Helios-Testnet-Logo.svg" alt="Helios Testnet" className="h-8" />
           </div>
           
           <div className="text-center mb-4 sm:mb-0 sm:mx-auto">

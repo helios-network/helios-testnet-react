@@ -111,27 +111,33 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <img
-              src="/images/Helios-Testnet.png"
-              alt="Helios Testnet"
-              className="h-8 sm:h-10 mr-2"
-            />
+            <button
+              onClick={() => handleNavClick("dashboard", "/")}
+              className="flex items-center hover:opacity-90 transition-opacity"
+              aria-label="Go to home page"
+            >
+              <img
+                src="/images/Helios-Testnet-Logo.svg"
+                alt="Helios Testnet"
+                className="h-8 sm:h-10 mr-2"
+              />
+            </button>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-2 mx-4 flex-1 justify-start">
+          <nav className="hidden md:flex items-center space-x-4 mx-6 flex-1 justify-start">
             {navItems.map(item => (
               <button
                 key={item.key}
                 onClick={() => handleNavClick(item.key, item.path)}
-                className={`flex items-center space-x-1 px-3 py-1.5 rounded-full transition-colors ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-colors ${
                   currentView === item.key
                     ? "bg-[#002DCB] text-white"
                     : "hover:bg-[#E2EBFF] text-[#060F32]"
                 }`}
               >
                 {item.icon}
-                <span className="text-sm font-medium">{item.label}</span>
+                <span className="text-base font-medium">{item.label}</span>
               </button>
             ))}
           </nav>
@@ -150,10 +156,10 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             {!hasDiscordLinked && (
               <button
                 onClick={handleLinkDiscord}
-                className="bg-[#5865F2] text-white rounded-full px-3 py-1.5 flex items-center hover:bg-[#4752c4] transition-colors shadow-sm text-sm font-medium"
+                className="bg-[#5865F2] text-white rounded-full px-4 py-2 flex items-center hover:bg-[#4752c4] transition-colors shadow-sm text-base font-medium"
               >
                 <DiscordIcon />
-                <span className="ml-1.5">Link Discord</span>
+                <span className="ml-2">Link Discord</span>
               </button>
             )}
             <InviteCodeDisplay />
@@ -164,29 +170,29 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
         <div 
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
             mobileMenuOpen 
-              ? "max-h-96 opacity-100 mt-3" 
+              ? "max-h-96 opacity-100 mt-4" 
               : "max-h-0 opacity-0 mt-0"
           }`}
           style={{
             visibility: mobileMenuOpen ? 'visible' : 'hidden',
             borderTop: mobileMenuOpen ? '1px solid #D7E0FF' : 'none',
-            paddingTop: mobileMenuOpen ? '0.75rem' : '0',
-            paddingBottom: mobileMenuOpen ? '0.75rem' : '0',
+            paddingTop: mobileMenuOpen ? '1rem' : '0',
+            paddingBottom: mobileMenuOpen ? '1rem' : '0',
           }}
         >
-          <div className="flex flex-col space-y-2">
+          <div className="flex flex-col space-y-3">
             {navItems.map(item => (
               <button
                 key={item.key}
                 onClick={() => handleNavClick(item.key, item.path)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                   currentView === item.key
                     ? "bg-[#002DCB] text-white"
                     : "hover:bg-[#E2EBFF] text-[#060F32]"
                 }`}
               >
                 {item.icon}
-                <span className="text-sm font-medium">{item.label}</span>
+                <span className="text-base font-medium">{item.label}</span>
               </button>
             ))}
             
@@ -194,15 +200,15 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             {!hasDiscordLinked && (
               <button
                 onClick={handleLinkDiscord}
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors bg-[#5865F2] text-white"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors bg-[#5865F2] text-white"
               >
                 <DiscordIcon />
-                <span className="text-sm font-medium">Link Discord</span>
+                <span className="text-base font-medium">Link Discord</span>
               </button>
             )}
             
             {/* Mobile InviteCodeDisplay */}
-            <div className="pt-2 border-t border-[#D7E0FF]">
+            <div className="pt-3 border-t border-[#D7E0FF]">
               <InviteCodeDisplay />
             </div>
           </div>

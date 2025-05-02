@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
           {/* Logo + Navigation group */}
           <div className="flex items-center">
             <img
-              src="/images/Helios-Testnet.png"
+              src="/images/Helios-Testnet-Logo.svg"
               alt="Helios Testnet"
               className="h-8 sm:h-10 mr-2"
             />

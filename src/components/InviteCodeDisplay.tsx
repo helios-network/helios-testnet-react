@@ -131,35 +131,35 @@ const InviteCodeDisplay = () => {
         <>
           <button
             onClick={() => setCurrentView("referrals")}
-            className="bg-[#002DCB] text-white rounded-full px-3 py-1.5 flex items-center hover:bg-[#0025B3] transition-colors shadow-sm active:shadow-inner"
+            className="bg-[#002DCB] text-white rounded-full px-4 py-2 flex items-center hover:bg-[#0025B3] transition-colors shadow-sm active:shadow-inner"
             title="View Referral Leaderboard"
           >
-            <Users className="w-3.5 h-3.5 mr-1.5" />
+            <Users className="w-4 h-4 mr-2" />
             <div className="flex flex-col items-start">
-              <span className="text-xs font-medium whitespace-nowrap">
+              <span className="text-base font-medium whitespace-nowrap">
                 {referralCount || 0}{" "}
                 <span className="xs:inline">Referrals</span>
               </span>
             </div>
           </button>
 
-          <div className="bg-white/80 rounded-full px-2 py-1 flex items-center border border-[#002DCB]/10 shadow-sm">
-            <div className="text-xs font-medium text-[#002DCB] mr-1 hidden sm:block">
+          <div className="bg-white/80 rounded-full px-3 py-2 flex items-center border border-[#002DCB]/10 shadow-sm">
+            <div className="text-sm font-medium text-[#002DCB] mr-1.5 hidden sm:block">
               Code:
             </div>
-            <div className="text-xs font-bold text-[#060F32] mr-1">
+            <div className="text-sm font-bold text-[#060F32] mr-1.5">
               {referralCode}
             </div>
             <button
               onClick={handleCopy}
-              className="text-[#002DCB] p-1 rounded-full hover:bg-[#E2EBFF] active:bg-[#D7E0FF] transition-colors"
+              className="text-[#002DCB] p-1.5 rounded-full hover:bg-[#E2EBFF] active:bg-[#D7E0FF] transition-colors"
               aria-label="Copy invite code"
               title="Copy to clipboard"
             >
               {copied ? (
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
               ) : (
-                <Copy className="h-3.5 w-3.5" />
+                <Copy className="h-4 w-4" />
               )}
             </button>
           </div>
