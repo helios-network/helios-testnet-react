@@ -8,6 +8,7 @@ export interface User {
   completedSteps: string[];
   referralCode?: string;
   tags?: string[];
+  discordUsername?: string;
 }
 
 export interface OnboardingProgress {
