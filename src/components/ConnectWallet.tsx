@@ -29,17 +29,29 @@ const ConnectWallet = () => {
   const [previousConnectionState, setPreviousConnectionState] = useState<
     boolean | null
   >(null);
+  // Additional wallet connection state to be more resilient against momentary disconnects
+  const [wasEverConnected, setWasEverConnected] = useState(false);
+
+  // Track real connection state including history
+  useEffect(() => {
+    if (isConnected) {
+      setWasEverConnected(true);
+    }
+  }, [isConnected]);
+
+  // Enhanced connection check that uses both current state and history
+  const isReallyConnected = isConnected || (wasEverConnected && window.ethereum && typeof window.ethereum.isConnected === 'function' && window.ethereum.isConnected());
 
   // Track connection state changes and handle disconnections
   useEffect(() => {
     // If we had a connection and now we don't, handle the disconnect
-    if (previousConnectionState === true && !isConnected) {
+    if (previousConnectionState === true && !isReallyConnected) {
       handleDisconnect();
     }
 
     // Update previous connection state
-    setPreviousConnectionState(isConnected);
-  }, [isConnected]);
+    setPreviousConnectionState(isReallyConnected);
+  }, [isReallyConnected]);
 
   // Handle wallet disconnection - this runs when the wallet gets disconnected directly from metamask
   const handleDisconnect = () => {
@@ -63,7 +75,7 @@ const ConnectWallet = () => {
   // Explicitly check token on mount
   useEffect(() => {
     // Double-check to ensure we're not showing the connect UI when no token exists
-    if (isConnected) {
+    if (isReallyConnected) {
       const token = localStorage.getItem("jwt_token");
       if (!token) {
         console.log(
@@ -77,7 +89,7 @@ const ConnectWallet = () => {
   // Automatically trigger signing when wallet is connected
   useEffect(() => {
     const checkAndSignMessage = async () => {
-      if (isConnected && address && !isLoading && !needsInviteCode) {
+      if (isReallyConnected && address && !isLoading && !needsInviteCode) {
         // Check if we have a valid JWT token AND user data
         const token = localStorage.getItem("jwt_token");
         
@@ -104,7 +116,7 @@ const ConnectWallet = () => {
     };
 
     checkAndSignMessage();
-  }, [isConnected, address]);
+  }, [isReallyConnected, address]);
 
   const signMessage = async (address: string): Promise<string> => {
     try {
@@ -287,7 +299,7 @@ const ConnectWallet = () => {
       setIsLoading(true);
 
       // Connect wallet first if not connected
-      if (!isConnected) {
+      if (!isReallyConnected) {
         const connector = metaMask();
         await connect({ connector });
         // Wallet connection will trigger the useEffect which will handle signing
@@ -328,7 +340,7 @@ const ConnectWallet = () => {
       if (needsInviteCode) return "Verifying code...";
       return "Processing...";
     }
-    if (!isConnected) return "Connect Wallet";
+    if (!isReallyConnected) return "Connect Wallet";
     if (needsInviteCode) return "Submit Invite";
     return "Connect"; // Changed from "Processing..." to "Connect" for clarity
   };
@@ -519,7 +531,7 @@ const ConnectWallet = () => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                  ) : isConnected ? (
+                  ) : isReallyConnected ? (
                     <>
                       {needsInviteCode ? (
                         <>
@@ -540,7 +552,7 @@ const ConnectWallet = () => {
                   )}
                 </motion.button>
 
-                {isConnected && needsInviteCode && (
+                {isReallyConnected && needsInviteCode && (
                   <button
                     onClick={clearInviteState}
                     className="mt-2 text-sm text-[#002DCB] hover:underline flex items-center"

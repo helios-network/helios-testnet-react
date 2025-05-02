@@ -50,16 +50,35 @@ function AppContent() {
 
   // Monitor wallet connection and authentication status
   useEffect(() => {
+    let connectionCheckTimer: NodeJS.Timeout | null = null;
+    
     const checkAuthenticationStatus = async () => {
       const token = localStorage.getItem("jwt_token");
 
-      // Only reset if wallet disconnected with token (user manually disconnected wallet)
+      // Check if the disconnection is persistent before clearing token
       if (token && !isConnected) {
-        console.log("Wallet disconnected but token exists: Clearing session");
-        localStorage.removeItem("jwt_token");
-        resetStore();
-        setStep(0);
-      } else if (step > 0 && !token) {
+        console.log("Potential wallet disconnection detected, verifying...");
+        
+        // Add a delay to avoid reacting to temporary connection issues
+        // Only clear the session if the wallet is still disconnected after the delay
+        if (connectionCheckTimer) clearTimeout(connectionCheckTimer);
+        
+        connectionCheckTimer = setTimeout(async () => {
+          // Check again if still disconnected after delay
+          if (!isConnected) {
+            console.log("Confirmed: Wallet disconnected but token exists: Clearing session");
+            localStorage.removeItem("jwt_token");
+            resetStore();
+            setStep(0);
+          } else {
+            console.log("False alarm: Wallet connection restored");
+          }
+        }, 3000); // 3 second delay
+        
+        return; // Exit early, let the timeout handle it
+      } 
+      
+      if (step > 0 && !token) {
         // We're in an authenticated step but token is missing
         console.log("Missing token but in authenticated step: Resetting to login");
         resetStore();
@@ -79,6 +98,13 @@ function AppContent() {
     };
 
     checkAuthenticationStatus();
+    
+    // Cleanup timeout on unmount or when dependencies change
+    return () => {
+      if (connectionCheckTimer) {
+        clearTimeout(connectionCheckTimer);
+      }
+    };
   }, [isConnected, step, resetStore, setStep, initialize]);
 
   // Initial app loading
