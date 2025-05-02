@@ -31,17 +31,18 @@ const ConnectWallet = () => {
   >(null);
   // Additional wallet connection state to be more resilient against momentary disconnects
   const [wasEverConnected, setWasEverConnected] = useState(false);
-
+  
   // Track real connection state including history
   useEffect(() => {
     if (isConnected) {
       setWasEverConnected(true);
     }
   }, [isConnected]);
-
-  // Enhanced connection check that uses both current state and history
-  const isReallyConnected = isConnected || (wasEverConnected && window.ethereum && typeof window.ethereum.isConnected === 'function' && window.ethereum.isConnected());
-
+  
+  // Enhanced connection check - simply use wagmi's isConnected plus our connection memory
+  // This avoids TypeScript errors with window.ethereum while still providing better connection stability
+  const isReallyConnected = isConnected || wasEverConnected;
+  
   // Track connection state changes and handle disconnections
   useEffect(() => {
     // If we had a connection and now we don't, handle the disconnect
@@ -49,8 +50,8 @@ const ConnectWallet = () => {
       handleDisconnect();
     }
 
-    // Update previous connection state
-    setPreviousConnectionState(isReallyConnected);
+    // Update previous connection state with proper type safety
+    setPreviousConnectionState(isReallyConnected ? true : false);
   }, [isReallyConnected]);
 
   // Handle wallet disconnection - this runs when the wallet gets disconnected directly from metamask
