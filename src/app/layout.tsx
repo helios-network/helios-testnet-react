@@ -1,25 +1,17 @@
 import "@/styles/globals.scss";
-import { headers } from "next/headers";
-import { WagmiProvider } from "wagmi";
-import { config } from "../wagmiConfig/config";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import ContextProvider from "@/context";
-import LayoutClientWrapper from "@/components/LayoutClientWrapper"; // create this component
+import LayoutClientWrapper from "@/components/LayoutClientWrapper";
 
-export const queryClient = new QueryClient();
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = headers();
-  const cookies = (await headersList).get("cookie") || "";
-
   return (
     <html lang="en">
       <body>
-        <ContextProvider cookies={cookies}>
+        {/* In static export mode, cookies will be null */}
+        <ContextProvider cookies={null}>
           <LayoutClientWrapper>{children}</LayoutClientWrapper>
         </ContextProvider>
       </body>

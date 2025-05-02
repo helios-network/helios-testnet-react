@@ -17,8 +17,8 @@ if (!projectId) {
 const metadata = {
   name: "Helios Portal",
   description: "Helios Portal",
-  url: "https://portal.helioschain.network/", // origin must match your domain & subdomain
-  icons: ["https://portal.helioschain.network/img/logo.png"],
+  url: "https://testnet.helioschain.network/", // origin must match your domain & subdomain
+  icons: ["https://testnet.helioschain.network/images/logo.png"],
 };
 
 // Create a function to handle session storage
@@ -39,6 +39,62 @@ const clearSession = (): void => {
 
 const useSIWX = false;
 
+// Configure SIWX options
+const siwxConfig = useSIWX ? {
+  createMessage: async (input: any): Promise<SIWXMessage> => {
+    const message: SIWXMessage = {
+      accountAddress: input.accountAddress,
+      chainId: input.chainId,
+      domain: "Helios Portal",
+      uri: "https://portal.helios.network",
+      version: "1",
+      nonce: "nonce",
+      statement: "Sign in to access your account.",
+      issuedAt: new Date().toISOString(),
+      toString: function (): string {
+        return `
+          ${this.domain} wants you to sign in with your account:
+          ${this.accountAddress}
+
+          URI: ${this.uri}
+          Version: ${this.version}
+          Chain ID: ${this.chainId}
+          Nonce: ${this.nonce}
+          Issued At: ${this.issuedAt}
+        `.trim();
+      },
+    };
+    return message;
+  },
+  addSession: async (session: SIWXSession): Promise<void> => {
+    console.log("Adding session:", session);
+    saveSession(session);
+  },
+  revokeSession: async (
+    chainId: string,
+    address: string
+  ): Promise<void> => {
+    console.log(`Revoking session for ${address} on chain ${chainId}`);
+    clearSession();
+  },
+  setSessions: async (sessions: SIWXSession[]): Promise<void> => {
+    console.log("Setting sessions:", sessions);
+    if (sessions.length > 0) {
+      saveSession(sessions[0]);
+    } else {
+      clearSession();
+    }
+  },
+  getSessions: async (
+    chainId: string,
+    address: string
+  ): Promise<SIWXSession[]> => {
+    console.log(`Getting sessions for ${address} on chain ${chainId}`);
+    const session = getSession();
+    return session ? [session] : [];
+  },
+} : undefined;
+
 const modal = createAppKit({
   adapters: [wagmiAdapter],
   projectId,
@@ -48,62 +104,7 @@ const modal = createAppKit({
   features: {
     analytics: false,
   },
-  ...(useSIWX && {
-    siwx: {
-      createMessage: async (input): Promise<SIWXMessage> => {
-        const message: SIWXMessage = {
-          accountAddress: input.accountAddress,
-          chainId: input.chainId,
-          domain: "Helios Portal",
-          uri: "https://portal.helios.network",
-          version: "1",
-          nonce: "nonce",
-          statement: "Sign in to access your account.",
-          issuedAt: new Date().toISOString(),
-          toString: function (): string {
-            return `
-              ${this.domain} wants you to sign in with your account:
-              ${this.accountAddress}
-
-              URI: ${this.uri}
-              Version: ${this.version}
-              Chain ID: ${this.chainId}
-              Nonce: ${this.nonce}
-              Issued At: ${this.issuedAt}
-            `.trim();
-          },
-        };
-        return message;
-      },
-      addSession: async (session: SIWXSession): Promise<void> => {
-        console.log("Adding session:", session);
-        saveSession(session);
-      },
-      revokeSession: async (
-        chainId: string,
-        address: string
-      ): Promise<void> => {
-        console.log(`Revoking session for ${address} on chain ${chainId}`);
-        clearSession();
-      },
-      setSessions: async (sessions: SIWXSession[]): Promise<void> => {
-        console.log("Setting sessions:", sessions);
-        if (sessions.length > 0) {
-          saveSession(sessions[0]);
-        } else {
-          clearSession();
-        }
-      },
-      getSessions: async (
-        chainId: string,
-        address: string
-      ): Promise<SIWXSession[]> => {
-        console.log(`Getting sessions for ${address} on chain ${chainId}`);
-        const session = getSession();
-        return session ? [session] : [];
-      },
-    },
-  }),
+  siwx: siwxConfig,
 });
 
 type ContextProviderProps = {

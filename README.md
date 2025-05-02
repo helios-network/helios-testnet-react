@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Helios Testnet App
+
+A Next.js application for interacting with the Helios blockchain testnet. This application provides essential tools for builders to test the Helios testnet, including a faucet for claiming test tokens and a referral system to track engagement.
+
+## Features
+
+### Test Token Faucet
+- Request testnet HLS tokens and other supported tokens
+- View claim history and eligibility status
+- Cooldown periods to prevent abuse
+
+### Referral System
+- Generate unique invite codes
+- Track referrals through a leaderboard
+- Earn rewards for successful referrals
+
+### Web3 Integration
+- Connect with popular Web3 wallets 
+- Interact directly with the Helios testnet blockchain
+- View transaction status and history
+
+## Helios Testnet Information
+
+- **Chain ID**: 42000
+- **Network Name**: Helios Testnet
+- **RPC URL**: https://testnet1.helioschainlabs.org/
+- **Explorer**: https://explorer.helioschainlabs.org/
+- **Native Currency**: 
+  - **Name**: Helios
+  - **Symbol**: HLS
+  - **Decimals**: 18
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18.x or later
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-org/helios-testnet-react.git
+cd helios-testnet-react
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Start the development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Connecting to Helios Testnet
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+To connect your wallet to the Helios testnet:
 
-## Learn More
+1. Open your wallet (MetaMask, etc.)
+2. Add a custom network with the following details:
+   - Network Name: Helios Testnet
+   - RPC URL: https://testnet1.helioschainlabs.org/
+   - Chain ID: 42000
+   - Currency Symbol: HLS
+   - Block Explorer: https://explorer.helioschainlabs.org/
 
-To learn more about Next.js, take a look at the following resources:
+## Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This project uses:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Next.js](https://nextjs.org/) - React framework
+- [Wagmi](https://wagmi.sh/) - React Hooks for Ethereum
+- [TailwindCSS](https://tailwindcss.com/) - For styling
+- [Framer Motion](https://www.framer.com/motion/) - For animations
 
-## Deploy on Vercel
+## Building for Production
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+# or
+yarn build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact
+
+For questions or support, please contact the Helios team.

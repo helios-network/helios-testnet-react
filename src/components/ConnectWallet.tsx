@@ -100,7 +100,10 @@ const ConnectWallet = () => {
 
   const signMessage = async (address: string): Promise<string> => {
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      if (!window.ethereum) {
+        throw new Error("Ethereum provider not found");
+      }
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
       const signer = provider.getSigner();
       const message = `Welcome to Helios! Please sign this message to verify your wallet ownership.\n\nWallet: ${address}`;
       console.log("--signMessage--", message);

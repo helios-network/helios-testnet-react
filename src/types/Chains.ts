@@ -1,5 +1,5 @@
-import type { ChainId } from "@/config/constants"
-import type { Token } from "./Tokens"
+import type { ChainId } from "@/wagmiConfig/constants"
+import type { Token } from "@/types/Tokens"
 
 export interface Chain {
   id: ChainId
