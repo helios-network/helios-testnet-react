@@ -137,26 +137,39 @@ const OnboardingFlow = () => {
 
       await api.startOnboardingStep("add_helios_network");
 
-      const exists = await checkNetworkExists();
-
-      if (!exists) {
-        const ethereum = window.ethereum as any;
-        await ethereum?.request({
-          method: "wallet_addEthereumChain",
-          params: [
-            {
-              chainId: "0xa410",
-              chainName: "Helios Testnet",
-              nativeCurrency: {
-                name: "Helios",
-                symbol: "HLS",
-                decimals: 18,
+      try {
+        const exists = await checkNetworkExists();
+        
+        if (!exists) {
+          const ethereum = window.ethereum as any;
+          await ethereum?.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: "0xa410",
+                chainName: "Helios Testnet",
+                nativeCurrency: {
+                  name: "Helios",
+                  symbol: "HLS",
+                  decimals: 18,
+                },
+                rpcUrls: ["https://testnet1.helioschainlabs.org/"],
+                blockExplorerUrls: ["https://explorer.helioschainlabs.org/"],
               },
-              rpcUrls: ["https://testnet1.helioschainlabs.org/"],
-              blockExplorerUrls: ["https://explorer.helioschainlabs.org/"],
-            },
-          ],
-        });
+            ],
+          });
+        }
+      } catch (error: any) {
+        // If we got error -32603 about duplicate RPC endpoint, the network is already configured
+        // but with a different chainId (0x1092 instead of 0xa410)
+        if (error.code === -32603 && error.message?.includes("same RPC endpoint")) {
+          // This means the network is already set up, just with a different chainId
+          console.log("Network already exists with different chainId, proceeding to next step");
+          // We can still consider this step successful
+        } else {
+          // For other errors, rethrow
+          throw error;
+        }
       }
 
       const response = await api.completeOnboardingStep(
