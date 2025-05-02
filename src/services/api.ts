@@ -292,19 +292,48 @@ class ApiClient {
 
   async login(
     wallet: string,
-    signature: string
-  ): Promise<{ token: string; user: User }> {
+    signature: string,
+    inviteCode?: string
+  ): Promise<{ token: string; user: User; requiresInviteCode?: boolean; walletAddress?: string }> {
+    const payload: { wallet: string; signature: string; inviteCode?: string } = {
+      wallet,
+      signature
+    };
+
+    if (inviteCode) {
+      payload.inviteCode = inviteCode;
+    }
+
     const response = await fetch(`${API_URL}/users/login`, {
       method: "POST",
       headers: this.getHeaders(),
-      body: JSON.stringify({ wallet, signature }),
+      body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      throw new Error("Login failed");
+    const data = await response.json();
+
+    // Check for invite code requirement error
+    if (response.status === 403 && data.requiresInviteCode) {
+      return {
+        token: "",
+        user: {} as User,
+        requiresInviteCode: true,
+        walletAddress: data.walletAddress || wallet
+      };
     }
 
-    const data = await response.json();
+    if (!response.ok) {
+      // If it's a 403 error about account confirmation, include the wallet address
+      if (response.status === 403 && 
+          (data.message?.includes("not confirmed") || data.requiresInviteCode)) {
+        const error = new Error(data.message || "Account not confirmed");
+        (error as any).requiresInviteCode = true;
+        (error as any).walletAddress = data.walletAddress || wallet;
+        throw error;
+      }
+      
+      throw new Error(data.message || "Login failed");
+    }
 
     // Get token either from data.token or from data.user.token
     const token = data.token || (data.user && data.user.token);
@@ -329,8 +358,19 @@ class ApiClient {
       headers: this.getHeaders(),
     });
 
+    if (response.status === 403) {
+      const errorData = await response.json();
+      // Check if this is an account confirmation error
+      if (errorData.requiresInviteCode || errorData.message?.includes("not confirmed")) {
+        const error = new Error(errorData.message || "Account not confirmed. Please provide an invite code.");
+        (error as any).requiresInviteCode = true;
+        throw error;
+      }
+    }
+
     if (!response.ok) {
-      throw new Error("Failed to fetch onboarding progress");
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch onboarding progress");
     }
 
     return response.json();
@@ -447,7 +487,7 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch Daily Mission");
+      throw new Error("Failed to fetch leaderboard");
     }
 
     return response.json();
@@ -459,7 +499,7 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch Daily Mission");
+      throw new Error("Failed to fetch user rank");
     }
 
     return response.json();
@@ -597,6 +637,45 @@ class ApiClient {
 
     return response.json();
   }
+
+  async confirmAccount(
+    wallet: string,
+    signature: string,
+    inviteCode: string
+  ): Promise<{ token: string; user: User }> {
+    console.log(`Confirming account for wallet ${wallet} with invite code ${inviteCode}`);
+    
+    const response = await fetch(`${API_URL}/users/confirm-account`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ wallet, signature, inviteCode }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Account confirmation failed:", data);
+      throw new Error(data.message || "Account confirmation failed");
+    }
+
+    // Get token from response
+    const token = data.token;
+
+    if (token) {
+      console.log("Confirm account successful, setting JWT token");
+      this.setToken(token);
+
+      // Create a standardized response structure
+      return {
+        token: token,
+        user: data.user || data,
+      };
+    } else {
+      console.error("No token received from confirmation response");
+      throw new Error("Authentication failed: No token received");
+    }
+  }
 }
 
+// Create and export the API client instance
 export const api = new ApiClient();

@@ -87,11 +87,29 @@ function AppContent() {
         // If we have token and wallet but showing connect screen, try to initialize
         try {
           await initialize();
-        } catch (error) {
+          // If initialization succeeds, the step will be updated by the initialize function
+        } catch (error: any) {
           console.error("Failed to initialize with existing token:", error);
-          // Only clear token if initialization explicitly fails
-          localStorage.removeItem("jwt_token");
-          resetStore();
+          
+          // Handle case where initialization fails due to unconfirmed account
+          if (error.message?.includes("not confirmed") || 
+              error.requiresInviteCode ||
+              error.response?.status === 403) {
+            console.log("Account needs confirmation with an invite code");
+            
+            // Make sure we're on the connect wallet step to show the invite code form
+            if (step !== 0) {
+              setStep(0);
+            }
+            
+            // Clear token - user will need to go through login flow again
+            localStorage.removeItem("jwt_token");
+            resetStore();
+          } else {
+            // For other errors, also clear token
+            localStorage.removeItem("jwt_token");
+            resetStore();
+          }
         }
       }
       setIsInitializing(false);

@@ -50,34 +50,87 @@ export const useStore = create<OnboardingState>((set, get) => ({
     console.log("token", token);
     if (token) {
       try {
-        const progress = await api.getOnboardingProgress();
-        console.log("progress", progress);
-        set({ onboardingProgress: progress });
+        // First try to check if the token is for a valid account that's confirmed
+        try {
+          const progress = await api.getOnboardingProgress();
+          console.log("progress", progress);
+          set({ onboardingProgress: progress });
 
-        if (
-          Array.isArray(progress.completedSteps) &&
-          progress.completedSteps?.length >= 3
-        ) {
-          set({ step: 7 }); // Go to dashboard
-        } else if (
-          Array.isArray(progress.completedSteps) &&
-          progress.completedSteps?.length > 0
-        ) {
-          const stepMapping: { [key: string]: number } = {
-            add_helios_network: 3,
-            claim_from_faucet: 4,
-            mint_early_bird_nft: 5,
-          };
-          const lastCompletedStep =
-            progress.completedSteps[progress.completedSteps.length - 1];
-          const nextStep = stepMapping[lastCompletedStep] + 1;
-          set({ step: nextStep });
-        } else {
-          set({ step: 2 }); // Start onboarding
+          if (
+            Array.isArray(progress.completedSteps) &&
+            progress.completedSteps?.length >= 3
+          ) {
+            set({ step: 7 }); // Go to dashboard
+          } else if (
+            Array.isArray(progress.completedSteps) &&
+            progress.completedSteps?.length > 0
+          ) {
+            const stepMapping: { [key: string]: number } = {
+              add_helios_network: 3,
+              claim_from_faucet: 4,
+              mint_early_bird_nft: 5,
+            };
+            const lastCompletedStep =
+              progress.completedSteps[progress.completedSteps.length - 1];
+            const nextStep = stepMapping[lastCompletedStep] + 1;
+            set({ step: nextStep });
+          } else {
+            set({ step: 2 }); // Start onboarding
+          }
+        } catch (progressError: any) {
+          console.error("Failed to get progress:", progressError);
+          
+          // Check if this is because the account is not confirmed
+          if (progressError.message?.includes("not confirmed") || 
+              progressError.response?.status === 403 || 
+              progressError.requiresInviteCode) {
+            
+            // Account exists but requires confirmation
+            console.log("Account exists but needs confirmation");
+            
+            // Create a custom error with the requiresInviteCode flag
+            const confirmationError = new Error("Account not confirmed. Please provide a valid invite code.");
+            (confirmationError as any).requiresInviteCode = true;
+            
+            // Clear token since it's invalid until account is confirmed
+            localStorage.removeItem("jwt_token");
+            
+            // Reset to step 0 to show the connect wallet screen where user can confirm account
+            set({ step: 0 });
+            
+            // Re-throw with confirmation flag
+            throw confirmationError;
+          }
+          
+          // For other errors, just reset and let the user try again
+          localStorage.removeItem("jwt_token");
+          set({ step: 0 });
+          throw progressError; // Re-throw to be caught by the outer catch
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to initialize:", error);
-        set({ step: 0 }); // Go to connect wallet if initialization fails
+        
+        // Check for account confirmation errors
+        if (error.message?.includes("not confirmed") || 
+            error.response?.status === 403 || 
+            error.requiresInviteCode) {
+          
+          // Create a custom error with the requiresInviteCode flag
+          const confirmationError = new Error("Account not confirmed. Please provide a valid invite code.");
+          (confirmationError as any).requiresInviteCode = true;
+          
+          // Clear token since it's invalid
+          localStorage.removeItem("jwt_token");
+          
+          // Set step to 0 to show connect wallet screen
+          set({ step: 0 });
+          
+          // Re-throw the error with the confirmation flag
+          throw confirmationError;
+        }
+        
+        // For other errors, reset to connect wallet
+        set({ step: 0 });
       }
     } else {
       set({ step: 0 }); // No token, go to connect wallet
