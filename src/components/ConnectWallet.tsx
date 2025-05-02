@@ -18,7 +18,7 @@ const ConnectWallet = () => {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
-  const { setStep, setUser, resetStore } = useStore();
+  const { setStep, setUser, resetStore, user } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsInviteCode, setNeedsInviteCode] = useState(false);
@@ -78,10 +78,11 @@ const ConnectWallet = () => {
   useEffect(() => {
     const checkAndSignMessage = async () => {
       if (isConnected && address && !isLoading && !needsInviteCode) {
-        // Check if we have a valid JWT token
+        // Check if we have a valid JWT token AND user data
         const token = localStorage.getItem("jwt_token");
-        if (!token) {
-          // No token found, trigger the sign and login flow
+        
+        // Only proceed with sign flow if no token exists OR we have a token but no user data
+        if (!token || (token && !user)) {
           try {
             setIsLoading(true);
             await handleSignAndAuthenticate();
@@ -91,12 +92,15 @@ const ConnectWallet = () => {
           } finally {
             setIsLoading(false);
           }
+        } else if (token && user) {
+          // If we already have both token and user data, just move to next step
+          setStep(2);
         }
       }
     };
 
     checkAndSignMessage();
-  }, [isConnected, address]);
+  }, [isConnected, address, user]);
 
   const signMessage = async (address: string): Promise<string> => {
     try {
