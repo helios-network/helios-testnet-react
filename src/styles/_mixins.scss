@@ -2,7 +2,7 @@
 @use "sass:meta";
 
 $responsiveNav: 1200px;
-$responsiveMobile: 700px;
+$responsiveMobile: 1250px;
 
 @mixin max($width) {
   @media screen and (max-width: $width) {

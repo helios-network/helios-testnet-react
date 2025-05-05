@@ -193,3 +193,16 @@ body {
   background: linear-gradient(to right, #f0f0f0 4%, #e0e0e0 25%, #f0f0f0 36%);
   background-size: 1000px 100%;
 }
+
+@media (max-width: 1199px) {
+  .hide-text {
+    display: none;
+  }
+}
+
+@media (max-width: 1199px) {
+  .discord-link-btn {
+    padding-top: 0.75rem !important; // py-3
+    padding-bottom: 0.75rem !important;
+  }
+}

@@ -147,7 +147,7 @@ const InviteCodeDisplay = () => {
             <div className="text-sm font-medium text-[#002DCB] mr-1.5 hidden sm:block">
               Code:
             </div>
-            <div className="text-sm font-bold text-[#060F32] mr-1.5">
+            <div className="text-sm font-bold text-[#060F32] mr-1">
               {referralCode}
             </div>
             <button
