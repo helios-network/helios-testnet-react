@@ -180,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             </button>
 
             {/* Discord Link and InviteCodeDisplay */}
-            <div className="hidden lg:flex items-center space-x-1 xl:space-x-4 min-h-[40px]">
+            <div className="hidden lg:flex items-center space-x-1 xl:space-x-1 min-h-[40px]">
               {!hasDiscordLinked && (
                 <button
                   onClick={handleLinkDiscord}

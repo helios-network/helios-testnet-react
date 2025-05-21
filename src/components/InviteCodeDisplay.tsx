@@ -85,11 +85,14 @@ const InviteCodeDisplay = () => {
   const handleCopy = () => {
     if (!referralCode) return;
 
+    // Create the full referral URL
+    const referralUrl = `https://testnet.helioschain.network/?code=${referralCode}`;
+
     navigator.clipboard
-      .writeText(referralCode)
+      .writeText(referralUrl)
       .then(() => {
         setCopied(true);
-        console.log("InviteCodeDisplay: Code copied", referralCode);
+        console.log("InviteCodeDisplay: Code URL copied", referralUrl);
 
         // Clear existing timeout if any
         if (timeoutRef.current) {
@@ -118,7 +121,7 @@ const InviteCodeDisplay = () => {
 
   // Mobile-optimized display
   return (
-    <div className="flex flex-wrap gap-2 items-center justify-end">
+    <div className="flex gap-2 items-center justify-end">
       {loading ? (
         <div className="bg-white/70 rounded-full py-1 px-3 flex items-center">
           <div className="loading-shimmer h-4 w-20 rounded-md"></div>
@@ -135,8 +138,8 @@ const InviteCodeDisplay = () => {
             title="View Referral Leaderboard"
           >
             <Users className="w-4 h-4 mr-2" />
-            <div className="flex flex-col items-start">
-              <span className="text-base font-medium whitespace-nowrap">
+            <div className="flex flex-col items-start min-w-[60px]">
+              <span className="text-base font-medium">
                 {referralCount || 0}{" "}
                 <span className="xs:inline">Referrals</span>
               </span>
