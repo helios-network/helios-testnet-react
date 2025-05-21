@@ -33,10 +33,19 @@ const ConnectWallet = () => {
   // Additional wallet connection state to be more resilient against momentary disconnects
   const [wasEverConnected, setWasEverConnected] = useState(false);
   
-  // Get search params for checking Discord linking status
+  // Get search params for checking Discord linking status and referral code
   const searchParams = useSearchParams();
   const requireInvite = searchParams.get('requireInvite');
   const discordLinked = searchParams.get('discord-linked');
+  const referralCodeFromUrl = searchParams.get('code');
+  
+  // Set referral code from URL if available
+  useEffect(() => {
+    if (referralCodeFromUrl) {
+      console.log("Detected referral code from URL:", referralCodeFromUrl);
+      setInviteCode(referralCodeFromUrl);
+    }
+  }, [referralCodeFromUrl]);
   
   // Check for Discord linking that requires invite code
   useEffect(() => {
@@ -89,7 +98,7 @@ const ConnectWallet = () => {
     setNeedsInviteCode(false);
     setPendingSignature(null);
     setPendingWallet(null);
-    setInviteCode("");
+    setInviteCode(referralCodeFromUrl || ""); // Keep the referral code from URL if available
     setInviteError(null);
   };
 
@@ -204,6 +213,25 @@ const ConnectWallet = () => {
         throw signError; // Re-throw if it's not a user rejection
       }
 
+      // If we have a referral code from URL and the user is new, try to register with it
+      if (referralCodeFromUrl && signature) {
+        try {
+          console.log("Attempting registration with referral code from URL");
+          const registerResponse = await api.register(address, signature, referralCodeFromUrl);
+          
+          const user = registerResponse.user;
+          if (user) {
+            console.log("Successfully registered with referral code:", referralCodeFromUrl);
+            setUser(user);
+            setStep(2);
+            return;
+          }
+        } catch (registerError: any) {
+          console.log("Registration with referral code failed, continuing with normal flow:", registerError);
+          // Continue with normal flow below if registration with referral code fails
+        }
+      }
+
       try {
         // Try login first for existing users
         const loginResponse = await api.login(address, signature);
@@ -249,10 +277,29 @@ const ConnectWallet = () => {
         }
         
         // If it's not a confirmation error but some other error (e.g., user not found),
-        // proceed to try registration
+        // try to register with the invite code from URL if available
+        if (referralCodeFromUrl) {
+          try {
+            const confirmResponse = await api.confirmAccount(
+              address,
+              signature,
+              referralCodeFromUrl
+            );
+            
+            console.log("Account confirmed successfully with URL code:", confirmResponse);
+            const user = confirmResponse.user;
+            if (user) {
+              setUser(user);
+              setStep(2);
+              return;
+            }
+          } catch (confirmError) {
+            console.error("Failed to confirm with referral code from URL:", confirmError);
+          }
+        }
+        
+        // If all attempts fail, request an invite code
         console.log("Login failed, new user:", loginError);
-
-        // Store signature and wallet for registration with invite code
         setPendingSignature(signature);
         setPendingWallet(address);
         setNeedsInviteCode(true);
@@ -377,7 +424,10 @@ const ConnectWallet = () => {
   };
 
   const handleRegisterWithInvite = async () => {
-    if (!inviteCode.trim()) {
+    // If no invite code is entered but we have one from the URL, use that
+    const codeToUse = inviteCode.trim() || referralCodeFromUrl;
+    
+    if (!codeToUse) {
       setInviteError("Invite code is required");
       return;
     }
@@ -405,7 +455,7 @@ const ConnectWallet = () => {
           const confirmResponse = await api.confirmAccount(
             pendingWallet,
             signature,
-            inviteCode.trim()
+            codeToUse
           );
           
           console.log("Account confirmed successfully:", confirmResponse);
@@ -431,7 +481,7 @@ const ConnectWallet = () => {
           const confirmResponse = await api.confirmAccount(
             pendingWallet,
             pendingSignature!,
-            inviteCode.trim()
+            codeToUse
           );
           
           // If confirmation successful, use the response

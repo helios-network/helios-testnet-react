@@ -398,7 +398,7 @@ const OnboardingFlow = () => {
         {step === 6 && (
           <>
             <Mascot
-              text="From here, your journey truly begins. Check your XP, explore the network, and rise in the ranks. I'll be watching from above… unless you summon me again 🪐"
+              text="From here, your journey truly begins. Check your XP, explore the network, and rise in the ranks. I'll be watching from above… unless you summon me again"
               onTypingComplete={handleTypingComplete}
               currentStep={5}
               totalSteps={TOTAL_STEPS}
