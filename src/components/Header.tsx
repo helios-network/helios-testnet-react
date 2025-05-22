@@ -180,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             </button>
 
             {/* Discord Link and InviteCodeDisplay */}
-            <div className="hidden lg:flex items-center space-x-1 xl:space-x-4 min-h-[40px]">
+            <div className="hidden lg:flex items-center space-x-1 xl:space-x-2 min-h-[40px]">
               {!hasDiscordLinked && (
                 <button
                   onClick={handleLinkDiscord}
@@ -229,18 +229,18 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             ))}
 
             {/* Discord Link option in mobile menu */}
-            {!hasDiscordLinked && (
-              <button
-                onClick={handleLinkDiscord}
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors bg-[#5865F2] text-white"
-              >
-                <DiscordIcon />
-                <span className="text-base font-medium">Link Discord</span>
-              </button>
-            )}
 
             {/* Mobile InviteCodeDisplay */}
-            <div className="pt-2 border-t border-[#D7E0FF]">
+            <div className="flex flex-row pt-2 border-t border-[#D7E0FF] space-x-2.5">
+              {!hasDiscordLinked && (
+                <button
+                  onClick={handleLinkDiscord}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-full transition-colors bg-[#5865F2] text-white  hover:bg-[#4752c4]"
+                >
+                  <DiscordIcon />
+                  <span className="text-base font-medium">Link Discord</span>
+                </button>
+              )}
               <InviteCodeDisplay />
             </div>
           </div>

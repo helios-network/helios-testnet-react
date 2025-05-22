@@ -82,6 +82,14 @@ const InviteCodeDisplay = () => {
     fetchUserData();
   }, [address]);
 
+  function formatReferralCount(count: number): string {
+    if (count >= 1_000_000)
+      return (count / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    if (count >= 1_000)
+      return (count / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+    return count.toString();
+  }
+
   const handleCopy = () => {
     if (!referralCode) return;
 
@@ -137,7 +145,7 @@ const InviteCodeDisplay = () => {
             <Users className="w-4 h-4 mr-2" />
             <div className="flex flex-col items-start">
               <span className="text-base font-medium whitespace-nowrap">
-                {referralCount || 0}{" "}
+                {formatReferralCount(referralCount ?? 0)}{" "}
                 <span className="xs:inline hide-text">Referrals</span>
               </span>
             </div>
