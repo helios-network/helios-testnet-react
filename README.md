@@ -41,7 +41,7 @@ A Next.js application for interacting with the Helios blockchain testnet. This a
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-org/helios-testnet-react.git
+git clone https://github.com/helios-network/helios-testnet-react.git
 cd helios-testnet-react
 ```
 

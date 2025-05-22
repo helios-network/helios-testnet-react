@@ -62,7 +62,7 @@ export const Wallet = () => {
       position="bottom-right"
     >
       <ul>
-        <li>
+        {/* <li>
           <Button iconLeft="hugeicons:user" isNav={true}>
             Account
           </Button>
@@ -71,7 +71,7 @@ export const Wallet = () => {
           <Button iconLeft="hugeicons:settings-02" isNav={true}>
             Settings
           </Button>
-        </li>
+        </li> */}
         <li>
           <Button
             iconLeft="hugeicons:logout-03"
