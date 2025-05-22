@@ -138,7 +138,7 @@ const InviteCodeDisplay = () => {
             <div className="flex flex-col items-start">
               <span className="text-base font-medium whitespace-nowrap">
                 {referralCount || 0}{" "}
-                <span className="xs:inline">Referrals</span>
+                <span className="xs:inline hide-text">Referrals</span>
               </span>
             </div>
           </button>
@@ -148,7 +148,9 @@ const InviteCodeDisplay = () => {
               Code:
             </div>
             <div className="text-sm font-bold text-[#060F32] mr-1">
-              {referralCode}
+              {referralCode.length > 5
+                ? `${referralCode.slice(0, 3)}...${referralCode.slice(-2)}`
+                : referralCode}
             </div>
             <button
               onClick={handleCopy}
