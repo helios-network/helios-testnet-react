@@ -340,7 +340,7 @@ const OnboardingFlow = () => {
         {step === 2 && (
           <>
             <Mascot
-              text="Hey, I'm Phaeton, official mascot of Helios — who also happens to be my father ☀️. You've just entered our interchain testnet... and I'm here to guide you through your first steps."
+              text="Hey, I'm Phaeton, official mascot of Helios who also happens to be my father ☀️. You've just entered our testnet... and I'm here to guide you through your first steps."
               onTypingComplete={handleTypingComplete}
               currentStep={1}
               totalSteps={TOTAL_STEPS}
@@ -353,7 +353,7 @@ const OnboardingFlow = () => {
         {step === 3 && (
           <>
             <Mascot
-              text="Before we light up the sky together, you need to connect to the Helios network. It's EVM-compatible, so MetaMask will work just fine. Ready to ride the chain?"
+              text="Before we light up the sky together, you need to connect to the Helios network. It's EVM-compatible, so MetaMask or equivalent will work just fine. Ready to ride the chain?"
               onTypingComplete={handleTypingComplete}
               currentStep={2}
               totalSteps={TOTAL_STEPS}
@@ -368,7 +368,7 @@ const OnboardingFlow = () => {
         {step === 4 && (
           <>
             <Mascot
-              text="Every explorer needs some solar fuel. Let me beam some $HLS tokens your way so you can start exploring."
+              text="Every explorer needs some solar fuel. Let me drop some HLS tokens your way so you can start exploring, they will be sent directly on your wallet."
               onTypingComplete={handleTypingComplete}
               currentStep={3}
               totalSteps={TOTAL_STEPS}
@@ -383,12 +383,12 @@ const OnboardingFlow = () => {
         {step === 5 && (
           <>
             <Mascot
-              text="You've made it through the gates of Helios. To mark your arrival, you've earned a Testnet Explorer badge — minted directly to your wallet."
+              text="You've made it through the gates of Helios. To mark your arrival, you've earned a Testnet Explorer badge, that will be minted directly to your wallet later."
               onTypingComplete={handleTypingComplete}
               currentStep={4}
               totalSteps={TOTAL_STEPS}
               onNext={handleMintNFT}
-              buttonText="Mint Testnet NFT"
+              buttonText="Take the badge"
               loadingText="Minting..."
               isLoading={isLoading}
             />
