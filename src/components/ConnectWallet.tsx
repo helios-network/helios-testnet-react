@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useConnect, useAccount, useDisconnect } from "wagmi";
 import { useStore } from "../store/onboardingStore";
 import { metaMask } from "wagmi/connectors";
+import { useAppKit } from "@reown/appkit/react";
 import {
   Sparkles,
   Wallet,
@@ -16,6 +17,7 @@ import { Video } from "@/components/video/video";
 import { useSearchParams } from "next/navigation";
 
 const ConnectWallet = () => {
+  const { open: openLoginModal, close: closeLoginModal } = useAppKit();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
@@ -32,13 +34,13 @@ const ConnectWallet = () => {
   >(null);
   // Additional wallet connection state to be more resilient against momentary disconnects
   const [wasEverConnected, setWasEverConnected] = useState(false);
-  
+
   // Get search params for checking Discord linking status and referral code
   const searchParams = useSearchParams();
-  const requireInvite = searchParams.get('requireInvite');
-  const discordLinked = searchParams.get('discord-linked');
-  const referralCodeFromUrl = searchParams.get('code');
-  
+  const requireInvite = searchParams.get("requireInvite");
+  const discordLinked = searchParams.get("discord-linked");
+  const referralCodeFromUrl = searchParams.get("code");
+
   // Set referral code from URL if available
   useEffect(() => {
     if (referralCodeFromUrl) {
@@ -46,32 +48,36 @@ const ConnectWallet = () => {
       setInviteCode(referralCodeFromUrl);
     }
   }, [referralCodeFromUrl]);
-  
+
   // Check for Discord linking that requires invite code
   useEffect(() => {
-    if (requireInvite === 'true' || discordLinked === 'true') {
+    if (requireInvite === "true" || discordLinked === "true") {
       if (isConnected && address) {
-        console.log("Discord account linked but needs invite code confirmation");
+        console.log(
+          "Discord account linked but needs invite code confirmation"
+        );
         setNeedsInviteCode(true);
         setPendingWallet(address);
-        
+
         // We don't have the signature yet, so we'll need to get it when the user submits the invite code
-        setError("Your Discord account has been linked, but you need to enter an invite code to activate your account.");
+        setError(
+          "Your Discord account has been linked, but you need to enter an invite code to activate your account."
+        );
       }
     }
   }, [requireInvite, discordLinked, isConnected, address]);
-  
+
   // Track real connection state including history
   useEffect(() => {
     if (isConnected) {
       setWasEverConnected(true);
     }
   }, [isConnected]);
-  
+
   // Enhanced connection check - simply use wagmi's isConnected plus our connection memory
   // This avoids TypeScript errors with window.ethereum while still providing better connection stability
   const isReallyConnected = isConnected || wasEverConnected;
-  
+
   // Track connection state changes and handle disconnections
   useEffect(() => {
     // If we had a connection and now we don't, handle the disconnect
@@ -122,14 +128,16 @@ const ConnectWallet = () => {
       if (isReallyConnected && address && !isLoading && !needsInviteCode) {
         // Check if we have a valid JWT token AND user data
         const token = localStorage.getItem("jwt_token");
-        
+
         if (token) {
           // If token exists, we should already have or will get user data from the initialize function
           // So we don't need to do anything here - the LayoutClientWrapper will handle initialization
-          console.log("Token exists, letting initialization handle authentication");
+          console.log(
+            "Token exists, letting initialization handle authentication"
+          );
           return;
         }
-        
+
         // Only attempt to sign and authenticate if no token exists
         if (!token) {
           try {
@@ -138,7 +146,10 @@ const ConnectWallet = () => {
           } catch (error: any) {
             console.error("Auto-sign error:", error);
             // Check for account confirmation requirements
-            if (error.requiresInviteCode || error.message?.includes("not confirmed")) {
+            if (
+              error.requiresInviteCode ||
+              error.message?.includes("not confirmed")
+            ) {
               // This is handled in handleSignAndAuthenticate which should have set needsInviteCode
               console.log("Account needs confirmation with invite code");
             } else {
@@ -217,17 +228,27 @@ const ConnectWallet = () => {
       if (referralCodeFromUrl && signature) {
         try {
           console.log("Attempting registration with referral code from URL");
-          const registerResponse = await api.register(address, signature, referralCodeFromUrl);
-          
+          const registerResponse = await api.register(
+            address,
+            signature,
+            referralCodeFromUrl
+          );
+
           const user = registerResponse.user;
           if (user) {
-            console.log("Successfully registered with referral code:", referralCodeFromUrl);
+            console.log(
+              "Successfully registered with referral code:",
+              referralCodeFromUrl
+            );
             setUser(user);
             setStep(2);
             return;
           }
         } catch (registerError: any) {
-          console.log("Registration with referral code failed, continuing with normal flow:", registerError);
+          console.log(
+            "Registration with referral code failed, continuing with normal flow:",
+            registerError
+          );
           // Continue with normal flow below if registration with referral code fails
         }
       }
@@ -235,7 +256,7 @@ const ConnectWallet = () => {
       try {
         // Try login first for existing users
         const loginResponse = await api.login(address, signature);
-        
+
         // Check if user needs to provide an invite code - requiresInviteCode true indicates user exists but isn't confirmed
         if (loginResponse.requiresInviteCode) {
           console.log("User exists but needs invite code");
@@ -245,7 +266,7 @@ const ConnectWallet = () => {
           // Don't continue to the next step since user needs to confirm with invite code
           return;
         }
-        
+
         console.log("Login successful:", loginResponse);
 
         // Ensure we're using the user object correctly
@@ -259,23 +280,26 @@ const ConnectWallet = () => {
       } catch (loginError: any) {
         // Check if this is an unconfirmed account error
         console.log("Login failed:", loginError);
-        
+
         // Check for confirmation requirement errors in various formats
-        if (loginError.requiresInviteCode || 
-            (loginError.message && loginError.message.includes("not confirmed")) ||
-            (loginError.response?.status === 403)) {
+        if (
+          loginError.requiresInviteCode ||
+          (loginError.message &&
+            loginError.message.includes("not confirmed")) ||
+          loginError.response?.status === 403
+        ) {
           console.log("User exists but needs invite code");
-          
+
           // Check if the error response includes the wallet address
           const walletAddress = loginError.walletAddress || address;
-          
+
           setPendingSignature(signature);
           setPendingWallet(walletAddress);
           setNeedsInviteCode(true);
           // Important: don't try to register a new user in this case
           return;
         }
-        
+
         // If it's not a confirmation error but some other error (e.g., user not found),
         // try to register with the invite code from URL if available
         if (referralCodeFromUrl) {
@@ -285,8 +309,11 @@ const ConnectWallet = () => {
               signature,
               referralCodeFromUrl
             );
-            
-            console.log("Account confirmed successfully with URL code:", confirmResponse);
+
+            console.log(
+              "Account confirmed successfully with URL code:",
+              confirmResponse
+            );
             const user = confirmResponse.user;
             if (user) {
               setUser(user);
@@ -294,10 +321,13 @@ const ConnectWallet = () => {
               return;
             }
           } catch (confirmError) {
-            console.error("Failed to confirm with referral code from URL:", confirmError);
+            console.error(
+              "Failed to confirm with referral code from URL:",
+              confirmError
+            );
           }
         }
-        
+
         // If all attempts fail, request an invite code
         console.log("Login failed, new user:", loginError);
         setPendingSignature(signature);
@@ -306,16 +336,19 @@ const ConnectWallet = () => {
       }
     } catch (error: any) {
       console.error("Failed to sign and authenticate:", error);
-      
+
       // Check if error is about requiring confirmation
-      if (error.requiresInviteCode || error.message?.includes("not confirmed")) {
+      if (
+        error.requiresInviteCode ||
+        error.message?.includes("not confirmed")
+      ) {
         // Here signature might not be defined if the error happened during signing
         if (address) {
           // Try to get the wallet address from the error response
           const walletAddress = error.walletAddress || address;
-          
+
           setPendingWallet(walletAddress);
-          if (typeof signature !== 'undefined') {
+          if (typeof signature !== "undefined") {
             setPendingSignature(signature);
           }
           setNeedsInviteCode(true);
@@ -332,12 +365,12 @@ const ConnectWallet = () => {
     try {
       const signature = await signMessage(walletAddress);
       console.log("handleSignAndLogin", signature);
-      
+
       // Try login first
       try {
         const loginResponse = await api.login(walletAddress, signature);
         console.log("Login response:", loginResponse);
-        
+
         // Check if user needs to provide an invite code
         if (loginResponse.requiresInviteCode) {
           console.log("User exists but needs invite code");
@@ -346,13 +379,13 @@ const ConnectWallet = () => {
           setNeedsInviteCode(true);
           return;
         }
-        
+
         // If login successful, use the user data
         const user = loginResponse.user;
         if (!user) {
           throw new Error("No user data received from login");
         }
-        
+
         setUser(user);
         setStep(2);
         return;
@@ -365,11 +398,11 @@ const ConnectWallet = () => {
           setNeedsInviteCode(true);
           return;
         }
-        
+
         // If it's another error, try registration
         console.log("Login failed, trying registration:", loginError);
       }
-      
+
       // If login fails, try to register
       try {
         // Try to register first
@@ -426,7 +459,7 @@ const ConnectWallet = () => {
   const handleRegisterWithInvite = async () => {
     // If no invite code is entered but we have one from the URL, use that
     const codeToUse = inviteCode.trim() || referralCodeFromUrl;
-    
+
     if (!codeToUse) {
       setInviteError("Invite code is required");
       return;
@@ -442,7 +475,7 @@ const ConnectWallet = () => {
 
     try {
       let user;
-      
+
       // If we don't have a signature (e.g., for Discord linked accounts),
       // we need to get a signature first
       if (!pendingSignature && pendingWallet) {
@@ -450,14 +483,14 @@ const ConnectWallet = () => {
           // Get a signature for the wallet
           const signature = await signMessage(pendingWallet);
           setPendingSignature(signature);
-          
+
           // Try to confirm the account with the signature and invite code
           const confirmResponse = await api.confirmAccount(
             pendingWallet,
             signature,
             codeToUse
           );
-          
+
           console.log("Account confirmed successfully:", confirmResponse);
           user = confirmResponse.user;
         } catch (signError: any) {
@@ -468,13 +501,15 @@ const ConnectWallet = () => {
             signError.message?.includes("rejected") ||
             signError.message?.includes("denied")
           ) {
-            throw new Error("You declined the signature request. Please try again.");
+            throw new Error(
+              "You declined the signature request. Please try again."
+            );
           }
           throw signError;
         }
       } else {
         // We have both wallet and signature
-        
+
         // Use the confirmAccount API which will handle all cases (new user, existing unconfirmed, existing confirmed)
         try {
           console.log("Confirming account with invite code");
@@ -483,7 +518,7 @@ const ConnectWallet = () => {
             pendingSignature!,
             codeToUse
           );
-          
+
           // If confirmation successful, use the response
           console.log("Account confirmed successfully:", confirmResponse);
           user = confirmResponse.user;
@@ -516,8 +551,7 @@ const ConnectWallet = () => {
 
       // Connect wallet first if not connected
       if (!isReallyConnected) {
-        const connector = metaMask();
-        await connect({ connector });
+        await openLoginModal();
         // Wallet connection will trigger the useEffect which will handle signing
         setIsLoading(false);
         return;
@@ -530,7 +564,7 @@ const ConnectWallet = () => {
       }
 
       // Specific case for Discord-linked accounts that need activation
-      if (requireInvite === 'true' && address) {
+      if (requireInvite === "true" && address) {
         setPendingWallet(address);
         setNeedsInviteCode(true);
         setIsLoading(false);
@@ -564,16 +598,16 @@ const ConnectWallet = () => {
       if (needsInviteCode) return "Verifying code...";
       return "Processing...";
     }
-    
+
     if (!isReallyConnected) return "Connect Wallet";
-    
+
     if (needsInviteCode) {
       if (pendingWallet && !pendingSignature) {
         return "Sign & Submit Invite";
       }
       return "Submit Invite";
     }
-    
+
     return "Continue";
   };
 
@@ -610,7 +644,8 @@ const ConnectWallet = () => {
                 </h1>
 
                 <p className="text-lg text-[#5C6584] max-w-2xl mx-auto mb-10">
-                Start testing Helios, a scalable blockchain network built for secure cross-chain interaction.
+                  Start testing Helios, a scalable blockchain network built for
+                  secure cross-chain interaction.
                 </p>
               </motion.div>
 
@@ -626,7 +661,7 @@ const ConnectWallet = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-6 max-w-md w-full"
                   >
-                     <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[#002DCB]/10">
+                    <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[#002DCB]/10">
                       <div className="flex items-center mb-4">
                         <span className="w-10 h-10 rounded-full bg-[#E2EBFF] flex items-center justify-center mr-3">
                           <ShieldCheck className="h-5 w-5 text-[#002DCB]" />
@@ -636,12 +671,12 @@ const ConnectWallet = () => {
                             Exclusive Access
                           </h2>
                           <p className="text-[#5C6584] text-sm">
-                            {(requireInvite === 'true' || discordLinked === 'true') ? 
-                              "Your Discord account is linked! Please enter your invite code to activate your account." : 
-                              pendingWallet && pendingSignature ? 
-                                "Your wallet is ready! Please enter your invite code to activate your account." : 
-                                "Enter your invite code to continue"
-                            }
+                            {requireInvite === "true" ||
+                            discordLinked === "true"
+                              ? "Your Discord account is linked! Please enter your invite code to activate your account."
+                              : pendingWallet && pendingSignature
+                              ? "Your wallet is ready! Please enter your invite code to activate your account."
+                              : "Enter your invite code to continue"}
                           </p>
                         </div>
                       </div>
@@ -711,15 +746,20 @@ const ConnectWallet = () => {
                         )}
 
                         <p className="text-xs text-gray-500 mt-3">
-                          {(requireInvite === 'true' || discordLinked === 'true') ? (
+                          {requireInvite === "true" ||
+                          discordLinked === "true" ? (
                             <span className="block mb-2">
-                              Your Discord account has been successfully linked. To complete your account activation,
-                              you need a valid invite code. This ensures exclusive access to the Helios testnet platform.
+                              Your Discord account has been successfully linked.
+                              To complete your account activation, you need a
+                              valid invite code. This ensures exclusive access
+                              to the Helios testnet platform.
                             </span>
                           ) : pendingWallet ? (
                             <span className="block mb-2">
-                              An invite code is required to activate your account. 
-                              {pendingSignature && " Your wallet has been authenticated, you only need to enter a valid invite code."}
+                              An invite code is required to activate your
+                              account.
+                              {pendingSignature &&
+                                " Your wallet has been authenticated, you only need to enter a valid invite code."}
                             </span>
                           ) : null}
                           <span className="flex items-center">
@@ -853,7 +893,9 @@ const ConnectWallet = () => {
                         Explore Helios
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Use the Helios Testnet to run real transactions, test cross-chain features, and interact directly with the network.
+                        Use the Helios Testnet to run real transactions, test
+                        cross-chain features, and interact directly with the
+                        network.
                       </p>
                     </div>
 
@@ -878,7 +920,8 @@ const ConnectWallet = () => {
                         Earn Rewards
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Earn XP by completing on-chain tasks, testing features, and helping improve the network.
+                        Earn XP by completing on-chain tasks, testing features,
+                        and helping improve the network.
                       </p>
                     </div>
 
@@ -903,7 +946,8 @@ const ConnectWallet = () => {
                         Contribute
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Share feedback, report issues, and play a role in shaping Helios ecosystem as it grows.
+                        Share feedback, report issues, and play a role in
+                        shaping Helios ecosystem as it grows.
                       </p>
                     </div>
                   </div>
