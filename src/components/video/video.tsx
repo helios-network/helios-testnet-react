@@ -37,13 +37,15 @@ export const Video = ({ id, ...props }: VideoProps) => {
     >
       <video
         ref={videoRef}
-        preload="none"
-        poster={`/video/${id}.webp`}
+        autoPlay
         muted
         loop
         playsInline
+        preload="auto"
+        poster={`/video/${id}.webp`}
         data-ref={id}
       >
+        <source src={`/video/${id}.mp4`} type="video/mp4" />
         <source src={`/video/${id}.webm`} type="video/webm" />
       </video>
     </div>
