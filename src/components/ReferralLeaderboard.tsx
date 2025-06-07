@@ -4,6 +4,7 @@ import { useAccount } from "wagmi";
 import { api } from "../services/api";
 import { Users, Trophy, Award } from "lucide-react";
 import Footer from "./Footer";
+import InviteQuotaInfo from "./InviteQuotaInfo";
 
 interface ReferralStats {
   totalUsers: number;
@@ -84,12 +85,17 @@ export function ReferralLeaderboard() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-3xl font-bold text-[#060F32] mb-8 flex items-center"
+            className="text-3xl font-bold text-[#060F32] mb-6 flex items-center"
           >
             <Trophy className="w-7 h-7 text-[#002DCB] mr-3" />
             Referral Leaderboard
             <span className="ml-3 text-sm px-3 py-1 bg-[#E2EBFF] text-[#002DCB] rounded-full">Beta</span>
           </motion.h1>
+
+          {/* Invite Quota Information */}
+          <div className="mb-8">
+            <InviteQuotaInfo showDetailed={true} />
+          </div>
 
           {loading ? (
             <div className="flex flex-col justify-center items-center h-64">

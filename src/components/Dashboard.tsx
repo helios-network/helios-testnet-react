@@ -20,7 +20,8 @@ import {
   UserPlus,
   Building,
   Megaphone,
-  Flag
+  Flag,
+  Trophy
 } from "lucide-react";
 import { useStore } from "../store/onboardingStore";
 import { useAccount } from "wagmi";
@@ -28,6 +29,7 @@ import { api } from "../services/api";
 import { ViewContext } from "./LayoutClientWrapper";
 import Footer from "./Footer";
 import { User } from "../services/api";
+import InviteQuotaInfo from "./InviteQuotaInfo";
 
 interface ExtendedUser extends User {
   tags?: string[];
@@ -517,15 +519,28 @@ const Dashboard = () => {
                   <div className="flex-1 ml-3">
                     <div className="flex items-center gap-1">
                       <span className="text-2xl text-[#060F32] custom-font font-bold">
-                        Leaderboard
+                        Leaderboard & Invites
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-[#828DB3]">
-                        Top contributors in the Helios ecosystem
+                        Top contributors and daily invite system
                       </span>
                     </div>
                   </div>
+                </div>
+
+                {/* Detailed Invite Quota Information */}
+                <div className="mt-6 mb-6">
+                  <InviteQuotaInfo showDetailed={true} />
+                </div>
+
+                {/* Leaderboard Title */}
+                <div className="flex items-center mb-4">
+                  <div className="bg-[#002DCB] p-2 rounded-full mr-3">
+                    <Trophy className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#060F32]">Top Contributors</h3>
                 </div>
 
                 <div className="mt-4 mb-4">
@@ -651,6 +666,9 @@ const Dashboard = () => {
               </section>
             </div>
           </div>
+
+          {/* Additional spacing to prevent overlap */}
+          <div className="mb-8"></div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
             <div className="lg:col-span-3 space-y-6">

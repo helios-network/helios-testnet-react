@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { ViewContext } from "./LayoutClientWrapper";
 import { api } from "../services/api";
-import { Share2, Users, Copy, CheckCircle2 } from "lucide-react";
+import { Share2, Users, Copy, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 const InviteCodeDisplay = () => {
   const { address } = useAccount();
@@ -15,6 +15,37 @@ const InviteCodeDisplay = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Invite quota state
+  const [inviteQuota, setInviteQuota] = useState<{
+    canInvite: boolean;
+    currentQuota: number;
+    usedToday: number;
+    remainingInvites: number;
+  } | null>(null);
+  const [quotaLoading, setQuotaLoading] = useState(false);
+
+  // Function to fetch invite quota information
+  const fetchInviteQuota = async () => {
+    if (!address) return;
+    
+    try {
+      setQuotaLoading(true);
+      const quotaResponse = await api.getUserInviteStatus(address);
+      if (quotaResponse.success) {
+        setInviteQuota({
+          canInvite: quotaResponse.data.canInvite,
+          currentQuota: quotaResponse.data.currentQuota,
+          usedToday: quotaResponse.data.usedToday,
+          remainingInvites: quotaResponse.data.remainingInvites,
+        });
+      }
+    } catch (error) {
+      console.error("InviteCodeDisplay: Error fetching invite quota:", error);
+    } finally {
+      setQuotaLoading(false);
+    }
+  };
 
   useEffect(() => {
     console.log("InviteCodeDisplay: Fetching user profile");
@@ -67,6 +98,9 @@ const InviteCodeDisplay = () => {
             setReferralCount(referralsResponse.referralCount);
             setReferralXP(referralsResponse.referralXP);
           }
+
+          // Fetch invite quota information
+          await fetchInviteQuota();
         } catch (fetchError) {
           console.error("InviteCodeDisplay: Error fetching data:", fetchError);
           console.log("fallbackCode", fallbackCode);
@@ -142,7 +176,7 @@ const InviteCodeDisplay = () => {
         <>
           <button
             onClick={() => setCurrentView("referrals")}
-            className="bg-[#002DCB] text-white rounded-full px-4 py-2 flex items-center hover:bg-[#0025B3] transition-colors shadow-sm active:shadow-inner"
+            className="bg-[#002DCB] text-white rounded-full px-4 py-2 flex items-center hover:bg-[#0025B3] transition-colors shadow-sm active:shadow-inner relative"
             title="View Referral Leaderboard"
           >
             <Users className="w-4 h-4 mr-2" />
@@ -151,7 +185,16 @@ const InviteCodeDisplay = () => {
                 {formatReferralCount(referralCount ?? 0)}{" "}
                 <span className="xs:inline hide-text">Referrals</span>
               </span>
+              {inviteQuota && (
+                <span className="text-xs opacity-80 whitespace-nowrap">
+                  {inviteQuota.remainingInvites} left today
+                </span>
+              )}
             </div>
+            {inviteQuota && !inviteQuota.canInvite && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white" 
+                   title="Daily invite limit reached" />
+            )}
           </button>
 
           <div className="bg-white/80 rounded-full px-3 py-2 flex items-center border border-[#002DCB]/10 shadow-sm">
@@ -163,6 +206,23 @@ const InviteCodeDisplay = () => {
                 ? `${referralCode.slice(0, 3)}...${referralCode.slice(-2)}`
                 : referralCode}
             </div>
+            
+            {/* Quota indicator */}
+            {inviteQuota && (
+              <div className="flex items-center mr-1.5">
+                {inviteQuota.canInvite ? (
+                  <div className="flex items-center text-green-600" title={`${inviteQuota.remainingInvites} invites remaining today`}>
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span className="text-xs font-medium">{inviteQuota.remainingInvites}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-red-500" title="Daily invite limit reached">
+                    <AlertCircle className="h-3 w-3" />
+                  </div>
+                )}
+              </div>
+            )}
+            
             <button
               onClick={handleCopy}
               className="text-[#002DCB] p-1.5 rounded-full hover:bg-[#E2EBFF] active:bg-[#D7E0FF] transition-colors"

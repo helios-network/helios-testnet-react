@@ -207,6 +207,49 @@ export interface AvailableTokensResponse {
   }>;
 }
 
+export interface InviteQuotaResponse {
+  success: boolean;
+  data: {
+    currentQuota: number;
+    timestamp: string;
+  };
+}
+
+export interface UserInviteStatusResponse {
+  success: boolean;
+  data: {
+    wallet: string;
+    referralCode: string;
+    canInvite: boolean;
+    currentQuota: number;
+    usedToday: number;
+    remainingInvites: number;
+    timestamp: string;
+  };
+}
+
+export interface QuotaStatisticsResponse {
+  success: boolean;
+  data: {
+    statistics: Array<{
+      _id: string;
+      date: string;
+      inviteQuota: number;
+      baseInviteQuota: number;
+      growthFactor: number;
+      activityFactor: number;
+      usersActiveToday: number;
+      usersActiveYesterday: number;
+      activityToday: number;
+      activityNormal: number;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    period: string;
+    timestamp: string;
+  };
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -674,6 +717,65 @@ class ApiClient {
       console.error("No token received from confirmation response");
       throw new Error("Authentication failed: No token received");
     }
+  }
+
+  // Invite Quota API Methods
+
+  async getCurrentInviteQuota(): Promise<InviteQuotaResponse> {
+    const response = await fetch(`${API_URL}/invite-quota/current`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to get current invite quota");
+    }
+
+    return response.json();
+  }
+
+  async getUserInviteStatus(wallet: string): Promise<UserInviteStatusResponse> {
+    const response = await fetch(`${API_URL}/invite-quota/user-status`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ wallet }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to get user invite status");
+    }
+
+    return response.json();
+  }
+
+  async getQuotaStatistics(days: number = 7): Promise<QuotaStatisticsResponse> {
+    const response = await fetch(`${API_URL}/invite-quota/statistics?days=${days}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to get quota statistics");
+    }
+
+    return response.json();
+  }
+
+  async recalculateQuota(): Promise<{ success: boolean; message: string; data: any }> {
+    const response = await fetch(`${API_URL}/invite-quota/recalculate`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to recalculate quota");
+    }
+
+    return response.json();
   }
 }
 
