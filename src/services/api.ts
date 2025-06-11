@@ -250,6 +250,53 @@ export interface QuotaStatisticsResponse {
   };
 }
 
+export interface TemporaryInviteCode {
+  code: string;
+  name: string;
+  description?: string;
+  maxUses: number;
+  currentUses: number;
+  usesRemaining: number;
+  expiresAt?: string;
+  isActive: boolean;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  canBeUsed?: boolean;
+}
+
+export interface CreateTemporaryCodeRequest {
+  name: string;
+  description?: string;
+  maxUses: number;
+  expiresAt?: string;
+  customCode?: string;
+}
+
+export interface CreateTemporaryCodeResponse {
+  success: boolean;
+  message: string;
+  data: TemporaryInviteCode;
+}
+
+export interface ListTemporaryCodesResponse {
+  success: boolean;
+  data: {
+    codes: TemporaryInviteCode[];
+    pagination: {
+      page: number;
+      totalPages: number;
+      total: number;
+      limit: number;
+    };
+  };
+}
+
+export interface TemporaryCodeInfoResponse {
+  success: boolean;
+  data: TemporaryInviteCode;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -773,6 +820,122 @@ class ApiClient {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || "Failed to recalculate quota");
+    }
+
+    return response.json();
+  }
+
+  // Temporary Invite Code API Methods
+
+  async createTemporaryCode(data: CreateTemporaryCodeRequest): Promise<CreateTemporaryCodeResponse> {
+    const response = await fetch(`${API_URL}/temporary-invites`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create temporary invite code");
+    }
+
+    return response.json();
+  }
+
+  async listTemporaryCodes(
+    page: number = 1,
+    limit: number = 20,
+    includeInactive: boolean = false
+  ): Promise<ListTemporaryCodesResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      includeInactive: includeInactive.toString(),
+    });
+
+    const response = await fetch(`${API_URL}/temporary-invites?${params}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to list temporary invite codes");
+    }
+
+    return response.json();
+  }
+
+  async getTemporaryCodeInfo(code: string): Promise<TemporaryCodeInfoResponse> {
+    const response = await fetch(`${API_URL}/temporary-invites/${code}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to get temporary invite code info");
+    }
+
+    return response.json();
+  }
+
+  async deactivateTemporaryCode(code: string): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_URL}/temporary-invites/${code}/deactivate`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to deactivate temporary invite code");
+    }
+
+    return response.json();
+  }
+
+  async updateTemporaryCodeLimit(
+    code: string,
+    maxUses: number
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_URL}/temporary-invites/${code}/update-limit`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ maxUses }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update temporary invite code limit");
+    }
+
+    return response.json();
+  }
+
+  async cleanupExpiredCodes(): Promise<{ success: boolean; message: string; data: { deactivatedCount: number } }> {
+    const response = await fetch(`${API_URL}/temporary-invites/cleanup/expired`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to cleanup expired codes");
+    }
+
+    return response.json();
+  }
+
+  // Marketing Analytics API Methods
+  async getMarketingAnalytics(): Promise<{ success: boolean; data: any; timestamp: string }> {
+    const response = await fetch(`${API_URL}/admin/marketing-analytics`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to get marketing analytics");
     }
 
     return response.json();

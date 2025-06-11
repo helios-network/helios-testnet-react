@@ -28,7 +28,8 @@ export const ViewContext = React.createContext({
 const pathToViewMap: Record<string, string> = {
   '/': 'dashboard',
   '/referrals': 'referrals',
-  '/faucet': 'faucet'
+  '/faucet': 'faucet',
+  '/admin': 'admin'
 };
 
 function AppContent() {
@@ -153,6 +154,7 @@ function AppContent() {
       {currentView === "dashboard" && <Dashboard />}
       {currentView === "referrals" && <ReferralLeaderboard />}
       {currentView === "faucet" && <FaucetContent />}
+      {currentView === "admin" && null} {/* Admin content will be rendered via children */}
     </ViewContext.Provider>
   );
 }
@@ -165,6 +167,7 @@ export default function LayoutClientWrapper({
   const step = useStore((state) => state.step);
   const initialize = useStore((state) => state.initialize);
   const [hydrated, setHydrated] = useState(false);
+  const pathname = usePathname();
 
   // Handle hydration
   useEffect(() => {
@@ -180,11 +183,20 @@ export default function LayoutClientWrapper({
     return <LoadingIndicator isLoading={true} text="Initializing..." />;
   }
 
+  // Check if we're on the admin page
+  const isAdminPage = pathname === '/admin';
+
   return (
     <>
       <StrictMode>
-        <AppContent />
-        {children}
+        <div className={s.container}>
+          <AppContent />
+          {isAdminPage && (
+            <div className={s.adminContent}>
+              {children}
+            </div>
+          )}
+        </div>
         <NextTopLoader
           color="var(--primary-medium)"
           height={2}

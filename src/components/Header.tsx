@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Home, Trophy, Droplet, Menu, X } from "lucide-react";
+import { Home, Trophy, Droplet, Menu, X, Shield } from "lucide-react";
 import { ViewContext } from "./LayoutClientWrapper";
 import InviteCodeDisplay from "./InviteCodeDisplay";
 import { useRouter } from "next/navigation";
@@ -7,6 +7,7 @@ import { useStore } from "../store/onboardingStore";
 import { api } from "../services/api";
 import { Chains } from "../app/(components)/chains";
 import { Wallet } from "../app/(components)/wallet";
+import { useAccount } from "wagmi";
 
 interface HeaderProps {
   currentView: string;
@@ -31,6 +32,16 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const user = useStore((state) => state.user);
   const setUser = useStore((state) => state.setUser);
   const [isPollingForDiscord, setIsPollingForDiscord] = useState(false);
+  const { address } = useAccount();
+
+  // Admin wallet addresses (should match the ones in admin page)
+  const ADMIN_WALLETS = [
+    "0x8984e422E30033A84B780420566046d25EB3519a".toLowerCase(), // Fred wallet
+    "0x007a1123a54cdD9bA35AD2012DB086b9d8350A5f".toLowerCase(), // testnet wallet 1
+    "0xcfc9b7c86c97b0b5b6a5f897f102408ba3ca07d8".toLowerCase(), // chris wallet
+  ];
+
+  const isAdmin = address && ADMIN_WALLETS.includes(address.toLowerCase());
 
   const navItems = [
     {
@@ -51,6 +62,12 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       icon: <Droplet className="w-4 h-4" />,
       path: "/faucet",
     },
+    ...(isAdmin ? [{
+      key: "admin",
+      label: "Admin",
+      icon: <Shield className="w-4 h-4" />,
+      path: "/admin",
+    }] : []),
   ];
 
   const handleNavClick = (view: string, path: string) => {
