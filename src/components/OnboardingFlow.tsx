@@ -205,14 +205,14 @@ const OnboardingFlow = () => {
       await api.startOnboardingStep("claim_from_faucet");
 
       // Call faucet API to get tokens
-      const faucetResponse = await api.requestFaucetTokens("HLS", "helios-testnet", 0.1);
+      const faucetResponse = await api.requestFaucetTokens("HLS", "helios-testnet", 1);
       
       // Show transaction notification
       if (faucetResponse.success && faucetResponse.transactionHash) {
         setTxNotification({
           show: true,
           txHash: faucetResponse.transactionHash,
-          amount: faucetResponse.faucetClaim?.amount || 0.1,
+          amount: faucetResponse.faucetClaim?.amount || 1,
           token: faucetResponse.faucetClaim?.token || "HLS"
         });
         
