@@ -65,12 +65,15 @@ export const useStore = create<OnboardingState>((set, get) => ({
     
     if (token) {
       try {
-        setLoading(true, "Initializing your account...");
+        setLoading(true, "Verifying your account...");
         
-        // First try to check if the token is for a valid account that's confirmed
-        try {
-          const progress = await api.getOnboardingProgress();
-          console.log("progress", progress);
+        // CRITICAL: We must get a successful API response before proceeding to any authenticated step
+        // If API fails due to lag/timeout, we should NOT default to onboarding
+        const progress = await api.getOnboardingProgress();
+        console.log("progress", progress);
+        
+        // Only proceed if we successfully got progress data
+        if (progress && progress.success !== false) {
           set({ onboardingProgress: progress });
 
           if (
@@ -92,38 +95,13 @@ export const useStore = create<OnboardingState>((set, get) => ({
             const nextStep = stepMapping[lastCompletedStep] + 1;
             set({ step: nextStep });
           } else {
-            set({ step: 2 }); // Start onboarding
+            set({ step: 2 }); // Start onboarding - only if API confirms this
           }
-        } catch (progressError: any) {
-          console.error("Failed to get progress:", progressError);
-          
-          // Check if this is because the account is not confirmed
-          if (progressError.message?.includes("not confirmed") || 
-              progressError.response?.status === 403 || 
-              progressError.requiresInviteCode) {
-            
-            // Account exists but requires confirmation
-            console.log("Account exists but needs confirmation");
-            
-            // Create a custom error with the requiresInviteCode flag
-            const confirmationError = new Error("Account not confirmed. Please provide a valid invite code.");
-            (confirmationError as any).requiresInviteCode = true;
-            
-            // Clear token since it's invalid until account is confirmed
-            localStorage.removeItem("jwt_token");
-            
-            // Reset to step 0 to show the connect wallet screen where user can confirm account
-            set({ step: 0 });
-            
-            // Re-throw with confirmation flag
-            throw confirmationError;
-          }
-          
-          // For other errors, just reset and let the user try again
-          localStorage.removeItem("jwt_token");
-          set({ step: 0 });
-          throw progressError; // Re-throw to be caught by the outer catch
+        } else {
+          // Invalid progress response - treat as error
+          throw new Error("Invalid progress response from server");
         }
+        
       } catch (error: any) {
         console.error("Failed to initialize:", error);
         
@@ -132,22 +110,30 @@ export const useStore = create<OnboardingState>((set, get) => ({
             error.response?.status === 403 || 
             error.requiresInviteCode) {
           
-          // Create a custom error with the requiresInviteCode flag
-          const confirmationError = new Error("Account not confirmed. Please provide a valid invite code.");
-          (confirmationError as any).requiresInviteCode = true;
+          console.log("Account exists but needs confirmation");
           
-          // Clear token since it's invalid
+          // Clear token since it's invalid until account is confirmed
           localStorage.removeItem("jwt_token");
           
           // Set step to 0 to show connect wallet screen
           set({ step: 0 });
           
+          // Create a custom error with the requiresInviteCode flag
+          const confirmationError = new Error("Account not confirmed. Please provide a valid invite code.");
+          (confirmationError as any).requiresInviteCode = true;
+          
           // Re-throw the error with the confirmation flag
           throw confirmationError;
         }
         
-        // For other errors, reset to connect wallet
+        // For ANY other error (including timeouts, network issues, server errors):
+        // DO NOT proceed to onboarding - stay on connect wallet screen
+        console.log("API error during initialization - clearing token and staying on connect screen");
+        localStorage.removeItem("jwt_token");
         set({ step: 0 });
+        
+        // Don't throw the error - just stay on connect screen
+        // The user can try connecting again
       } finally {
         setLoading(false);
       }

@@ -21,7 +21,7 @@ const ConnectWallet = () => {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
-  const { setStep, setUser, resetStore, user, setLoading, isLoading: globalLoading } = useStore();
+  const { setStep, setUser, resetStore, user, setLoading, isLoading: globalLoading, initialize } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsInviteCode, setNeedsInviteCode] = useState(false);
@@ -203,7 +203,8 @@ const ConnectWallet = () => {
           if (userProfile) {
             console.log("User already authenticated with valid token");
             setUser(userProfile);
-            setStep(2);
+            // Instead of directly setting step 2, let initialize determine the correct step
+            await initialize();
             return; // Exit early, no need to sign again
           }
         } catch (profileError) {
@@ -244,7 +245,8 @@ const ConnectWallet = () => {
               referralCodeFromUrl
             );
             setUser(user);
-            setStep(2);
+            // Let initialize determine the correct step based on onboarding progress
+            await initialize();
             return;
           }
         } catch (registerError: any) {
@@ -279,7 +281,8 @@ const ConnectWallet = () => {
         }
 
         setUser(user);
-        setStep(2);
+        // Let initialize determine the correct step based on onboarding progress
+        await initialize();
       } catch (loginError: any) {
         // Check if this is an unconfirmed account error
         console.log("Login failed:", loginError);
@@ -320,7 +323,8 @@ const ConnectWallet = () => {
             const user = confirmResponse.user;
             if (user) {
               setUser(user);
-              setStep(2);
+              // Let initialize determine the correct step based on onboarding progress
+              await initialize();
               return;
             }
           } catch (confirmError) {
@@ -540,7 +544,8 @@ const ConnectWallet = () => {
 
       setUser(user);
       setNeedsInviteCode(false);
-      setStep(2);
+      // Let initialize determine the correct step based on onboarding progress
+      await initialize();
     } catch (error: any) {
       console.error("Failed to register/confirm with invite:", error);
       setInviteError(error.message || "Invalid invite code");

@@ -69,44 +69,13 @@ const OnboardingFlow = () => {
   }>({ show: false });
 
   useEffect(() => {
-    const initializeProgress = async () => {
-      try {
-        const progress = await api.getOnboardingProgress();
-
-        // Map step keys to component steps
-        const stepMapping = {
-          add_helios_network: 3,
-          claim_from_faucet: 4,
-          mint_early_bird_nft: 5,
-        };
-
-        if (progress.completedSteps.length >= Object.keys(stepMapping).length) {
-          setStep(7);
-          return;
-        }
-
-        // If we have completed steps, find the next step
-        if (progress.completedSteps && progress.completedSteps.length > 0) {
-          const lastCompletedStep =
-            progress.completedSteps[progress.completedSteps.length - 1];
-          const nextStep = stepMapping[lastCompletedStep as keyof typeof stepMapping] + 1;
-
-          // If all steps are completed, go to dashboard
-          if (nextStep > 5) {
-            setStep(7);
-          } else {
-            setStep(nextStep);
-          }
-        } else {
-          // If no steps completed, start from beginning
-          setStep(2);
-        }
-      } catch (error) {
-        console.error("Failed to fetch onboarding progress:", error);
-      }
-    };
-
-    initializeProgress();
+    // Remove the independent initialization logic since the store's initialize function
+    // should handle setting the correct step based on API response
+    // This prevents race conditions where OnboardingFlow sets step 2 before
+    // the API response confirms the user should be in onboarding
+    
+    // The step should already be set correctly by the store's initialize function
+    // when the user is authenticated and their onboarding progress is fetched
   }, [setStep]);
 
   const checkNetworkExists = async () => {
