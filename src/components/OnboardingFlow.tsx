@@ -49,8 +49,14 @@ const TransactionNotification = ({ txHash, amount, token, onClose }: {
 };
 
 const OnboardingFlow = () => {
-  const { step, setStep, addXP, fetchOnboardingProgress, onboardingProgress } =
-    useStore();
+  const { 
+    step, 
+    setStep, 
+    addXP, 
+    fetchOnboardingProgress, 
+    onboardingProgress,
+    setLoading
+  } = useStore();
   const [showXPToast, setShowXPToast] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -128,6 +134,7 @@ const OnboardingFlow = () => {
     console.log("handleAddNetwork");
     try {
       setIsLoading(true);
+      setLoading(true, "Adding Helios network to your wallet...");
       const progress = await api.getOnboardingProgress();
 
       if (progress.completedSteps.includes("add_helios_network")) {
@@ -189,12 +196,14 @@ const OnboardingFlow = () => {
       }
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const handleClaimTokens = async () => {
     try {
       setIsLoading(true);
+      setLoading(true, "Claiming tokens from faucet...");
       const progress = await api.getOnboardingProgress();
 
       if (progress.completedSteps.includes("claim_from_faucet")) {
@@ -232,6 +241,7 @@ const OnboardingFlow = () => {
       }
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
   
@@ -257,6 +267,7 @@ const OnboardingFlow = () => {
   const handleMintNFT = async () => {
     try {
       setIsLoading(true);
+      setLoading(true, "Minting your Testnet Explorer badge...");
       const progress = await api.getOnboardingProgress();
 
       if (progress.completedSteps.includes("mint_early_bird_nft")) {
@@ -301,6 +312,7 @@ const OnboardingFlow = () => {
       }
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
 

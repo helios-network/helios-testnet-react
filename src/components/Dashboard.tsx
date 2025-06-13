@@ -125,6 +125,7 @@ const Tooltip = ({ text, children, className = "", position = 'top' }: TooltipPr
 const Dashboard = () => {
   const { address } = useAccount();
   const { setCurrentView } = React.useContext(ViewContext);
+  const { setLoading } = useStore();
   const [xpHistory, setXPHistory] = useState<XPHistoryItem[]>([]);
   const [dailyMission, setDailyMission] = useState<DailyMissionItem[]>([]);
   const [Leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
@@ -139,6 +140,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        setLoading(true, "Loading your dashboard...");
         const [
           levelResponse,
           dailyMissionResponse,
@@ -212,6 +214,8 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error("Failed to fetch initial data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -221,6 +225,9 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchXPHistory = async () => {
       try {
+        if (currentPage > 1) {
+          setLoading(true, "Loading XP history...");
+        }
         const XPHistoryPageResponse = await api.getXPHistoryPage(
           currentPage,
           5,
@@ -234,6 +241,9 @@ const Dashboard = () => {
         console.error("Failed to fetch XP history:", error);
       } finally {
         setIsLoading(false);
+        if (currentPage > 1) {
+          setLoading(false);
+        }
       }
     };
 

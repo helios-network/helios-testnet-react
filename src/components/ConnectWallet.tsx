@@ -21,7 +21,7 @@ const ConnectWallet = () => {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const { address, isConnected } = useAccount();
-  const { setStep, setUser, resetStore, user } = useStore();
+  const { setStep, setUser, resetStore, user, setLoading, isLoading: globalLoading } = useStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsInviteCode, setNeedsInviteCode] = useState(false);
@@ -142,6 +142,7 @@ const ConnectWallet = () => {
         if (!token) {
           try {
             setIsLoading(true);
+            setLoading(true, "Connecting to your wallet...");
             await handleSignAndAuthenticate();
           } catch (error: any) {
             console.error("Auto-sign error:", error);
@@ -157,6 +158,7 @@ const ConnectWallet = () => {
             }
           } finally {
             setIsLoading(false);
+            setLoading(false);
           }
         }
       }
@@ -190,6 +192,7 @@ const ConnectWallet = () => {
     try {
       setError(null);
       setIsLoading(true);
+      setLoading(true, "Signing message and authenticating...");
 
       // First check if we already have a valid JWT token
       const token = localStorage.getItem("jwt_token");
@@ -358,6 +361,7 @@ const ConnectWallet = () => {
       }
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -471,6 +475,7 @@ const ConnectWallet = () => {
     }
 
     setIsLoading(true);
+    setLoading(true, "Processing invite code...");
     setInviteError(null);
 
     try {
@@ -541,6 +546,7 @@ const ConnectWallet = () => {
       setInviteError(error.message || "Invalid invite code");
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -548,12 +554,14 @@ const ConnectWallet = () => {
     try {
       setError(null);
       setIsLoading(true);
+      setLoading(true, "Connecting wallet...");
 
       // Connect wallet first if not connected
       if (!isReallyConnected) {
         await openLoginModal();
         // Wallet connection will trigger the useEffect which will handle signing
         setIsLoading(false);
+        setLoading(false);
         return;
       }
 
@@ -582,6 +590,7 @@ const ConnectWallet = () => {
       setError(error.message || "Failed to connect wallet");
     } finally {
       setIsLoading(false);
+      setLoading(false);
     }
   };
 
