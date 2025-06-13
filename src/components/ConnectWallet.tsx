@@ -200,8 +200,9 @@ const ConnectWallet = () => {
           if (userProfile) {
             console.log("User already authenticated with valid token");
             setUser(userProfile);
-            setStep(2);
-            return; // Exit early, no need to sign again
+            // Instead of jumping to a fixed step, re-initialize to get the correct state
+            await useStore.getState().initialize();
+            return; // Exit early
           }
         } catch (profileError) {
           console.log("Existing token invalid, proceeding with new signature");
@@ -241,7 +242,8 @@ const ConnectWallet = () => {
               referralCodeFromUrl
             );
             setUser(user);
-            setStep(2);
+            // Instead of jumping to a fixed step, re-initialize to get the correct state
+            await useStore.getState().initialize();
             return;
           }
         } catch (registerError: any) {
@@ -387,7 +389,8 @@ const ConnectWallet = () => {
         }
 
         setUser(user);
-        setStep(2);
+        // Instead of jumping to a fixed step, re-initialize to get the correct state
+        await useStore.getState().initialize();
         return;
       } catch (loginError: any) {
         // Check if user exists but needs invite code
@@ -420,7 +423,9 @@ const ConnectWallet = () => {
         }
 
         setUser(user);
-        setStep(2);
+        // Instead of jumping to a fixed step, re-initialize to get the correct state
+        await useStore.getState().initialize();
+        return;
       } catch (registerError: any) {
         // If registration fails with 400 (wallet already registered), try login
         if (registerError.message === "Wallet already registered") {
@@ -444,7 +449,9 @@ const ConnectWallet = () => {
           }
 
           setUser(user);
-          setStep(2);
+          // Instead of jumping to a fixed step, re-initialize to get the correct state
+          await useStore.getState().initialize();
+          return;
         } else {
           throw registerError;
         }
