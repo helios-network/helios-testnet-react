@@ -122,36 +122,35 @@ const ConnectWallet = () => {
     }
   }, []);
 
-  // Automatically trigger signing when wallet is connected
+  // Add a ref to track authentication attempts
+  const authAttemptRef = React.useRef(false);
+
   useEffect(() => {
     const checkAndSignMessage = async () => {
-      if (isReallyConnected && address && !isLoading && !needsInviteCode) {
+      // Prevent multiple authentication attempts
+      if (authAttemptRef.current) return;
+      
+      if (isReallyConnected && address && !isLoading && !needsInviteCode && !error) {
         // Check if we have a valid JWT token AND user data
         const token = localStorage.getItem("jwt_token");
 
         if (token) {
           // If token exists, we should already have or will get user data from the initialize function
-          // So we don't need to do anything here - the LayoutClientWrapper will handle initialization
-          console.log(
-            "Token exists, letting initialization handle authentication"
-          );
+          console.log("Token exists, letting initialization handle authentication");
           return;
         }
 
         // Only attempt to sign and authenticate if no token exists
         if (!token) {
           try {
+            if (isLoading) return;
+            authAttemptRef.current = true;
             setIsLoading(true);
             setLoading(true, "Connecting to your wallet...");
             await handleSignAndAuthenticate();
           } catch (error: any) {
             console.error("Auto-sign error:", error);
-            // Check for account confirmation requirements
-            if (
-              error.requiresInviteCode ||
-              error.message?.includes("not confirmed")
-            ) {
-              // This is handled in handleSignAndAuthenticate which should have set needsInviteCode
+            if (error.requiresInviteCode || error.message?.includes("not confirmed")) {
               console.log("Account needs confirmation with invite code");
             } else {
               setError(error.message || "Failed to authenticate automatically");
@@ -159,21 +158,36 @@ const ConnectWallet = () => {
           } finally {
             setIsLoading(false);
             setLoading(false);
+            authAttemptRef.current = false;
           }
         }
       }
     };
 
+    if (isLoading || error) return;
     checkAndSignMessage();
-  }, [isReallyConnected, address]);
+  }, [isReallyConnected, address, error]);
 
   const signMessage = async (address: string): Promise<string> => {
     try {
+      // const signatureFromLocalStorage = localStorage.getItem("signature");
+      // if (signatureFromLocalStorage) {
+      //   const signatureData = JSON.parse(signatureFromLocalStorage);
+      //   const signatureDate = signatureData.date;
+      //   const currentDate = new Date().getTime();
+      //   if (signatureDate && currentDate - signatureDate < 1000 * 60 * 10) { // 10 minutes
+      //     return signatureData.signature;
+      //   } else {
+      //     localStorage.removeItem("signature");
+      //   }
+      // }
       const provider = new ethers.BrowserProvider(window.ethereum as any);
       const signer = provider.getSigner();
       const message = `Welcome to Helios! Please sign this message to verify your wallet ownership.\n\nWallet: ${address}`;
       console.log("--signMessage--", message);
-      return (await signer).signMessage(message);
+      const signature = await (await signer).signMessage(message);
+      // localStorage.setItem("signature", JSON.stringify({ signature: signature, date: new Date().getTime() }));
+      return signature;
     } catch (error) {
       console.error("Signing error:", error);
       throw new Error("Failed to sign message");
@@ -186,10 +200,17 @@ const ConnectWallet = () => {
       return;
     }
 
+    if (error || authAttemptRef.current) {
+      return;
+    }
+
+    // console.log("handleSignAndAuthenticate", address);
+
     // Declare signature variable at the top of the function scope
     let signature: string | undefined;
 
     try {
+      authAttemptRef.current = true;
       setError(null);
       setIsLoading(true);
       setLoading(true, "Signing message and authenticating...");
@@ -197,19 +218,16 @@ const ConnectWallet = () => {
       // First check if we already have a valid JWT token
       const token = localStorage.getItem("jwt_token");
       if (token) {
-        // Try to get user data with existing token
         try {
           const userProfile = await api.getUserProfile(address);
           if (userProfile) {
             console.log("User already authenticated with valid token");
             setUser(userProfile);
-            // Instead of directly setting step 2, let initialize determine the correct step
             await initialize();
-            return; // Exit early, no need to sign again
+            return;
           }
         } catch (profileError) {
           console.log("Existing token invalid, proceeding with new signature");
-          // Token might be invalid or expired, continue with signing process
         }
       }
 
@@ -218,6 +236,9 @@ const ConnectWallet = () => {
       } catch (signError: any) {
         // Check for user rejection errors and display a friendly message
         console.error("Signature error:", signError);
+        if (signError.message?.includes("Request blocked due to spam filter")) {
+          throw new Error("Request blocked due to spam filter");
+        }
         if (
           signError.code === 4001 || // Standard MetaMask rejection code
           signError.message?.includes("rejected") ||
@@ -335,8 +356,14 @@ const ConnectWallet = () => {
           }
         }
 
+        if (loginError.response?.status === 404) {
+          setError("Api is not working please try again later");
+          return;
+        }
+
         // If all attempts fail, request an invite code
         console.log("Login failed, new user:", loginError);
+
         setPendingSignature(signature);
         setPendingWallet(address);
         setNeedsInviteCode(true);
@@ -557,14 +584,12 @@ const ConnectWallet = () => {
 
   const handleConnect = async () => {
     try {
-      setError(null);
       setIsLoading(true);
       setLoading(true, "Connecting wallet...");
 
       // Connect wallet first if not connected
       if (!isReallyConnected) {
         await openLoginModal();
-        // Wallet connection will trigger the useEffect which will handle signing
         setIsLoading(false);
         setLoading(false);
         return;
@@ -585,8 +610,13 @@ const ConnectWallet = () => {
       }
 
       // If already connected, proceed with signing
-      if (address) {
-        await handleSignAndAuthenticate();
+      if (address && !error && !authAttemptRef.current) {
+        try {
+          await handleSignAndAuthenticate();
+        } catch (error: any) {
+          console.error("Failed to connect wallet:", error);
+          setError(error.message || "Failed to connect wallet");
+        }
       } else {
         throw new Error("No wallet address found");
       }
@@ -807,56 +837,72 @@ const ConnectWallet = () => {
                   </motion.div>
                 ) : null}
 
-                <motion.button
-                  onClick={handleConnect}
-                  disabled={isLoading}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`web3-button py-4 px-8 text-xl
-                       ${isLoading ? "opacity-80 cursor-not-allowed" : ""}
-                       flex items-center justify-center gap-3`}
-                >
-                  {isLoading ? (
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  ) : isReallyConnected ? (
-                    <>
-                      {needsInviteCode ? (
-                        <>
-                          <span>{renderButtonText()}</span>
-                        </>
-                      ) : (
-                        <>
-                          <ArrowRightCircle className="h-5 w-5" />
-                          <span>Continue</span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Wallet className="h-5 w-5" />
-                      <span>Connect Wallet</span>
-                    </>
-                  )}
-                </motion.button>
+                {error ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl max-w-md shadow-sm mb-4"
+                  >
+                    <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-bold text-red-700 mb-1">
+                        Connection Error
+                      </h3>
+                      <p className="text-sm">{error}</p>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    onClick={handleConnect}
+                    disabled={isLoading}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`web3-button py-4 px-8 text-xl
+                         ${isLoading ? "opacity-80 cursor-not-allowed" : ""}
+                         flex items-center justify-center gap-3`}
+                  >
+                    {isLoading ? (
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    ) : isReallyConnected ? (
+                      <>
+                        {needsInviteCode ? (
+                          <>
+                            <span>{renderButtonText()}</span>
+                          </>
+                        ) : (
+                          <>
+                            <ArrowRightCircle className="h-5 w-5" />
+                            <span>Continue</span>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="h-5 w-5" />
+                        <span>Connect Wallet</span>
+                      </>
+                    )}
+                  </motion.button>
+                )}
 
                 {isReallyConnected && needsInviteCode && (
                   <button
@@ -879,22 +925,6 @@ const ConnectWallet = () => {
                     </svg>
                     Back
                   </button>
-                )}
-
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl max-w-md shadow-sm"
-                  >
-                    <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-bold text-red-700 mb-1">
-                        Connection Error
-                      </h3>
-                      <p className="text-sm">{error}</p>
-                    </div>
-                  </motion.div>
                 )}
 
                 {(!isConnected || !needsInviteCode) && (
