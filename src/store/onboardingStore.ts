@@ -56,26 +56,26 @@ export const useStore = create<OnboardingState>((set, get) => ({
           console.log("progress", progress);
           set({ onboardingProgress: progress });
 
-          if (
-            Array.isArray(progress.completedSteps) &&
-            progress.completedSteps?.length >= 3
-          ) {
-            set({ step: 7 }); // Go to dashboard
-          } else if (
-            Array.isArray(progress.completedSteps) &&
-            progress.completedSteps?.length > 0
-          ) {
-            const stepMapping: { [key: string]: number } = {
-              add_helios_network: 3,
-              claim_from_faucet: 4,
-              mint_early_bird_nft: 5,
-            };
-            const lastCompletedStep =
-              progress.completedSteps[progress.completedSteps.length - 1];
-            const nextStep = stepMapping[lastCompletedStep] + 1;
-            set({ step: nextStep });
+          if (Array.isArray(progress.completedSteps)) {
+            if (progress.completedSteps.length >= 3) {
+              set({ step: 7 }); // Go to dashboard
+            } else if (progress.completedSteps.length > 0) {
+              const stepMapping: { [key: string]: number } = {
+                add_helios_network: 3,
+                claim_from_faucet: 4,
+                mint_early_bird_nft: 5,
+              };
+              const lastCompletedStep =
+                progress.completedSteps[progress.completedSteps.length - 1];
+              const nextStep = stepMapping[lastCompletedStep] + 1;
+              set({ step: nextStep });
+            } else {
+              set({ step: 2 }); // Start onboarding
+            }
           } else {
-            set({ step: 2 }); // Start onboarding
+            throw new Error(
+              "Invalid onboarding progress data: completedSteps is not an array."
+            );
           }
         } catch (progressError: any) {
           console.error("Failed to get progress:", progressError);
