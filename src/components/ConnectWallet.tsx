@@ -10,8 +10,9 @@ import {
   ShieldCheck,
   ArrowRightCircle,
   AlertTriangle,
+  ServerCrash,
 } from "lucide-react";
-import { api } from "../services/api";
+import { api, NetworkError } from "../services/api";
 import { ethers } from "ethers";
 import { Video } from "@/components/video/video";
 import { useSearchParams } from "next/navigation";
@@ -184,179 +185,76 @@ const ConnectWallet = () => {
       return;
     }
 
-    // Declare signature variable at the top of the function scope
-    let signature: string | undefined;
+    let signature: string;
 
     try {
       setError(null);
       setIsLoading(true);
 
-      // First check if we already have a valid JWT token
-      const token = localStorage.getItem("jwt_token");
-      if (token) {
-        // Try to get user data with existing token
-        try {
-          const userProfile = await api.getUserProfile(address);
-          if (userProfile) {
-            console.log("User already authenticated with valid token");
-            setUser(userProfile);
-            // Instead of jumping to a fixed step, re-initialize to get the correct state
-            await useStore.getState().initialize();
-            return; // Exit early
-          }
-        } catch (profileError) {
-          console.log("Existing token invalid, proceeding with new signature");
-          // Token might be invalid or expired, continue with signing process
-        }
-      }
-
+      // 1. Sign the message
       try {
         signature = await signMessage(address);
       } catch (signError: any) {
-        // Check for user rejection errors and display a friendly message
-        console.error("Signature error:", signError);
         if (
-          signError.code === 4001 || // Standard MetaMask rejection code
+          signError.code === 4001 ||
           signError.message?.includes("rejected") ||
           signError.message?.includes("denied")
         ) {
-          throw new Error("You declined the signature request");
+          throw new Error("You declined the signature request.");
         }
-        throw signError; // Re-throw if it's not a user rejection
+        throw signError;
       }
 
-      // If we have a referral code from URL and the user is new, try to register with it
-      if (referralCodeFromUrl && signature) {
-        try {
-          console.log("Attempting registration with referral code from URL");
-          const registerResponse = await api.register(
-            address,
-            signature,
-            referralCodeFromUrl
-          );
-
-          const user = registerResponse.user;
-          if (user) {
-            console.log(
-              "Successfully registered with referral code:",
-              referralCodeFromUrl
-            );
-            setUser(user);
-            // Instead of jumping to a fixed step, re-initialize to get the correct state
-            await useStore.getState().initialize();
-            return;
-          }
-        } catch (registerError: any) {
-          console.log(
-            "Registration with referral code failed, continuing with normal flow:",
-            registerError
-          );
-          // Continue with normal flow below if registration with referral code fails
-        }
-      }
-
+      // 2. Try to log in
       try {
-        // Try login first for existing users
         const loginResponse = await api.login(address, signature);
-
-        // Check if user needs to provide an invite code - requiresInviteCode true indicates user exists but isn't confirmed
-        if (loginResponse.requiresInviteCode) {
-          console.log("User exists but needs invite code");
-          setPendingSignature(signature);
-          setPendingWallet(address);
-          setNeedsInviteCode(true);
-          // Don't continue to the next step since user needs to confirm with invite code
-          return;
-        }
-
-        console.log("Login successful:", loginResponse);
-
-        // Ensure we're using the user object correctly
-        const user = loginResponse.user;
-        if (!user) {
-          throw new Error("No user data received from login");
-        }
-
-        setUser(user);
-        setStep(2);
+        setUser(loginResponse.user);
+        return; 
       } catch (loginError: any) {
-        // Check if this is an unconfirmed account error
-        console.log("Login failed:", loginError);
-
-        // Check for confirmation requirement errors in various formats
-        if (
-          loginError.requiresInviteCode ||
-          (loginError.message &&
-            loginError.message.includes("not confirmed")) ||
-          loginError.response?.status === 403
-        ) {
-          console.log("User exists but needs invite code");
-
-          // Check if the error response includes the wallet address
-          const walletAddress = loginError.walletAddress || address;
-
-          setPendingSignature(signature);
-          setPendingWallet(walletAddress);
-          setNeedsInviteCode(true);
-          // Important: don't try to register a new user in this case
-          return;
+        if (loginError instanceof NetworkError) {
+          throw loginError; // Re-throw to be caught by the outer catch
         }
 
-        // If it's not a confirmation error but some other error (e.g., user not found),
-        // try to register with the invite code from URL if available
-        if (referralCodeFromUrl) {
+        // If login fails because user is not registered, try to register
+        if (loginError.message?.includes("not registered")) {
+          console.log("Login failed, attempting to register new user.");
           try {
-            const confirmResponse = await api.confirmAccount(
-              address,
-              signature,
-              referralCodeFromUrl
-            );
-
-            console.log(
-              "Account confirmed successfully with URL code:",
-              confirmResponse
-            );
-            const user = confirmResponse.user;
-            if (user) {
-              setUser(user);
-              setStep(2);
+            const registerResponse = await api.register(address, signature, inviteCode);
+            setUser(registerResponse.user);
+            return;
+          } catch (registerError: any) {
+            // Handle registration errors (e.g., invalid invite code)
+            if (registerError instanceof NetworkError) {
+              throw registerError; // Re-throw to be caught by the outer catch
+            }
+             if (registerError.message?.includes("Invalid invite code")) {
+              setNeedsInviteCode(true);
+              setError("This invite code is invalid. Please try another.");
               return;
             }
-          } catch (confirmError) {
-            console.error(
-              "Failed to confirm with referral code from URL:",
-              confirmError
-            );
+            throw new Error(`Registration failed: ${registerError.message}`);
           }
         }
+        
+        // Handle other login errors, like "account not confirmed"
+        if (loginError.message?.includes("not confirmed")) {
+          console.log("Account exists but needs confirmation with an invite code.");
+          setNeedsInviteCode(true);
+          setPendingWallet(address);
+          setPendingSignature(signature);
+          setError("Your account is not confirmed. Please enter a valid invite code to proceed.");
+          return;
+        }
 
-        // If all attempts fail, request an invite code
-        console.log("Login failed, new user:", loginError);
-        setPendingSignature(signature);
-        setPendingWallet(address);
-        setNeedsInviteCode(true);
+        // For other login errors, display them
+        throw loginError;
       }
     } catch (error: any) {
-      console.error("Failed to sign and authenticate:", error);
-
-      // Check if error is about requiring confirmation
-      if (
-        error.requiresInviteCode ||
-        error.message?.includes("not confirmed")
-      ) {
-        // Here signature might not be defined if the error happened during signing
-        if (address) {
-          // Try to get the wallet address from the error response
-          const walletAddress = error.walletAddress || address;
-
-          setPendingWallet(walletAddress);
-          if (typeof signature !== "undefined") {
-            setPendingSignature(signature);
-          }
-          setNeedsInviteCode(true);
-        }
+      console.error("Authentication process failed:", error);
+      if (error instanceof NetworkError) {
+        setError("Failed to connect to Helios servers. Please try again later.");
       } else {
-        setError(error.message || "Failed to authenticate");
+        setError(error.message || "An unknown error occurred during authentication.");
       }
     } finally {
       setIsLoading(false);
@@ -364,102 +262,46 @@ const ConnectWallet = () => {
   };
 
   const handleSignAndLogin = async (walletAddress: string) => {
+    let signature;
     try {
-      const signature = await signMessage(walletAddress);
-      console.log("handleSignAndLogin", signature);
+      setIsLoading(true);
+      setError(null);
+      setInviteError(null);
 
-      // Try login first
       try {
-        const loginResponse = await api.login(walletAddress, signature);
-        console.log("Login response:", loginResponse);
-
-        // Check if user needs to provide an invite code
-        if (loginResponse.requiresInviteCode) {
-          console.log("User exists but needs invite code");
-          setPendingSignature(signature);
-          setPendingWallet(walletAddress);
-          setNeedsInviteCode(true);
-          return;
+        signature = await signMessage(walletAddress);
+      } catch (signError: any) {
+        if (
+          signError.code === 4001 ||
+          signError.message?.includes("rejected") ||
+          signError.message?.includes("denied")
+        ) {
+          throw new Error("You declined the signature request.");
         }
-
-        // If login successful, use the user data
-        const user = loginResponse.user;
-        if (!user) {
-          throw new Error("No user data received from login");
-        }
-
-        setUser(user);
-        // Instead of jumping to a fixed step, re-initialize to get the correct state
-        await useStore.getState().initialize();
-        return;
-      } catch (loginError: any) {
-        // Check if user exists but needs invite code
-        if (loginError.requiresInviteCode) {
-          console.log("User exists but needs invite code");
-          setPendingSignature(signature);
-          setPendingWallet(walletAddress);
-          setNeedsInviteCode(true);
-          return;
-        }
-
-        // If it's another error, try registration
-        console.log("Login failed, trying registration:", loginError);
+        throw signError;
       }
 
-      // If login fails, try to register
       try {
-        // Try to register first
-        const registerResponse = await api.register(walletAddress, signature);
-        console.log(
-          "handleSignAndLogin registerResponse",
-          signature,
-          registerResponse
-        );
-
-        // Ensure we're using the user object correctly
-        const user = registerResponse.user;
-        if (!user) {
-          throw new Error("No user data received from registration");
-        }
-
-        setUser(user);
-        // Instead of jumping to a fixed step, re-initialize to get the correct state
-        await useStore.getState().initialize();
+        const response = await api.login(walletAddress, signature, inviteCode);
+        setUser(response.user);
+        // Let the layout wrapper handle the state change
         return;
-      } catch (registerError: any) {
-        // If registration fails with 400 (wallet already registered), try login
-        if (registerError.message === "Wallet already registered") {
-          console.log("Wallet Registered");
-          const loginResponse = await api.login(walletAddress, signature);
-          console.log("Wallet Registered", loginResponse);
-
-          // Check if user needs to provide an invite code
-          if (loginResponse.requiresInviteCode) {
-            console.log("User exists but needs invite code");
-            setPendingSignature(signature);
-            setPendingWallet(walletAddress);
-            setNeedsInviteCode(true);
-            return;
-          }
-
-          // Ensure we're using the user object correctly
-          const user = loginResponse.user;
-          if (!user) {
-            throw new Error("No user data received from login");
-          }
-
-          setUser(user);
-          // Instead of jumping to a fixed step, re-initialize to get the correct state
-          await useStore.getState().initialize();
-          return;
-        } else {
-          throw registerError;
+      } catch (error: any) {
+        if (error instanceof NetworkError) {
+          throw error;
         }
+        // Fallback for other login errors
+        throw new Error(`Login failed: ${error.message}`);
       }
     } catch (error: any) {
-      throw new Error(
-        error.message || "Failed to sign message or authenticate"
-      );
+       console.error("Login with invite code failed:", error);
+      if (error instanceof NetworkError) {
+        setInviteError("Failed to connect to Helios servers. Please try again later.");
+      } else {
+        setInviteError(error.message || "An unknown error occurred during login.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -880,12 +722,13 @@ const ConnectWallet = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl max-w-md shadow-sm"
                   >
-                    <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-bold text-red-700 mb-1">
-                        Connection Error
-                      </h3>
-                      <p className="text-sm">{error}</p>
+                    <div className="flex items-center justify-center space-x-2">
+                      {error.includes("Failed to connect") ? (
+                        <ServerCrash className="h-5 w-5 text-yellow-400" />
+                      ) : (
+                        <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                      )}
+                      <span className="text-sm font-medium">{error}</span>
                     </div>
                   </motion.div>
                 )}
