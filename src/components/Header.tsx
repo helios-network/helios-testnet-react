@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Home, Trophy, Droplet, Menu, X, Shield } from "lucide-react";
+import { Home, Trophy, Droplet, Menu, X, Shield, CalendarDays } from "lucide-react";
 import { ViewContext } from "./LayoutClientWrapper";
 import InviteCodeDisplay from "./InviteCodeDisplay";
 import { useRouter } from "next/navigation";
@@ -53,6 +53,12 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       label: "Home",
       icon: <Home className="w-4 h-4" />,
       path: "/",
+    },
+    {
+      key: "season",
+      label: "Season",
+      icon: <CalendarDays className="w-4 h-4" />,
+      path: "/season",
     },
     {
       key: "referrals",
@@ -163,7 +169,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             >
               <img
                 src="/images/Helios-Testnet-Logo.svg"
-                alt="Helios Testnet"
+                alt="Helios Beta Mainnet"
                 className="h-8 sm:h-10"
               />
             </button>

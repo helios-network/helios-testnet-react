@@ -4,10 +4,14 @@ import { useAccount } from "wagmi";
 import { ViewContext } from "./LayoutClientWrapper";
 import { api } from "../services/api";
 import { Share2, Users, Copy, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { useStore } from "../store/onboardingStore";
 
 const InviteCodeDisplay = () => {
   const { address } = useAccount();
   const { setCurrentView } = React.useContext(ViewContext);
+  const step = useStore((state) => state.step);
+  const requiresBotVerification = useStore((state) => state.requiresBotVerification);
+  const isAuthenticated = step > 0 && !requiresBotVerification;
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralCount, setReferralCount] = useState<number | null>(null);
   const [referralXP, setReferralXP] = useState<number | null>(null);
@@ -49,9 +53,13 @@ const InviteCodeDisplay = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      // If the wallet is not connected yet, we'll just wait. The component will show its
-      // default loading state, and this effect will re-run when the address becomes available.
-      if (!address) {
+      // Wait until wallet is connected AND authenticated (JWT available) to avoid 401s
+      if (!address || !isAuthenticated) {
+        setLoading(true);
+        setError(null);
+        setReferralCode(null);
+        setReferralCount(null);
+        setReferralXP(null);
         return;
       }
 
@@ -86,7 +94,7 @@ const InviteCodeDisplay = () => {
     };
 
     fetchUserData();
-  }, [address]);
+  }, [address, isAuthenticated]);
 
   function formatReferralCount(count: number): string {
     if (count >= 1_000_000)

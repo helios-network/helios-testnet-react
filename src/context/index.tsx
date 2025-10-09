@@ -15,8 +15,8 @@ if (!projectId) {
 
 // Set up metadata
 const metadata = {
-  name: "Helios Portal",
-  description: "Helios Portal",
+  name: "Helios Beta Mainnet",
+  description: "Helios Beta Mainnet - Bridge assets, stake, and earn HLS rewards",
   url: "https://testnet.helioschain.network/", // origin must match your domain & subdomain
   icons: ["https://testnet.helioschain.network/images/logo.png"],
 };

@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { WagmiProvider, useAccount } from "wagmi";
 import { useStore } from "../store/onboardingStore"; // adjust path
 import ConnectWallet from "./ConnectWallet"; // adjust path
 import OnboardingFlow from "./OnboardingFlow"; // adjust path
 import Dashboard from "./Dashboard"; // adjust path
+import GamifiedDashboard from "./GamifiedDashboard";
 import { Toaster } from "sonner";
 import Header from "./Header";
 import NextTopLoader from "nextjs-toploader";
@@ -15,6 +16,8 @@ import ReferralLeaderboard from "../components/ReferralLeaderboard";
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import LoadingIndicator from './LoadingIndicator';
+import { api } from "../services/api";
+import { ethers } from "ethers";
 
 // Dynamically import the Faucet content component
 const FaucetContent = dynamic(() => import('../app/faucet/FaucetContent'), { ssr: false });
@@ -27,6 +30,7 @@ export const ViewContext = React.createContext({
 // Map URL paths to view names
 const pathToViewMap: Record<string, string> = {
   '/': 'dashboard',
+  '/season': 'season',
   '/referrals': 'referrals',
   '/faucet': 'faucet',
   '/admin': 'admin'
@@ -42,6 +46,8 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<string>("dashboard");
   const pathname = usePathname();
   const [isInitializing, setIsInitializing] = useState(true);
+  const { address, isConnected } = useAccount();
+  const autoAuthRef = useRef(false);
 
   // Sync currentView with URL path
   useEffect(() => {
@@ -67,14 +73,61 @@ function AppContent() {
     init();
   }, [initialize]); // Remove user from dependency array to prevent re-initialization loops
 
+  // Dashboard is publicly viewable, other views require authentication
+  const isPublicView = currentView === "dashboard";
+  const isAuthenticated = step > 0 && !requiresBotVerification;
+
+  // Auto-sign and authenticate on Home when wallet connects and no JWT exists
+  useEffect(() => {
+    const maybeAutoAuthenticate = async () => {
+      if (isInitializing) return;
+      if (!isPublicView) return; // only on Home
+      if (!isConnected || !address) return;
+      if (requiresBotVerification) return; // gate handled by ConnectWallet
+      if (autoAuthRef.current) return; // prevent loops
+
+      const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
+      if (token) return; // already authenticated
+
+      autoAuthRef.current = true;
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum as any);
+        const signer = await provider.getSigner();
+        const message = `Welcome to Helios! Please sign this message to verify your wallet ownership.\n\nWallet: ${address}`;
+        const signature = await signer.signMessage(message);
+
+        const loginResponse = await api.login(address, signature);
+        if (loginResponse?.requiresBotVerification) {
+          useStore.getState().setRequiresBotVerification(true);
+          autoAuthRef.current = false; // allow retry after verification flow
+          return;
+        }
+
+        useStore.getState().setUser(loginResponse.user);
+        await useStore.getState().initialize(loginResponse.user);
+      } catch (err) {
+        console.error('Home auto-auth failed:', err);
+        // let the user click Continue manually; don't loop
+        autoAuthRef.current = false;
+      }
+    };
+
+    void maybeAutoAuthenticate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPublicView, isConnected, address, requiresBotVerification]);
+
   // Show loading indicator while initializing
   if (isInitializing) {
-    return <LoadingIndicator isLoading={true} text="Loading Helios Testnet..." />;
+    return <LoadingIndicator isLoading={true} text="Loading Helios Beta Mainnet..." />;
   }
 
-  // If bot verification is required OR if not authenticated yet, show connect wallet
-  // The ConnectWallet component itself will handle showing the verification UI
-  if (requiresBotVerification || step === 0) {
+  // If bot verification is required, show connect wallet
+  if (requiresBotVerification) {
+    return <ConnectWallet />;
+  }
+
+  // If not authenticated and not on dashboard, show connect wallet
+  if (step === 0 && currentView !== "dashboard") {
     return <ConnectWallet />;
   }
 
@@ -83,15 +136,20 @@ function AppContent() {
     return <OnboardingFlow />;
   }
 
-  // User is authenticated and past onboarding
+  // If trying to access protected views without authentication, show connect wallet
+  if (!isPublicView && !isAuthenticated) {
+    return <ConnectWallet />;
+  }
+
   // Provide the ViewContext and render the appropriate component based on currentView
   return (
     <ViewContext.Provider value={{ currentView, setCurrentView }}>
       <Header currentView={currentView} />
       {currentView === "dashboard" && <Dashboard />}
-      {currentView === "referrals" && <ReferralLeaderboard />}
-      {currentView === "faucet" && <FaucetContent />}
-      {currentView === "admin" && null} {/* Admin content will be rendered via children */}
+      {currentView === "season" && isAuthenticated && <GamifiedDashboard />}
+      {currentView === "referrals" && isAuthenticated && <ReferralLeaderboard />}
+      {currentView === "faucet" && isAuthenticated && <FaucetContent />}
+      {currentView === "admin" && isAuthenticated && null} {/* Admin content will be rendered via children */}
     </ViewContext.Provider>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useConnect, useAccount, useDisconnect } from "wagmi";
 import { useStore } from "../store/onboardingStore";
@@ -132,19 +132,35 @@ const ConnectWallet = () => {
     setInviteError(null);
   };
 
-  // Explicitly check token on mount
+  // Auto-continue (signature) once wallet is connected and no JWT exists
+  // Guard with a ref to avoid infinite retries
+  const autoSignTriggeredRef = useRef(false);
   useEffect(() => {
-    // Double-check to ensure we're not showing the connect UI when no token exists
-    if (isReallyConnected && pendingSignature !== "pending") {
+    const maybeAutoSign = async () => {
+      if (!isReallyConnected || !address) return;
+      if (isLoading) return;
+      if (pendingSignature === "pending") return;
+      // Don't auto-sign if other gates are active
+      if (needsInviteCode || requiresBotVerification) return;
+
       const token = localStorage.getItem("jwt_token");
-      if (!token) {
-        console.log(
-          "No token found but wallet connected, resetting to initial state"
-        );
-        handleDisconnect();
+      if (token) return;
+
+      if (autoSignTriggeredRef.current) return;
+      autoSignTriggeredRef.current = true;
+
+      try {
+        await handleSignAndAuthenticate();
+      } catch (e) {
+        // Do not loop; allow user to press Continue manually
+        console.error("Auto-continue failed:", e);
       }
-    }
-  }, []);
+    };
+
+    void maybeAutoSign();
+    // We intentionally exclude isLoading changes to avoid rapid re-invocations
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReallyConnected, address, needsInviteCode, requiresBotVerification, pendingSignature]);
 
   // // Automatically trigger signing when wallet is connected
   // useEffect(() => {
@@ -303,7 +319,7 @@ const ConnectWallet = () => {
       setError(null);
 
       // The message for this signature must match what the backend's /verify-bot expects
-      const message = `I am verifying my account for Helios Testnet: ${address}`;
+      const message = `I am verifying my account for Helios Beta Mainnet: ${address}`;
       let signature: string;
       try {
         signature = await (
@@ -606,21 +622,21 @@ const ConnectWallet = () => {
                 <div className="mb-6">
                   <img
                     src="/images/Helios-Testnet-Logo.svg"
-                    alt="Helios Testnet"
+                    alt="Helios Beta Mainnet"
                     className="h-24 mx-auto mb-4 mt-8 md:mt-0"
                   />
                 </div>
 
                 <h1 className="text-4xl xl:text-7xl lg:text-6xl md:text-5xl sm:text-4xl text-[#002DCB] mb-6 leading-tight">
-                  Welcome to the
+                  Welcome to
                   <span className="block font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#002DCB] to-[#4F6BFF]">
-                    Helios Mission Hub
+                    Helios Beta Mainnet
                   </span>
                 </h1>
 
                 <p className="text-lg text-[#5C6584] max-w-2xl mx-auto mb-10">
-                  Start testing Helios, a scalable blockchain network built for
-                  secure cross-chain interaction.
+                  Bridge your assets, stake, and earn HLS rewards on the Helios ecosystem.
+                 
                 </p>
               </motion.div>
 
@@ -959,12 +975,11 @@ const ConnectWallet = () => {
                         <Sparkles className="h-7 w-7 text-white" />
                       </div>
                       <h3 className="text-[#002DCB] font-bold text-xl mb-3">
-                        Explore Helios
+                        Bridge Assets
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Use the Helios Testnet to run real transactions, test
-                        cross-chain features, and interact directly with the
-                        network.
+                        Bridge assets from Ethereum, BNB Chain, Polygon, and other
+                        supported chains to start earning HLS rewards.
                       </p>
                     </div>
 
@@ -986,11 +1001,11 @@ const ConnectWallet = () => {
                         </svg>
                       </div>
                       <h3 className="text-[#002DCB] font-bold text-xl mb-3">
-                        Earn Rewards
+                        Stake & Earn
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Earn XP by completing on-chain tasks, testing features,
-                        and helping improve the network.
+                        Stake your assets to earn HLS rewards and participate
+                        in the Helios ecosystem governance.
                       </p>
                     </div>
 
@@ -1012,11 +1027,11 @@ const ConnectWallet = () => {
                         </svg>
                       </div>
                       <h3 className="text-[#002DCB] font-bold text-xl mb-3">
-                        Contribute
+                        Participate
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Share feedback, report issues, and play a role in
-                        shaping Helios ecosystem as it grows.
+                        Join the Helios community, participate in governance,
+                        and help shape the future of cross-chain DeFi.
                       </p>
                     </div>
                   </div>
