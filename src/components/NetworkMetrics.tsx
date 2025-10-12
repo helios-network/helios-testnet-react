@@ -34,37 +34,18 @@ const MetricCard: React.FC<MetricCardProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20"
+      className="bg-white/80 backdrop-blur-sm rounded-xl px-7 pt-5 pb-4"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#002DCB] to-[#4A6CF7] rounded-xl flex items-center justify-center">
-            {icon}
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-[#5C6584]">{title}</h3>
-            {subtitle && (
-              <p className="text-xs text-[#828DB3]">{subtitle}</p>
-            )}
-          </div>
-        </div>
-        {change !== undefined && (
-          <div className={`flex items-center space-x-1 ${
-            isPositive ? 'text-green-500' : isNegative ? 'text-red-500' : 'text-gray-500'
-          }`}>
-            {isPositive ? (
-              <ArrowUpRight className="w-4 h-4" />
-            ) : isNegative ? (
-              <ArrowDownRight className="w-4 h-4" />
-            ) : null}
-            <span className="text-sm font-semibold">
-              {formatPercentage(change)}
-            </span>
-          </div>
+      <div className="flex items-center">
+        {icon}
+      </div>
+      <div className="py-2">
+        <h3 className="text-sm font-medium">{title}</h3>
+        {subtitle && (
+          <p className="text-xs text-[#828DB3]">{subtitle}</p>
         )}
       </div>
-      
-      <div className="space-y-1">
+      <div className="flex items-end space-x-3">
         {isLoading ? (
           <div className="h-8 bg-gray-200 rounded animate-pulse" />
         ) : (
@@ -76,6 +57,20 @@ const MetricCard: React.FC<MetricCardProps> = ({
           >
             {value}
           </motion.h2>
+        )}
+        {change !== undefined && (
+          <div className={`flex items-center space-x-1 pb-0.5 ${
+            isPositive ? 'text-green-500' : isNegative ? 'text-red-500' : 'text-gray-500'
+          }`}>
+            {isPositive ? (
+              <ArrowUpRight className="w-4 h-4" />
+            ) : isNegative ? (
+              <ArrowDownRight className="w-4 h-4" />
+            ) : null}
+            <span className="text-sm font-semibold">
+              {formatPercentage(change)}
+            </span>
+          </div>
         )}
       </div>
     </motion.div>
@@ -111,14 +106,14 @@ const NetworkMetrics: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mb-4">
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total Value Locked"
           value={metrics ? formatCurrency(metrics.totalTVL) : "Loading..."}
           change={metrics?.tvlGrowth24h}
-          icon={<TrendingUp className="w-6 h-6 text-white" />}
+          icon={<TrendingUp className="w-6 h-6 text-[#002DCB]" />}
           subtitle="Across all chains"
           isLoading={isLoading}
         />
@@ -126,7 +121,7 @@ const NetworkMetrics: React.FC = () => {
         <MetricCard
           title="Highest APY"
           value={metrics ? `${metrics.highestAPY}%` : "Loading..."}
-          icon={<Zap className="w-6 h-6 text-white" />}
+          icon={<Zap className="w-6 h-6 text-[#002DCB]" />}
           subtitle="Future rewards"
           isLoading={isLoading}
         />
@@ -134,7 +129,7 @@ const NetworkMetrics: React.FC = () => {
         <MetricCard
           title="Active Markets"
           value={metrics ? metrics.activeMarkets.toString() : "Loading..."}
-          icon={<Activity className="w-6 h-6 text-white" />}
+          icon={<Activity className="w-6 h-6 text-[#002DCB]" />}
           subtitle="Supported chains"
           isLoading={isLoading}
         />
@@ -143,7 +138,7 @@ const NetworkMetrics: React.FC = () => {
           title="Total Users"
           value={metrics ? formatNumber(metrics.totalUsers) : "Loading..."}
           change={metrics?.tvlGrowth7d}
-          icon={<Users className="w-6 h-6 text-white" />}
+          icon={<Users className="w-6 h-6 text-[#002DCB]" />}
           subtitle="Community members"
           isLoading={isLoading}
         />
@@ -155,12 +150,12 @@ const NetworkMetrics: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-2xl p-6 text-white"
+          className="bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl px-7 py-5 text-white"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-xl font-bold mb-2">Network Growth</h3>
-              <p className="text-blue-100">
+              <h3 className="text-md font-medium">Network Growth</h3>
+              <p className="text-xs text-blue-100">
                 TVL increased by {formatPercentage(metrics.tvlGrowth24h)} in the last 24 hours
               </p>
             </div>
@@ -168,7 +163,7 @@ const NetworkMetrics: React.FC = () => {
               <div className="text-2xl font-bold">
                 {formatPercentage(metrics.tvlGrowth7d)}
               </div>
-              <div className="text-sm text-blue-100">7-day growth</div>
+              <div className="text-xs text-blue-100">7-day growth</div>
             </div>
           </div>
         </motion.div>

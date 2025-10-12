@@ -157,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
     user && (user.discordUsername || (user.discord && user.discord.username));
 
   return (
-    <header className="border-b border-[#D7E0FF] bg-white/90 py-3 px-4 sticky top-0 z-50">
+    <header className="bg-blue-50/90 py-5 px-4 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-row items-center justify-between">
           {/* Logo */}
@@ -168,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               aria-label="Go to home page"
             >
               <img
-                src="/images/Helios-Testnet-Logo.svg"
+                src="/images/helios_beta_mainnet.svg"
                 alt="Helios Beta Mainnet"
                 className="h-8 sm:h-10"
               />
@@ -176,15 +176,15 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-2 mx-4 flex-1 justify-start">
+          <nav className="hidden lg:flex items-center space-x-2 mx-8 flex-1 justify-start">
             {navItems.map((item) => (
               <button
                 key={item.key}
                 onClick={() => handleNavClick(item.key, item.path)}
-                className={`flex items-center space-x-1 px-3 py-1.5 rounded-full transition-colors ${
+                className={`flex items-center space-x-1 px-3 py-1.5 rounded-xs transition-colors ${
                   currentView === item.key
-                    ? "bg-[#002DCB] text-white"
-                    : "hover:bg-[#E2EBFF] text-[#060F32]"
+                    ? "bg-blue-300 text-white"
+                    : "hover:bg-blue-100"
                 }`}
               >
                 {item.icon}
@@ -211,7 +211,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               {!isUserLoading && !hasDiscordLinked && (
                 <button
                   onClick={handleLinkDiscord}
-                  className="bg-[#5865F2] discord-link-btn text-white rounded-full px-3 py-1.5 flex items-center hover:bg-[#4752c4] transition-colors shadow-sm text-base font-medium"
+                  className="bg-[#5865F2] discord-link-btn text-white rounded-xs px-3 py-1.5 flex items-center hover:bg-[#4752c4] transition-colors shadow-sm text-base font-medium"
                 >
                   <DiscordIcon />
                   <span className="ml-1 hide-text">Link Discord</span>
@@ -262,7 +262,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               {!isUserLoading && !hasDiscordLinked && (
                 <button
                   onClick={handleLinkDiscord}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-full transition-colors bg-[#5865F2] text-white  hover:bg-[#4752c4]"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-xs transition-colors bg-[#5865F2] text-white  hover:bg-[#4752c4]"
                 >
                   <DiscordIcon />
                   <span className="text-base font-medium">Link Discord</span>
