@@ -568,9 +568,9 @@ class ApiClient {
     }
   }
 
-  async getUserDailyMission(): Promise<DailyMissionResponse> {
+  async getUserDailyMission(season?: string): Promise<DailyMissionResponse> {
     try {
-      const response = await fetch(`${API_URL}/users/daily-missions`, {
+      const response = await fetch(`${API_URL}/users/daily-missions?season=${season}`, {
         headers: this.getHeaders(),
       });
 
@@ -590,11 +590,12 @@ class ApiClient {
   getXPHistoryPage = async (
     page: number = 1,
     limit: number = 50,
-    timeframe: string = "alltime"
+    timeframe: string = "alltime",
+    seasonId?: string
   ): Promise<XPHistoryResponse | null> => {
     try {
       const res = await fetch(
-        `${API_URL}/users/xp/history?timeframe=${timeframe}&page=${page}&limit=${limit}`,
+        `${API_URL}/users/xp/history?timeframe=${timeframe}&page=${page}&limit=${limit}&seasonId=${seasonId}`,
         {
           headers: this.getHeaders(),
         }
@@ -619,9 +620,9 @@ class ApiClient {
     }
   };
 
-  async getLeaderboard(): Promise<LeaderboardResponse> {
-    try {
-      const response = await fetch(`${API_URL}/leaderboard/global`, {
+  async getLeaderboard(season?: string): Promise<LeaderboardResponse> {
+    try {      
+      const response = await fetch(`${API_URL}/leaderboard/global?season=${season}`, {
         headers: this.getHeaders(),
       });
 
@@ -638,9 +639,9 @@ class ApiClient {
     }
   }
 
-  async getUserRank(): Promise<UserRankResponse> {
+  async getUserRank(season?: string): Promise<UserRankResponse> {
     try {
-      const response = await fetch(`${API_URL}/leaderboard/user-rank`, {
+      const response = await fetch(`${API_URL}/leaderboard/user-rank?season=${season}`, {
         headers: this.getHeaders(),
       });
 
@@ -657,9 +658,9 @@ class ApiClient {
     }
   }
 
-  async getUserXPLevel(): Promise<XPLevelResponse> {
+  async getUserXPLevel(season?: string): Promise<XPLevelResponse> {
     try {
-      const response = await fetch(`${API_URL}/users/xp/level`, {
+      const response = await fetch(`${API_URL}/users/xp/level?season=${season}`, {
         headers: this.getHeaders(),
       });
 
@@ -672,6 +673,26 @@ class ApiClient {
     } catch (error: any) {
       if (error.name === 'AbortError' || error instanceof TypeError) {
         throw new NetworkError("A network error occurred while fetching user XP and level.");
+      }
+      throw error;
+    }
+  }
+
+  async getSeasons(): Promise<{ success: boolean; seasons: any[] }> {
+    try {
+      const response = await fetch(`${API_URL}/users/seasons`, {
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData;
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError("A network error occurred while fetching seasons.");
       }
       throw error;
     }

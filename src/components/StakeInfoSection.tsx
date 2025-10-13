@@ -1,13 +1,19 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { TrendingUp } from "lucide-react";
+import { useSeason } from "../contexts/SeasonContext";
 
 const StakeInfoSection: React.FC = () => {
+  const { currentSeason } = useSeason();
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-2xl p-8 text-white"
+      className="rounded-2xl p-8 text-white"
+      style={{
+        background: `linear-gradient(135deg, ${currentSeason.theme.primary}, ${currentSeason.theme.secondary})`
+      }}
     >
       <div className="flex items-start space-x-4">
         <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -21,19 +27,31 @@ const StakeInfoSection: React.FC = () => {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: currentSeason.theme.accent }}
+              ></div>
               <span>Real asset staking with actual rewards</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: currentSeason.theme.accent }}
+              ></div>
               <span>Multi-chain asset support</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: currentSeason.theme.accent }}
+              ></div>
               <span>Future APY up to 22%</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: currentSeason.theme.accent }}
+              ></div>
               <span>Airdrop eligibility for early participants</span>
             </div>
           </div>

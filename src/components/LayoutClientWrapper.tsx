@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation';
 import LoadingIndicator from './LoadingIndicator';
 import { api } from "../services/api";
 import { ethers } from "ethers";
+import { SeasonProvider } from "../contexts/SeasonContext";
 
 // Dynamically import the Faucet content component
 const FaucetContent = dynamic(() => import('../app/faucet/FaucetContent'), { ssr: false });
@@ -143,14 +144,16 @@ function AppContent() {
 
   // Provide the ViewContext and render the appropriate component based on currentView
   return (
-    <ViewContext.Provider value={{ currentView, setCurrentView }}>
-      <Header currentView={currentView} />
-      {currentView === "dashboard" && <Dashboard />}
-      {currentView === "season" && isAuthenticated && <GamifiedDashboard />}
-      {currentView === "referrals" && isAuthenticated && <ReferralLeaderboard />}
-      {currentView === "faucet" && isAuthenticated && <FaucetContent />}
-      {currentView === "admin" && isAuthenticated && null} {/* Admin content will be rendered via children */}
-    </ViewContext.Provider>
+    <SeasonProvider>
+      <ViewContext.Provider value={{ currentView, setCurrentView }}>
+        <Header currentView={currentView} />
+        {currentView === "dashboard" && <Dashboard />}
+        {currentView === "season" && isAuthenticated && <GamifiedDashboard />}
+        {currentView === "referrals" && isAuthenticated && <ReferralLeaderboard />}
+        {currentView === "faucet" && isAuthenticated && <FaucetContent />}
+        {currentView === "admin" && isAuthenticated && null} {/* Admin content will be rendered via children */}
+      </ViewContext.Provider>
+    </SeasonProvider>
   );
 }
 
