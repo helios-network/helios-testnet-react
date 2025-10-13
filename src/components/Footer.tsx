@@ -2,15 +2,15 @@ import React from "react";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-white border-t border-[#D7E0FF] py-5 px-6">
+    <footer className="bg-blue-50/90 py-5 pt-6 pb-7">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-end">
           <div className="flex items-center mb-4 sm:mb-0">
-            <img src="/images/Helios-Testnet-Logo.svg" alt="Helios Testnet" className="h-8" />
+            <img src="/images/helios_beta_mainnet.svg" alt="Helios Testnet" className="h-8" />
           </div>
           
           <div className="text-center mb-4 sm:mb-0 sm:mx-auto">
-            <span className="text-sm text-[#828DB3]">Helios Blockchain © 2025 - All rights reserved.</span>
+            <span className="text-sm text-[#5C6584]">Helios Blockchain © 2025 - All rights reserved.</span>
           </div>
           
           <div className="flex space-x-6">

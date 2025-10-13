@@ -27,22 +27,22 @@ const Dashboard = () => {
   // Public view for non-authenticated users
   if (!isAuthenticated) {
     return (
-      <div className="bg-[#E6EBFD] min-h-screen flex flex-col">
-        <div className="flex-grow py-6 px-4">
+      <div className="bg-blue-50/90 min-h-screen flex flex-col">
+        <div className="flex-grow py-4 px-4">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Network Metrics */}
             <NetworkMetrics />
 
           {/* Top CTA - Immediately visible */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20 flex flex-col sm:flex-row items-center justify-between">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5 mb-4 flex flex-col sm:flex-row items-center justify-between">
             <div className="text-center sm:text-left mb-3 sm:mb-0">
-              <div className="text-[#060F32] font-bold text-lg">Bring Assets to Helios</div>
-              <div className="text-[#5C6584] text-sm">Bridge your assets from external chains – they count as staked and start earning HLS</div>
+              <div className="text-md font-medium">Bring Assets to Helios</div>
+              <div className="text-[#5C6584] text-xs">Bridge your assets from external chains – they count as staked and start earning HLS</div>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowChainSelector(true)}
-                className="bg-[#002DCB] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-[#0045FF] transition-colors"
+                className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
               >
                 Bridge & Stake
               </button>
@@ -50,7 +50,7 @@ const Dashboard = () => {
           </div>
 
             {/* TVL + Assets (compact side-by-side on large screens) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 mb-4 gap-4">
               <div className="lg:col-span-5">
                 <TVLChart />
               </div>
@@ -69,25 +69,27 @@ const Dashboard = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-2xl p-6 text-center text-white"
+              className="flex bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl px-7 py-6 text-white items-center justify-between"
             >
-              <h2 className="text-2xl font-bold mb-3">Ready to Start Earning?</h2>
-              <p className="text-blue-100 mb-4 max-w-2xl mx-auto text-sm">
-                Connect your wallet to start bridging assets and earning HLS rewards on the Helios Beta Mainnet.
-              </p>
+              <div className="mr-4">
+                <h2 className="text-md font-medium">Ready to Start Earning?</h2>
+                <p className="text-blue-100 max-w-2xl mx-auto text-xs">
+                  Connect your wallet to start bridging assets and earning HLS rewards on the Helios Beta Mainnet.
+                </p>
+              </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button 
                   onClick={() => setShowChainSelector(true)}
-                  className="bg-white text-[#002DCB] px-6 py-3 rounded-full text-base font-semibold hover:bg-gray-100 transition-colors"
+                  className="bg-white text-[#002DCB] border-2 border-transparent px-3 py-2 h-min rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
                 >
                   Bridge Assets Now
                 </button>
-        <button
+                <button
                   onClick={() => setShowStakingFlow(true)}
-                  className="bg-white/20 text-white border-2 border-white px-6 py-3 rounded-full text-base font-semibold hover:bg-white/30 transition-colors"
+                  className="bg-white/20 text-white border-2 border-white px-4 px-3 py-2 h-min rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors"
                 >
                   Start Staking
-        </button>
+                </button>
               </div>
             </motion.div>
           </div>
@@ -165,15 +167,15 @@ const Dashboard = () => {
           <NetworkMetrics />
 
           {/* Top CTA - Immediately visible */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20 flex flex-col sm:flex-row items-center justify-between">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between">
             <div className="text-center sm:text-left mb-3 sm:mb-0">
-              <div className="text-[#060F32] font-bold text-lg">Bring Assets to Helios</div>
-              <div className="text-[#5C6584] text-sm">Bridge your assets from external chains – they count as staked and start earning HLS</div>
+              <div className="text-[#060F32] font-medium text-md">Bring Assets to Helios</div>
+              <div className="text-[#828DB3] text-xs">Bridge your assets from external chains – they count as staked and start earning HLS</div>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowChainSelector(true)}
-                className="bg-[#002DCB] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-[#0045FF] transition-colors"
+                className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
               >
                 Bridge & Stake
               </button>
@@ -181,7 +183,7 @@ const Dashboard = () => {
           </div>
 
           {/* TVL + Assets (compact side-by-side on large screens) - move above personalized */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div className="lg:col-span-5">
               <TVLChart />
                     </div>

@@ -30,7 +30,7 @@ const TVLChart: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/20">
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5">
         <div className="h-64 bg-gray-200 rounded animate-pulse" />
       </div>
     );
@@ -68,15 +68,15 @@ const TVLChart: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-white/20"
+      className="bg-white/80 backdrop-blur-sm rounded-xl px-7 pt-5 pb-6"
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-start justify-between mb-2">
         <div>
-          <h3 className="text-xl font-bold text-[#060F32]">TVL Growth</h3>
-          <p className="text-[#5C6584] mt-1 text-sm">Total Value Locked over time</p>
+          <h3 className="text-md font-medium">TVL Growth</h3>
+          <p className="text-[#5C6584] text-xs">Total Value Locked over time</p>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-[#002DCB]">
+          <div className="text-3xl font-bold text-[#060F32]">
             {formatCurrency(lastValue)}
           </div>
           <div className={`text-sm font-medium ${
@@ -223,24 +223,24 @@ const TVLChart: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-[#D7E0FF]">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-[#002DCB]">
+      <div className="grid grid-cols-3 gap-6 pt-6">
+        <div className="pr-6 border-r border-[#D7E0FF]">
+          <div className="text-xs text-[#5C6584]">Starting TVL</div>
+          <div className="text-2xl font-bold">
             {formatCurrency(data[0]?.tvl || 0)}
           </div>
-          <div className="text-sm text-[#5C6584]">Starting TVL</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-[#002DCB]">
+        <div className="pr-6 border-r border-[#D7E0FF]">
+          <div className="text-xs text-[#5C6584]">Current TVL</div>
+          <div className="text-2xl font-bold">
             {formatCurrency(lastValue)}
           </div>
-          <div className="text-sm text-[#5C6584]">Current TVL</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-[#002DCB]">
+        <div className="">
+          <div className="text-xs text-[#5C6584]">Total Growth</div>
+          <div className="text-2xl font-bold">
             {formatCurrency(lastValue - firstValue)}
           </div>
-          <div className="text-sm text-[#5C6584]">Total Growth</div>
         </div>
       </div>
     </motion.div>
