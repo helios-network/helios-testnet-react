@@ -84,6 +84,21 @@ export interface LeaderboardResponse {
   };
 }
 
+export interface TVLLeaderboardResponse {
+  success: boolean;
+  leaderboard: Array<{
+    _id: string;
+    wallet: string;
+    tvl: number;
+    discordUsername: string;
+  }>;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalUsers: number;
+  };
+}
+
 export interface UserRankResponse {
   success: boolean;
   globalRank: number;
@@ -634,6 +649,57 @@ class ApiClient {
     } catch (error: any) {
       if (error.name === 'AbortError' || error instanceof TypeError) {
         throw new NetworkError("A network error occurred while fetching the leaderboard.");
+      }
+      throw error;
+    }
+  }
+
+  async getLeaderboardPage(
+    page: number = 1,
+    limit: number = 50,
+    season?: string
+  ): Promise<LeaderboardResponse> {
+    try {
+      const response = await fetch(
+        `${API_URL}/leaderboard/global?season=${season}&page=${page}&limit=${limit}`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch leaderboard page");
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError("A network error occurred while fetching the leaderboard page.");
+      }
+      throw error;
+    }
+  }
+
+  async getTVLLeaderboardPage(
+    page: number = 1,
+    limit: number = 50
+  ): Promise<TVLLeaderboardResponse> {
+    try {
+      const response = await fetch(
+        `${API_URL}/leaderboard/tvl?page=${page}&limit=${limit}`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch TVL leaderboard page");
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError("A network error occurred while fetching the TVL leaderboard page.");
       }
       throw error;
     }

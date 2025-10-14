@@ -67,6 +67,12 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       path: "/referrals",
     },
     {
+      key: "leaderboard",
+      label: "Leaderboard",
+      icon: <Trophy className="w-4 h-4" />,
+      path: "/leaderboard",
+    },
+    {
       key: "faucet",
       label: "Faucet",
       icon: <Droplet className="w-4 h-4" />,

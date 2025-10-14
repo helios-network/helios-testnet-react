@@ -13,6 +13,7 @@ import NextTopLoader from "nextjs-toploader";
 import s from "./wrapper.module.scss";
 import { StrictMode } from "react";
 import ReferralLeaderboard from "../components/ReferralLeaderboard";
+import Leaderboard from "../components/Leaderboard";
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import LoadingIndicator from './LoadingIndicator';
@@ -33,6 +34,7 @@ const pathToViewMap: Record<string, string> = {
   '/': 'dashboard',
   '/season': 'season',
   '/referrals': 'referrals',
+  '/leaderboard': 'leaderboard',
   '/faucet': 'faucet',
   '/admin': 'admin'
 };
@@ -150,6 +152,7 @@ function AppContent() {
         {currentView === "dashboard" && <Dashboard />}
         {currentView === "season" && isAuthenticated && <GamifiedDashboard />}
         {currentView === "referrals" && isAuthenticated && <ReferralLeaderboard />}
+        {currentView === "leaderboard" && isAuthenticated && <Leaderboard />}
         {currentView === "faucet" && isAuthenticated && <FaucetContent />}
         {currentView === "admin" && isAuthenticated && null} {/* Admin content will be rendered via children */}
       </ViewContext.Provider>
