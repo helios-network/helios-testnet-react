@@ -8,6 +8,7 @@ import { api } from "../services/api";
 import { Chains } from "../app/(components)/chains";
 import { Wallet } from "../app/(components)/wallet";
 import { useAccount } from "wagmi";
+import Image from "next/image";
 
 interface HeaderProps {
   currentView: string;
@@ -173,9 +174,11 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               className="flex items-center hover:opacity-90 transition-opacity"
               aria-label="Go to home page"
             >
-              <img
+              <Image
                 src="/images/helios_beta_mainnet.svg"
                 alt="Helios Beta Mainnet"
+                width={250}
+                height={250}
                 className="h-8 sm:h-10"
               />
             </button>

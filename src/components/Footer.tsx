@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 const Footer: React.FC = () => {
   return (
@@ -6,7 +7,7 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-end">
           <div className="flex items-center mb-4 sm:mb-0">
-            <img src="/images/helios_beta_mainnet.svg" alt="Helios Testnet" className="h-8" />
+            <Image src="/images/helios_beta_mainnet.svg" alt="Helios Testnet" width={32} height={32} className="h-8" />
           </div>
           
           <div className="text-center mb-4 sm:mb-0 sm:mx-auto">

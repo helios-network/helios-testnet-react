@@ -113,7 +113,7 @@ export const SeasonProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
 
     fetchSeasons();
-  }, []);
+  }, [currentSeason?.id, hasUserManuallyChangedSeason]);
 
   const handleSetCurrentSeason = (season: Season) => {
     console.log('SeasonContext: Manually setting season to:', season.identifier);

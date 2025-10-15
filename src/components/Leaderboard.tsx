@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { api } from '../services/api';
 import { useSeason } from '../contexts/SeasonContext';
@@ -56,15 +56,7 @@ const Leaderboard: React.FC = () => {
     }
   }, [currentSeason]);
 
-  useEffect(() => {
-    if (selectedSeason === 'tvl') {
-      fetchTVLLeaderboard();
-    } else if (selectedSeason) {
-      fetchLeaderboard();
-    }
-  }, [selectedSeason, currentPage]);
-
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     if (!selectedSeason) return;
 
     try {
@@ -83,9 +75,9 @@ const Leaderboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedSeason, currentPage, itemsPerPage]);
 
-  const fetchTVLLeaderboard = async () => {
+  const fetchTVLLeaderboard = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -102,7 +94,16 @@ const Leaderboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    if (selectedSeason === 'tvl') {
+      fetchTVLLeaderboard();
+    } else if (selectedSeason) {
+      fetchLeaderboard();
+    }
+  }, [selectedSeason, currentPage, fetchLeaderboard, fetchTVLLeaderboard]);
+
 
   const handlePageChange = (newPage: number) => {
     setIsLoading(true);

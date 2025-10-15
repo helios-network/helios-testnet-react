@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useStore } from "../store/onboardingStore";
 import Mascot from "./Mascot";
 import XPToast from "./XPToast";
@@ -308,9 +309,11 @@ const OnboardingFlow = () => {
       </div>
       {/* Overlay Mask Image */}
       <div className="absolute inset-0 z-10 flex items-center justify-center">
-        <img
+        <Image
           src="/images/Gradient.png"
           alt="Video Mask"
+          width={1920}
+          height={1080}
           className="w-full h-full object-cover"
         />
       </div>

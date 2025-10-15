@@ -8,6 +8,7 @@ import React from "react";
 import { Home, Trophy } from "lucide-react";
 import { ViewContext } from "@/components/LayoutClientWrapper";
 import InviteCodeDisplay from "@/components/InviteCodeDisplay";
+import Image from "next/image";
 
 // export const Header = () => {
 //   return <header className={s.header}></header>;
@@ -27,9 +28,11 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
         <div className="flex items-center flex-wrap justify-between">
           {/* Logo + Navigation group */}
           <div className="flex items-center">
-            <img
+            <Image
               src="/images/Helios-Testnet-Logo.svg"
               alt="Helios Testnet"
+              width={250}
+              height={250}
               className="h-8 sm:h-10 mr-2"
             />
             <nav className="flex items-center space-x-1 sm:space-x-2">

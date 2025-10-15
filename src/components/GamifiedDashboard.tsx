@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
   Award,
   Code,
@@ -272,7 +273,7 @@ const GamifiedDashboard = () => {
     if (!isLoadingSeasons && currentSeason) {
       fetchInitialData();
     }
-  }, [currentSeason.identifier, isLoadingSeasons]);
+  }, [currentSeason.identifier, isLoadingSeasons, address, currentSeason, logout]);
 
   useEffect(() => {
     const fetchXPHistory = async () => {
@@ -298,7 +299,7 @@ const GamifiedDashboard = () => {
     if (!isLoadingSeasons && currentSeason) {
       fetchXPHistory();
     }
-  }, [currentPage, currentSeason.identifier, isLoadingSeasons]);
+  }, [currentPage, currentSeason.identifier, isLoadingSeasons, currentSeason, itemsPerPage]);
 
   const shortenedAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -319,7 +320,7 @@ const GamifiedDashboard = () => {
     const generatePages = () => {
       const pages = [];
       let startPage = Math.max(1, currentPage - 2);
-      let endPage = Math.min(startPage + 4, totalPages);
+      const endPage = Math.min(startPage + 4, totalPages);
 
       if (endPage - startPage < 4 && totalPages > 4) {
         startPage = Math.max(1, endPage - 4);
@@ -462,9 +463,11 @@ const GamifiedDashboard = () => {
                     <>
                       <div className="flex">
                         <div className="hover-float">
-                          <img
+                          <Image
                             src="/images/Avatar.svg"
                             alt="Profile"
+                            width={64}
+                            height={64}
                             className="w-16 h-16"
                           />
                         </div>
@@ -682,9 +685,11 @@ const GamifiedDashboard = () => {
                         >
                           <div className="flex items-start gap-4">
                             <div className="bg-[#E2EBFF] p-3 rounded-xl flex-shrink-0" >
-                              <img
+                              <Image
                                 src={`/images/Icon3.svg`}
                                 alt="icon"
+                                width={20}
+                                height={20}
                                 className="w-5 h-5"
                               />
                             </div>
@@ -1035,7 +1040,7 @@ const GamifiedDashboard = () => {
 
                       {/* Mission content */}
                       <div className="space-y-2 text-center flex flex-col justify-center items-center">
-                      <img src="/images/Icon6.svg" alt="logo" className="w-20 h-20" />
+                      <Image src="/images/Icon6.svg" alt="logo" width={80} height={80} className="w-20 h-20" />
                         <h4 
                           className="font-semibold text-base capitalize"
                         >

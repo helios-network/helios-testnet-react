@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useConnect, useAccount, useDisconnect } from "wagmi";
 import { useStore } from "../store/onboardingStore";
 import { metaMask } from "wagmi/connectors";
 import { useAppKit } from "@reown/appkit/react";
+import Image from "next/image";
 import {
   Sparkles,
   Wallet,
@@ -102,19 +103,8 @@ const ConnectWallet = () => {
   // This avoids TypeScript errors with window.ethereum while still providing better connection stability
   const isReallyConnected = isConnected || wasEverConnected;
 
-  // Track connection state changes and handle disconnections
-  useEffect(() => {
-    // If we had a connection and now we don't, handle the disconnect
-    if (previousConnectionState === true && !isReallyConnected) {
-      handleDisconnect();
-    }
-
-    // Update previous connection state with proper type safety
-    setPreviousConnectionState(isReallyConnected ? true : false);
-  }, [isReallyConnected]);
-
   // Handle wallet disconnection - this runs when the wallet gets disconnected directly from metamask
-  const handleDisconnect = () => {
+  const handleDisconnect = useCallback(() => {
     console.log("Wallet disconnected, clearing session data");
 
     // Clear JWT token from localStorage
@@ -130,7 +120,19 @@ const ConnectWallet = () => {
     setPendingWallet(null);
     setInviteCode(referralCodeFromUrl || ""); // Keep the referral code from URL if available
     setInviteError(null);
-  };
+  }, [resetStore, referralCodeFromUrl, setStep, setUser]);
+
+  // Track connection state changes and handle disconnections
+  useEffect(() => {
+    // If we had a connection and now we don't, handle the disconnect
+    if (previousConnectionState === true && !isReallyConnected) {
+      handleDisconnect();
+    }
+
+    // Update previous connection state with proper type safety
+    setPreviousConnectionState(isReallyConnected ? true : false);
+  }, [isReallyConnected, handleDisconnect, previousConnectionState]);
+
 
   // Auto-continue (signature) once wallet is connected and no JWT exists
   // Guard with a ref to avoid infinite retries
@@ -620,9 +622,11 @@ const ConnectWallet = () => {
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
                 <div className="mb-6">
-                  <img
+                  <Image
                     src="/images/Helios-Testnet-Logo.svg"
                     alt="Helios Beta Mainnet"
+                    width={96}
+                    height={96}
                     className="h-24 mx-auto mb-4 mt-8 md:mt-0"
                   />
                 </div>

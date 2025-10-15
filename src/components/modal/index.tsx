@@ -1,7 +1,7 @@
 "use client"
 
 import clsx from "clsx"
-import { ReactNode, useEffect, useRef } from "react"
+import { ReactNode, useEffect, useRef, useCallback } from "react"
 import { createPortal } from "react-dom"
 import { Button } from "../button"
 import s from "./modal.module.scss"
@@ -27,6 +27,10 @@ export function Modal({
 }: ModalProps) {
   const modalRootRef = useRef<Element | null>(null)
 
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
   useEffect(() => {
     modalRootRef.current = document.getElementById("modal-root")
 
@@ -48,11 +52,8 @@ export function Modal({
       document.body.classList.remove("overflow")
       document.removeEventListener("keydown", handleEscKey)
     }
-  }, [open])
+  }, [open, handleClose])
 
-  const handleClose = () => {
-    onClose()
-  }
 
   const isBrowser = typeof window !== "undefined"
 

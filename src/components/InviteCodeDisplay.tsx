@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { ViewContext } from "./LayoutClientWrapper";
@@ -30,7 +30,7 @@ const InviteCodeDisplay = () => {
   const [quotaLoading, setQuotaLoading] = useState(false);
 
   // Function to fetch invite quota information
-  const fetchInviteQuota = async () => {
+  const fetchInviteQuota = useCallback(async () => {
     if (!address) return;
     
     try {
@@ -49,7 +49,7 @@ const InviteCodeDisplay = () => {
     } finally {
       setQuotaLoading(false);
     }
-  };
+  }, [address]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -94,7 +94,7 @@ const InviteCodeDisplay = () => {
     };
 
     fetchUserData();
-  }, [address, isAuthenticated]);
+  }, [address, isAuthenticated, fetchInviteQuota]);
 
   function formatReferralCount(count: number): string {
     if (count >= 1_000_000)

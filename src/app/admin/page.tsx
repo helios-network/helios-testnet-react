@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
   Plus, 
@@ -177,11 +177,41 @@ const AdminDashboard = () => {
   // Check if user is admin
   const isAdmin = address && ADMIN_WALLETS.includes(address.toLowerCase());
 
+  const fetchTemporaryCodesData = useCallback(async () => {
+    try {
+      // Fetch temporary codes
+      const codesResponse = await api.listTemporaryCodes(1, 50, true);
+      if (codesResponse.success) {
+        setTemporaryCodes(codesResponse.data.codes);
+
+        // Update comprehensive stats with temporary codes data
+        if (comprehensiveStats) {
+          setComprehensiveStats({
+            ...comprehensiveStats,
+            totalTemporaryCodes: codesResponse.data.codes.length,
+            activeTemporaryCodes: codesResponse.data.codes.filter(code => code.isActive).length,
+            temporaryCodeUsage: codesResponse.data.codes.reduce((total, code) => total + code.currentUses, 0)
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error("Error fetching temporary codes:", err);
+    }
+  }, [comprehensiveStats]);
+
+  const fetchData = useCallback(async () => {
+    if (currentView === 'overview') {
+      await fetchComprehensiveData();
+    } else if (currentView === 'temporary-codes') {
+      await fetchTemporaryCodesData();
+    }
+  }, [currentView, fetchTemporaryCodesData]);
+
   useEffect(() => {
     if (isAdmin) {
       fetchData();
     }
-  }, [isAdmin, currentView]);
+  }, [isAdmin, currentView, fetchData]);
 
   const fetchComprehensiveData = async () => {
     try {
@@ -268,35 +298,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchTemporaryCodesData = async () => {
-    try {
-      // Fetch temporary codes
-      const codesResponse = await api.listTemporaryCodes(1, 50, true);
-      if (codesResponse.success) {
-        setTemporaryCodes(codesResponse.data.codes);
 
-        // Update comprehensive stats with temporary codes data
-        if (comprehensiveStats) {
-          setComprehensiveStats({
-            ...comprehensiveStats,
-            totalTemporaryCodes: codesResponse.data.codes.length,
-            activeTemporaryCodes: codesResponse.data.codes.filter(code => code.isActive).length,
-            temporaryCodeUsage: codesResponse.data.codes.reduce((total, code) => total + code.currentUses, 0)
-          });
-        }
-      }
-    } catch (err: any) {
-      console.error("Error fetching temporary codes:", err);
-    }
-  };
-
-  const fetchData = async () => {
-    if (currentView === 'overview') {
-      await fetchComprehensiveData();
-    } else if (currentView === 'temporary-codes') {
-      await fetchTemporaryCodesData();
-    }
-  };
 
   const handleCreateCode = async (e: React.FormEvent) => {
     e.preventDefault();
