@@ -1,5 +1,5 @@
 // Mock data for now - in production, this would fetch from real APIs
-export interface NetworkMetrics {
+export interface INetworkMetrics {
   totalTVL: number;
   highestAPY: number;
   activeMarkets: number;
@@ -29,7 +29,7 @@ export interface ChainData {
 }
 
 // Mock data - replace with real API calls
-export const mockNetworkMetrics: NetworkMetrics = {
+export const mockNetworkMetrics: INetworkMetrics = {
   totalTVL: 31030000, // $31.03M
   highestAPY: 22, // 22%
   activeMarkets: 5,
@@ -140,7 +140,7 @@ export const mockTVLHistory = [
 ];
 
 // API functions
-export const fetchNetworkMetrics = async (): Promise<NetworkMetrics> => {
+export const fetchNetworkMetrics = async (): Promise<INetworkMetrics> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   return mockNetworkMetrics;

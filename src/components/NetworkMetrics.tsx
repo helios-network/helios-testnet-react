@@ -8,7 +8,7 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from "lucide-react";
-import { fetchNetworkMetrics, formatCurrency, formatNumber, formatPercentage, NetworkMetrics } from "../services/metricsApi";
+import { fetchNetworkMetrics, formatCurrency, formatNumber, formatPercentage, INetworkMetrics } from "../services/metricsApi";
 
 interface MetricCardProps {
   title: string;
@@ -78,7 +78,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
 };
 
 const NetworkMetrics: React.FC = () => {
-  const [metrics, setMetrics] = useState<NetworkMetrics | null>(null);
+  const [metrics, setMetrics] = useState<INetworkMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
