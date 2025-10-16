@@ -31,8 +31,8 @@ const ConnectWallet = () => {
   const setUser = useStore((state) => state.setUser);
   const resetStore = useStore((state) => state.resetStore);
   const user = useStore((state) => state.user);
-  const requiresBotVerification = useStore((state) => state.requiresBotVerification);
-  const setRequiresBotVerification = useStore((state) => state.setRequiresBotVerification);
+  const requiresBotVerification = false;
+  const setRequiresBotVerification = () => {};
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,12 +53,8 @@ const ConnectWallet = () => {
 
   // Check if Discord is linked when bot verification is required
   useEffect(() => {
-    if (requiresBotVerification && user && !user.discord) {
-      setShowDiscordLink(true);
-    } else {
-      setShowDiscordLink(false);
-    }
-  }, [requiresBotVerification, user]);
+    setShowDiscordLink(false);
+  }, [user]);
 
   // Get search params for checking Discord linking status and referral code
   const searchParams = useSearchParams();
@@ -143,7 +139,7 @@ const ConnectWallet = () => {
       if (isLoading) return;
       if (pendingSignature === "pending") return;
       // Don't auto-sign if other gates are active
-      if (needsInviteCode || requiresBotVerification) return;
+      if (needsInviteCode) return;
 
       const token = localStorage.getItem("jwt_token");
       if (token) return;
@@ -250,11 +246,7 @@ const ConnectWallet = () => {
       try {
         const loginResponse = await api.login(address, signature);
         // The store is now updated by the api service directly, so this check is redundant but safe
-        if (loginResponse.requiresBotVerification) {
-          // setNeedsBotVerification(true); // Now handled by global state
-          setError("Please verify you are not a bot to continue.");
-          return;
-        }
+        // No bot verification in beta mainnet
         setUser(loginResponse.user);
         // After successful login, re-initialize to route to the correct step
         await useStore.getState().initialize(loginResponse.user);
@@ -347,7 +339,6 @@ const ConnectWallet = () => {
 
       if (result.success) {
         toast.success("Verification successful! You can now proceed.");
-        setRequiresBotVerification(false);
         // Re-initialize to fetch latest user status and move to next step
         useStore.getState().initialize();
       } else {
@@ -388,11 +379,7 @@ const ConnectWallet = () => {
 
       try {
         const response = await api.login(walletAddress, signature, inviteCode);
-        if (response.requiresBotVerification) {
-          setRequiresBotVerification(true);
-          setError("Please verify you are not a bot to continue.");
-          return;
-        }
+        // No bot verification in beta mainnet
         setUser(response.user);
         // Let the layout wrapper handle the state change
         return;
@@ -540,10 +527,7 @@ const ConnectWallet = () => {
       }
 
       // If we have a wallet address but need bot verification
-      if (requiresBotVerification && address) {
-        await handleBotVerification();
-        return;
-      }
+      // No bot verification in beta mainnet
 
       // Specific case for Discord-linked accounts that need activation
       if (requireInvite === "true" && address) {
@@ -569,7 +553,6 @@ const ConnectWallet = () => {
 
   const clearInviteState = () => {
     setNeedsInviteCode(false);
-    setRequiresBotVerification(false);
     setShowDiscordLink(false);
     setPendingSignature(null);
     setPendingWallet(null);
@@ -581,13 +564,12 @@ const ConnectWallet = () => {
   const renderButtonText = () => {
     if (isLoading) {
       if (needsInviteCode) return "Verifying code...";
-      if (requiresBotVerification) return "Verifying...";
       return "Processing...";
     }
 
     if (!isReallyConnected) return "Connect Wallet";
 
-    if (requiresBotVerification) return "Verify Account";
+    // No bot verification state on beta mainnet
 
     if (needsInviteCode) {
       if (pendingWallet && !pendingSignature) {
@@ -803,7 +785,7 @@ const ConnectWallet = () => {
                   </motion.div>
                 ) : null}
 
-                {isReallyConnected && requiresBotVerification && (
+                {false && (
                   <motion.div
                     key="bot-verification"
                     initial={{ opacity: 0, y: 20 }}
@@ -864,11 +846,7 @@ const ConnectWallet = () => {
                 )}
 
                 <motion.button
-                  onClick={
-                    requiresBotVerification
-                      ? handleBotVerification
-                      : handleConnect
-                  }
+                  onClick={handleConnect}
                   disabled={isLoading}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
@@ -900,12 +878,7 @@ const ConnectWallet = () => {
                   ) : (
                     <>
                       {isReallyConnected ? (
-                        requiresBotVerification ? (
-                          <>
-                            <ShieldCheck className="h-5 w-5" />
-                            <span>{renderButtonText()}</span>
-                          </>
-                        ) : needsInviteCode ? (
+                        needsInviteCode ? (
                           <span>{renderButtonText()}</span>
                         ) : (
                           <>
@@ -923,7 +896,7 @@ const ConnectWallet = () => {
                   )}
                 </motion.button>
 
-                {isReallyConnected && (needsInviteCode || requiresBotVerification) && (
+                {isReallyConnected && (needsInviteCode) && (
                   <button
                     onClick={clearInviteState}
                     className="mt-2 text-sm text-[#002DCB] hover:underline flex items-center"

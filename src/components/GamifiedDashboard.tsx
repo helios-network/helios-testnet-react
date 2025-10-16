@@ -239,6 +239,29 @@ const GamifiedDashboard = () => {
             progressToNextLevel: levelResponse.progressToNextLevel,
             isMaxLevel: levelResponse.isMaxLevel,
           });
+          // If no participation in past seasons, explicitly zero the stats
+          if (levelResponse.participated === false) {
+            setXPLevelInfo({
+              currentLevel: 0,
+              totalXP: 0,
+              nextLevelXP: 0,
+              xpForCurrentLevel: 0,
+              xpNeededForNextLevel: 0,
+              progressToNextLevel: 0,
+              isMaxLevel: false,
+            });
+          }
+        } else {
+          // No season data for this wallet: show not participated
+          setXPLevelInfo({
+            currentLevel: 0,
+            totalXP: 0,
+            nextLevelXP: 0,
+            xpForCurrentLevel: 0,
+            xpNeededForNextLevel: 0,
+            progressToNextLevel: 0,
+            isMaxLevel: false,
+          });
         }
         setIsLoadingXP(false);
 
@@ -506,6 +529,11 @@ const GamifiedDashboard = () => {
                         <span className="text-[#002DCB] font-medium flex items-center gap-1">
                           Level {xpLevelInfo?.currentLevel || 0}
                         </span>
+                        {xpLevelInfo?.currentLevel === 0 && (
+                          <span className="text-[#5C6584]">
+                            You didn’t participate in this season
+                          </span>
+                        )}
                         {!xpLevelInfo?.isMaxLevel && (
                           <span className="text-[#5C6584]">
                             <span className="text-[#002DCB] font-medium">
@@ -1011,7 +1039,7 @@ const GamifiedDashboard = () => {
                         </div>
                       ))}
                     </div>
-                  ) : (
+                    ) : (
                     dailyMission?.map((missionObj, index) => (
                     <div
                       key={index}

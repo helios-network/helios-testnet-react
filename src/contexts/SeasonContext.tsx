@@ -43,6 +43,11 @@ const SeasonContext = createContext<SeasonContextType | undefined>(undefined);
 
 
 const updateSeasonStatus = (season: Season): Season => {
+  // Force Beta Mainnet to display as active in the app, regardless of dates
+  if (season.identifier === 'beta-mainnet') {
+    return { ...season, status: 'active' };
+  }
+
   const now = new Date();
   const startDate = new Date(season.startDate);
   const endDate = season.endDate ? new Date(season.endDate) : null;
@@ -60,13 +65,16 @@ const updateSeasonStatus = (season: Season): Season => {
   return { ...season, status };
 };
 
-const getActiveSeason = (seasons: Season[]): Season => {
+const pickDefaultSeason = (seasons: Season[]): Season => {
+  // Prefer beta-mainnet by default
+  const beta = seasons.find(s => s.identifier === 'beta-mainnet');
+  if (beta) return beta;
+
+  // Fallback to active by date
   const now = new Date();
-  
   for (const season of seasons) {
     const startDate = new Date(season.startDate);
     const endDate = season.endDate ? new Date(season.endDate) : null;
-    
     if (now >= startDate && (!endDate || now <= endDate)) {
       return season;
     }
@@ -87,14 +95,16 @@ export const SeasonProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         const response = await api.getSeasons();
         
         if (response.success && response.seasons) {
-          const seasonsWithUpdatedStatus = response.seasons.map(updateSeasonStatus);
+          const seasonsWithUpdatedStatus = response.seasons
+            .map(updateSeasonStatus)
+            .map(s => s.identifier === 'path' || s.identifier === 'genesis' ? { ...s, status: 'completed' } : s);
           setSeasons(seasonsWithUpdatedStatus);
           
           // Set current season only if user hasn't manually changed it
           if (!hasUserManuallyChangedSeason) {
-            const activeSeason = getActiveSeason(seasonsWithUpdatedStatus);
-            console.log('SeasonContext: Auto-detected active season:', activeSeason.identifier);
-            setCurrentSeason(activeSeason);
+            const defaultSeason = pickDefaultSeason(seasonsWithUpdatedStatus);
+            console.log('SeasonContext: Default season picked:', defaultSeason.identifier);
+            setCurrentSeason(defaultSeason);
           } else {
             // If user has manually changed season, update the current season with fresh data
             const updatedCurrentSeason = seasonsWithUpdatedStatus.find(s => s.id === currentSeason?.id);
@@ -123,8 +133,8 @@ export const SeasonProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const resetToAutoMode = () => {
     setHasUserManuallyChangedSeason(false);
-    const activeSeason = getActiveSeason(seasons);
-    setCurrentSeason(activeSeason);
+    const defaultSeason = pickDefaultSeason(seasons);
+    setCurrentSeason(defaultSeason);
   };
 
   // Don't render children until we have seasons data

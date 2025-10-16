@@ -4,7 +4,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { WagmiProvider, useAccount } from "wagmi";
 import { useStore } from "../store/onboardingStore"; // adjust path
 import ConnectWallet from "./ConnectWallet"; // adjust path
-import OnboardingFlow from "./OnboardingFlow"; // adjust path
 import Dashboard from "./Dashboard"; // adjust path
 import GamifiedDashboard from "./GamifiedDashboard";
 import { Toaster } from "sonner";
@@ -23,6 +22,10 @@ import { SeasonProvider } from "../contexts/SeasonContext";
 
 // Dynamically import the Faucet content component
 const FaucetContent = dynamic(() => import('../app/faucet/FaucetContent'), { ssr: false });
+
+// Persist across remounts to avoid showing spinners on client-side route changes
+let hasHydratedOnce = false;
+let hasInitializedOnce = false;
 
 export const ViewContext = React.createContext({
   currentView: "dashboard",
@@ -48,7 +51,7 @@ function AppContent() {
   
   const [currentView, setCurrentView] = useState<string>("dashboard");
   const pathname = usePathname();
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(!hasInitializedOnce);
   const { address, isConnected } = useAccount();
   const autoAuthRef = useRef(false);
 
@@ -61,20 +64,20 @@ function AppContent() {
 
   // Initial app loading and reaction to user state changes
   useEffect(() => {
+    if (hasInitializedOnce) return;
     const init = async () => {
       try {
         setIsInitializing(true);
         await initialize();
       } catch (error) {
         console.error("Initialization failed:", error);
-        // Errors are handled inside the initialize function (e.g., reset store)
       } finally {
+        hasInitializedOnce = true;
         setIsInitializing(false);
       }
     };
-
     init();
-  }, [initialize]); // Remove user from dependency array to prevent re-initialization loops
+  }, [initialize]);
 
   // Dashboard is publicly viewable, other views require authentication
   const isPublicView = currentView === "dashboard";
@@ -134,10 +137,7 @@ function AppContent() {
     return <ConnectWallet />;
   }
 
-  // If in onboarding flow
-  if (step >= 2 && step < 7) {
-    return <OnboardingFlow />;
-  }
+  // Onboarding flow removed; always render app layout
 
   // If trying to access protected views without authentication, show connect wallet
   if (!isPublicView && !isAuthenticated) {
@@ -165,12 +165,15 @@ export default function LayoutClientWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const [hydrated, setHydrated] = useState(false);
+  const [hydrated, setHydrated] = useState(hasHydratedOnce);
   const pathname = usePathname();
 
   // Handle hydration
   useEffect(() => {
-    setHydrated(true);
+    if (!hasHydratedOnce) {
+      setHydrated(true);
+      hasHydratedOnce = true;
+    }
   }, []);
 
   // Show a minimal loading state until hydration is complete

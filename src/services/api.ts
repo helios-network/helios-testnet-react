@@ -463,79 +463,28 @@ class ApiClient {
   }
 
   async getOnboardingProgress(): Promise<OnboardingProgress> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/progress`, {
-        headers: this.getHeaders(),
-      });
-
-      if (response.status === 403) {
-        const errorData = await response.json();
-        if (errorData.requiresInviteCode || errorData.message?.includes("not confirmed")) {
-          const error = new Error(errorData.message || "Account not confirmed. Please provide an invite code.");
-          (error as any).requiresInviteCode = true;
-          throw error;
-        }
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch onboarding progress");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while fetching onboarding progress.");
-      }
-      throw error;
-    }
+    // Onboarding is disabled on beta mainnet; return a static, completed-like payload
+    return {
+      success: true,
+      progress: [],
+      completedSteps: [],
+      totalSteps: 0,
+    } as OnboardingProgress;
   }
 
   async startOnboardingStep(
     stepKey: string
   ): Promise<{ success: boolean; step: any }> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/start`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ stepKey }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to start onboarding step");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while starting an onboarding step.");
-      }
-      throw error;
-    }
+    // No-op: onboarding disabled
+    return { success: true, step: null };
   }
 
   async completeOnboardingStep(
     stepKey: string,
     evidence: string
   ): Promise<{ success: boolean; step: any; rewards: any[] }> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/complete`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ stepKey, evidence }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to complete onboarding step");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while completing an onboarding step.");
-      }
-      throw error;
-    }
+    // No-op: onboarding disabled
+    return { success: true, step: null, rewards: [] };
   }
 
   async claimReward(rewardType: "xp" | "nft"): Promise<{
@@ -544,24 +493,8 @@ class ApiClient {
     message: string;
     transactionHash?: string;
   }> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/claim-reward`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ rewardType }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to claim reward");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while claiming a reward.");
-      }
-      throw error;
-    }
+    // No-op: onboarding disabled
+    return { success: true, reward: null, message: "Onboarding disabled" };
   }
 
   async getUserXPHistory(): Promise<XPHistoryResponse> {

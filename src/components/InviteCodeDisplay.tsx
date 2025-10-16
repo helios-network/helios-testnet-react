@@ -31,7 +31,7 @@ const InviteCodeDisplay = () => {
 
   // Function to fetch invite quota information
   const fetchInviteQuota = useCallback(async () => {
-    if (!address) return;
+    if (!address || !isAuthenticated) return;
     
     try {
       setQuotaLoading(true);
@@ -55,7 +55,7 @@ const InviteCodeDisplay = () => {
     const fetchUserData = async () => {
       // Wait until wallet is connected AND authenticated (JWT available) to avoid 401s
       if (!address || !isAuthenticated) {
-        setLoading(true);
+        setLoading(false);
         setError(null);
         setReferralCode(null);
         setReferralCount(null);
@@ -140,6 +140,11 @@ const InviteCodeDisplay = () => {
 
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
+
+  // Hide entirely when not authenticated or no wallet
+  if (!address || !isAuthenticated) {
+    return null;
+  }
 
   // Mobile-optimized display
   return (
