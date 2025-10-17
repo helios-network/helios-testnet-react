@@ -32,9 +32,14 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const setUser = useStore((state) => state.setUser);
   const isUserLoading = useStore((state) => state.isUserLoading);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showReferralMenu, setShowReferralMenu] = useState(false);
+  const referralRef = React.useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const [isPollingForDiscord, setIsPollingForDiscord] = useState(false);
   const { address } = useAccount();
+  const step = useStore((state) => state.step);
+  const requiresBotVerification = useStore((state) => state.requiresBotVerification);
+  const isAuthenticated = step > 0 && !requiresBotVerification;
 
   // Admin wallet addresses (should match the ones in admin page)
   const ADMIN_WALLETS = [
@@ -60,12 +65,6 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       label: "Season",
       icon: <CalendarDays className="w-4 h-4" />,
       path: "/season",
-    },
-    {
-      key: "referrals",
-      label: "Referrals",
-      icon: <Trophy className="w-4 h-4" />,
-      path: "/referrals",
     },
     {
       key: "leaderboard",
@@ -163,12 +162,31 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const hasDiscordLinked =
     user && (user.discordUsername || (user.discord && user.discord.username));
 
+  // Close referral menu on outside click
+  useEffect(() => {
+    if (!showReferralMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (referralRef.current && !referralRef.current.contains(e.target as Node)) {
+        setShowReferralMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showReferralMenu]);
+
+  // Close referral menu on logout/unauthenticated
+  useEffect(() => {
+    if (!address || !isAuthenticated) {
+      setShowReferralMenu(false);
+    }
+  }, [address, isAuthenticated]);
+
   return (
-    <header className="bg-blue-50/90 py-5 px-4 sticky top-0 z-50">
+    <header className="bg-white/90 py-5 px-4 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-row items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center w-40 sm:w-56 lg:w-64 flex-shrink-0">
             <button
               onClick={() => handleNavClick("dashboard", "/")}
               className="flex items-center hover:opacity-90 transition-opacity"
@@ -177,31 +195,37 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               <Image
                 src="/images/helios_beta_mainnet.svg"
                 alt="Helios Beta Mainnet"
-                width={250}
-                height={250}
-                className="h-8 sm:h-10"
+                width={320}
+                height={320}
+                className="w-full h-auto"
+                priority
               />
             </button>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-2 mx-8 flex-1 justify-start">
-            {navItems.map((item) => (
-              <button
-                key={item.key}
-                onClick={() => handleNavClick(item.key, item.path)}
-                className={`flex items-center space-x-1 px-3 py-1.5 rounded-xs transition-colors ${
-                  currentView === item.key
-                    ? "bg-blue-300 text-white"
-                    : "hover:bg-blue-100"
-                }`}
-              >
-                {item.icon}
-                <span className="text-base font-medium">{item.label}</span>
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const isActive = currentView === item.key;
+              const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-md transition-colors border ${
+                isActive
+                  ? "bg-[#002DCB] text-white border-[#002DCB]"
+                  : "hover:bg-[#E2EBFF] text-[#060F32] border-transparent"
+              }`;
+              const iconWrapperClass = isActive ? "text-white" : "text-[#002DCB]";
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => handleNavClick(item.key, item.path)}
+                  className={buttonClass}
+                >
+                  <span className={`${iconWrapperClass} inline-flex`}>{item.icon}</span>
+                  <span className="text-sm font-semibold">{item.label}</span>
+                </button>
+              );
+            })}
           </nav>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-shrink-0 relative" ref={referralRef}>
             {/* Mobile Menu Button */}
             <button
               className="lg:hidden p-2 rounded-md text-[#060F32] hover:bg-[#E2EBFF] justify-self-end"
@@ -215,19 +239,52 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               )}
             </button>
 
-            {/* Discord Link and InviteCodeDisplay */}
-            <div className="hidden lg:flex items-center space-x-1 xl:space-x-1 min-h-[40px]">
-              {!isUserLoading && !hasDiscordLinked && (
-                <button
-                  onClick={handleLinkDiscord}
-                  className="bg-[#5865F2] discord-link-btn text-white rounded-xs px-3 py-1.5 flex items-center hover:bg-[#4752c4] transition-colors shadow-sm text-base font-medium"
-                >
-                  <DiscordIcon />
-                  <span className="ml-1 hide-text">Link Discord</span>
-                </button>
-              )}
-              <InviteCodeDisplay />
-            </div>
+            {/* Referral quick menu (desktop + mobile) */}
+            {address && isAuthenticated && (
+              <button
+                onClick={() => setShowReferralMenu((v) => !v)}
+                className="hidden md:inline-flex items-center px-3 py-2 rounded-md border border-[#E2EBFF] text-[#060F32] hover:bg-[#E2EBFF] text-sm font-semibold"
+              >
+                Referral & Discord
+              </button>
+            )}
+            {address && isAuthenticated && showReferralMenu && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl border border-[#E2EBFF] shadow-lg p-3 z-50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-semibold text-[#060F32]">Referral</div>
+                  <button
+                    onClick={() => setShowReferralMenu(false)}
+                    className="text-[#828DB3] hover:text-[#060F32]"
+                    aria-label="Close referral menu"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {/* Invite code */}
+                  <div className="rounded-lg border border-[#E2EBFF] p-2 bg-[#F9FAFF]">
+                    <InviteCodeDisplay compact />
+                  </div>
+                  {/* Link Discord (if not linked) */}
+                  {!isUserLoading && !hasDiscordLinked && (
+                    <button
+                      onClick={() => { setShowReferralMenu(false); handleLinkDiscord(); }}
+                      className="w-full bg-[#5865F2] text-white rounded-md px-3 py-2 flex items-center justify-center hover:bg-[#4752c4] transition-colors text-sm font-medium"
+                    >
+                      <DiscordIcon />
+                      <span className="ml-2">Link Discord</span>
+                    </button>
+                  )}
+                  {/* Referrals page link */}
+                  <button
+                    onClick={() => { setShowReferralMenu(false); router.push('/referrals'); }}
+                    className="w-full px-3 py-2 rounded-md border border-[#E2EBFF] text-[#002DCB] hover:bg-[#E2EBFF] text-sm font-semibold"
+                  >
+                    Open Referrals
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="xl:ml-2">
               <Wallet />
             </div>
@@ -264,21 +321,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               </button>
             ))}
 
-            {/* Discord Link option in mobile menu */}
-
-            {/* Mobile InviteCodeDisplay */}
-            <div className="flex flex-row pt-2 border-t border-[#D7E0FF] space-x-2.5">
-              {!isUserLoading && !hasDiscordLinked && (
-                <button
-                  onClick={handleLinkDiscord}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-xs transition-colors bg-[#5865F2] text-white  hover:bg-[#4752c4]"
-                >
-                  <DiscordIcon />
-                  <span className="text-base font-medium">Link Discord</span>
-                </button>
-              )}
-              <InviteCodeDisplay />
-            </div>
+            {/* Additional mobile controls moved out of header to reduce crowding */}
           </div>
         </div>
       </div>

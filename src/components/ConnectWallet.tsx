@@ -244,7 +244,7 @@ const ConnectWallet = () => {
 
       // 2. Try to log in
       try {
-        const loginResponse = await api.login(address, signature);
+        const loginResponse = await api.login(address, signature, referralCodeFromUrl || undefined);
         // The store is now updated by the api service directly, so this check is redundant but safe
         // No bot verification in beta mainnet
         setUser(loginResponse.user);
@@ -605,11 +605,12 @@ const ConnectWallet = () => {
               >
                 <div className="mb-6">
                   <Image
-                    src="/images/Helios-Testnet-Logo.svg"
+                    src="/images/helios_beta_mainnet.svg"
                     alt="Helios Beta Mainnet"
-                    width={96}
-                    height={96}
-                    className="h-24 mx-auto mb-4 mt-8 md:mt-0"
+                    width={200}
+                    height={200}
+                    className="h-24 sm:h-28 md:h-32 w-auto mx-auto mb-4 mt-8 md:mt-0"
+                    priority
                   />
                 </div>
 

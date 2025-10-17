@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Activity } from "lucide-react";
 import { fetchTVLHistory, formatCurrency } from "../services/metricsApi";
@@ -11,6 +11,10 @@ interface TVLDataPoint {
 const TVLChart: React.FC = () => {
   const [data, setData] = useState<TVLDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [containerHeight, setContainerHeight] = useState<number>(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -26,6 +30,19 @@ const TVLChart: React.FC = () => {
     };
 
     loadData();
+
+    // Observe container size for responsive chart dimensions
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const cr = entry.contentRect;
+        setContainerWidth(cr.width);
+        setContainerHeight(cr.height);
+      }
+    });
+    if (containerRef.current) {
+      ro.observe(containerRef.current);
+    }
+    return () => ro.disconnect();
   }, []);
 
   if (isLoading) {
@@ -45,8 +62,13 @@ const TVLChart: React.FC = () => {
   const minTVL = Math.min(...data.map(d => d.tvl));
   const range = maxTVL - minTVL;
   const padding = range * 0.1;
-  const chartHeight = 140;
-  const chartWidth = 360;
+  // Derive chart size from container (with fallbacks)
+  const innerWidth = Math.max(360, Math.floor((containerWidth || 600) - 60));
+  const innerHeight = Math.max(260, Math.floor((containerHeight || 420) - 52));
+  const chartHeight = innerHeight;
+  const chartWidth = innerWidth;
+  const yAxisPad = 44; // reduced left padding so plot uses more width
+  const topPad = 24;   // reduced top padding to increase plot area
 
   // Calculate growth percentage
   const firstValue = data[0]?.tvl || 0;
@@ -54,8 +76,8 @@ const TVLChart: React.FC = () => {
   const growthPercentage = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
 
   const getPointPosition = (value: number, index: number) => {
-    const x = 50 + (index / (data.length - 1)) * chartWidth; // Add 50px padding for Y-axis labels
-    const y = 30 + chartHeight - ((value - minTVL + padding) / (range + padding * 2)) * chartHeight; // Add 30px padding for X-axis
+    const x = yAxisPad + (index / (data.length - 1)) * chartWidth;
+    const y = topPad + chartHeight - ((value - minTVL + padding) / (range + padding * 2)) * chartHeight;
     return { x, y };
   };
 
@@ -68,7 +90,7 @@ const TVLChart: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/80 backdrop-blur-sm rounded-xl px-7 pt-5 pb-6"
+      className="bg-white/80 backdrop-blur-sm rounded-xl px-7 pt-5 pb-6 h-full"
     >
       <div className="flex items-start justify-between mb-2">
         <div>
@@ -87,30 +109,30 @@ const TVLChart: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative">
+      <div ref={containerRef} className="relative min-h-[260px] sm:min-h-[360px] md:min-h-[420px]">
         <svg
           width="100%"
-          height={chartHeight + 60}
+          height="100%"
           viewBox={`0 0 ${chartWidth + 60} ${chartHeight + 60}`}
           className="overflow-visible"
           preserveAspectRatio="xMidYMid meet"
         >
           {/* Y-axis line */}
           <line
-            x1="50"
-            y1="30"
-            x2="50"
-            y2={30 + chartHeight}
+            x1={yAxisPad}
+            y1={topPad}
+            x2={yAxisPad}
+            y2={topPad + chartHeight}
             stroke="#D7E0FF"
             strokeWidth="2"
           />
           
           {/* X-axis line */}
           <line
-            x1="50"
-            y1={30 + chartHeight}
-            x2={chartWidth + 50}
-            y2={30 + chartHeight}
+            x1={yAxisPad}
+            y1={topPad + chartHeight}
+            x2={chartWidth + yAxisPad}
+            y2={topPad + chartHeight}
             stroke="#D7E0FF"
             strokeWidth="2"
           />
@@ -119,17 +141,17 @@ const TVLChart: React.FC = () => {
           {[0, 0.25, 0.5, 0.75, 1].map((ratio, index) => (
             <g key={index}>
               <line
-                x1="50"
-                y1={30 + chartHeight * ratio}
-                x2={chartWidth + 50}
-                y2={30 + chartHeight * ratio}
+                x1={yAxisPad}
+                y1={topPad + chartHeight * ratio}
+                x2={chartWidth + yAxisPad}
+                y2={topPad + chartHeight * ratio}
                 stroke="#E2EBFF"
                 strokeWidth="1"
                 opacity="0.5"
               />
               <text
-                x="45"
-                y={30 + chartHeight * ratio + 4}
+                x={yAxisPad - 5}
+                y={topPad + chartHeight * ratio + 4}
                 fontSize="10"
                 fill="#5C6584"
                 textAnchor="end"
@@ -148,7 +170,7 @@ const TVLChart: React.FC = () => {
           </defs>
           
           <path
-            d={`${pathData} L ${chartWidth + 50} ${30 + chartHeight} L 50 ${30 + chartHeight} Z`}
+            d={`${pathData} L ${chartWidth + yAxisPad} ${topPad + chartHeight} L ${yAxisPad} ${topPad + chartHeight} Z`}
             fill="url(#tvlGradient)"
           />
 
@@ -165,48 +187,62 @@ const TVLChart: React.FC = () => {
             transition={{ duration: 2, ease: "easeInOut" }}
           />
 
-          {/* Data points */}
+          {/* Data points and hover hit areas */}
           {points.map((point, index) => (
-            <motion.circle
-              key={index}
-              cx={point.x}
-              cy={point.y}
-              r="4"
-              fill="#002DCB"
-              stroke="white"
-              strokeWidth="2"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
-            />
+            <g key={index}>
+              <motion.circle
+                cx={point.x}
+                cy={point.y}
+                r="4.5"
+                fill="#002DCB"
+                stroke="white"
+                strokeWidth="2"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: index * 0.08, duration: 0.25 }}
+              />
+              {/* Larger transparent hit area to improve hover reliability */}
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="14"
+                fill="transparent"
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                style={{ cursor: 'pointer', pointerEvents: 'all' }}
+              />
+            </g>
           ))}
 
-          {/* Hover tooltips */}
-          {points.map((point, index) => (
+          {/* Single tooltip driven by hoveredIndex */}
+          {hoveredIndex !== null && (
             <motion.g
-              key={`tooltip-${index}`}
+              key={`tooltip-active`}
               initial={{ opacity: 0 }}
-              whileHover={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
               <rect
-                x={point.x - 20}
-                y={point.y - 30}
-                width="40"
-                height="20"
+                x={points[hoveredIndex].x - 28}
+                y={points[hoveredIndex].y - 36}
+                width="56"
+                height="22"
                 fill="#002DCB"
-                rx="4"
+                rx="5"
+                stroke="white"
+                strokeWidth="1"
               />
               <text
-                x={point.x}
-                y={point.y - 15}
+                x={points[hoveredIndex].x}
+                y={points[hoveredIndex].y - 22}
                 fontSize="10"
                 fill="white"
                 textAnchor="middle"
               >
-                {formatCurrency(data[index].tvl)}
+                {formatCurrency(data[hoveredIndex].tvl)}
               </text>
             </motion.g>
-          ))}
+          )}
         </svg>
 
         {/* X-axis labels */}
@@ -222,8 +258,8 @@ const TVLChart: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-6 pt-6">
+      {/* Stats (hidden on small screens to give more space to the chart) */}
+      <div className="hidden md:grid grid-cols-3 gap-6 pt-6">
         <div className="pr-6 border-r border-[#D7E0FF]">
           <div className="text-xs text-[#5C6584]">Starting TVL</div>
           <div className="text-2xl font-bold">
