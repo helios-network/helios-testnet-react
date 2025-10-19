@@ -162,6 +162,22 @@ export interface GlobalReferralStatsResponse {
   }>;
 }
 
+export interface LiquidityPositionDTO {
+  id: string;
+  chain: string;
+  asset: string;
+  amount: number;
+  amountUsd: number;
+}
+
+export interface LiquiditySummaryResponse {
+  success: boolean;
+  totalUsd: number;
+  byChain: Array<{ chain: string; amountUsd: number }>;
+  positions: LiquidityPositionDTO[];
+  chainContracts: Record<string, { address: string; explorer?: string }>;
+}
+
 export interface TagsResponse {
   success: boolean;
   tags: Array<{
@@ -523,6 +539,17 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         throw new Error("Failed to fetch Daily Mission");
       }
 
@@ -664,6 +691,17 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         const errorData = await response.json();
         throw errorData;
       }
@@ -704,6 +742,19 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        // Detect JWT expiry
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              // Clear token and notify app
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         throw new Error("Failed to fetch user profile");
       }
 
@@ -734,6 +785,17 @@ class ApiClient {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         throw new Error("Failed to fetch user referrals");
       }
 
@@ -779,6 +841,24 @@ class ApiClient {
     } catch (error: any) {
       if (error.name === 'AbortError' || error instanceof TypeError) {
         throw new NetworkError("A network error occurred while fetching tags.");
+      }
+      throw error;
+    }
+  }
+
+  async getUserLiquidity(): Promise<LiquiditySummaryResponse> {
+    try {
+      const response = await fetch(`${API_URL}/users/liquidity`, {
+        headers: this.getHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch liquidity summary');
+      }
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError('A network error occurred while fetching liquidity summary.');
       }
       throw error;
     }

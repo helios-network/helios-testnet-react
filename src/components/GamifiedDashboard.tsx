@@ -425,6 +425,8 @@ const GamifiedDashboard = () => {
         return <Megaphone className="w-6 h-6" />;
       case "ambassador":
         return <Flag className="w-6 h-6" />;
+      case "deposit_champion":
+        return <Trophy className="w-6 h-6" />;
       default:
         return <Star className="w-6 h-6" />;
     }

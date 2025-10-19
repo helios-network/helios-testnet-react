@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { WagmiProvider, useAccount } from "wagmi";
+import { WagmiProvider, useAccount, useDisconnect } from "wagmi";
 import { useStore } from "../store/onboardingStore"; // adjust path
 import ConnectWallet from "./ConnectWallet"; // adjust path
 import Dashboard from "./Dashboard"; // adjust path
 import GamifiedDashboard from "./GamifiedDashboard";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import Header from "./Header";
 import NextTopLoader from "nextjs-toploader";
 import s from "./wrapper.module.scss";
@@ -53,6 +53,7 @@ function AppContent() {
   const pathname = usePathname();
   const [isInitializing, setIsInitializing] = useState(!hasInitializedOnce);
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const autoAuthRef = useRef(false);
 
   // Sync currentView with URL path
@@ -78,6 +79,46 @@ function AppContent() {
     };
     init();
   }, [initialize]);
+
+  // Intercept fetch to catch JWT expiry and notify app
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const originalFetch = window.fetch;
+    window.fetch = async (...args: any[]) => {
+      const response = await originalFetch(...args as Parameters<typeof originalFetch>);
+      if (response && response.status === 401) {
+        try {
+          const cloned = response.clone();
+          const data = await cloned.json().catch(() => null);
+          const msg = data?.message || '';
+          if (/jwt expired|token expired|TokenExpiredError/i.test(msg)) {
+            window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: msg } }));
+          }
+        } catch {
+          // ignore parsing issues
+        }
+      }
+      return response;
+    };
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
+  // Handle auth expired: clear state, disconnect wallet, inform user
+  useEffect(() => {
+    const onAuthExpired = () => {
+      try {
+        useStore.getState().logout();
+      } catch {}
+      try {
+        disconnect();
+      } catch {}
+      toast.error('Your session expired. Please reconnect your wallet.');
+    };
+    window.addEventListener('auth:expired', onAuthExpired);
+    return () => window.removeEventListener('auth:expired', onAuthExpired);
+  }, [disconnect]);
 
   // Dashboard is publicly viewable, other views require authentication
   const isPublicView = currentView === "dashboard";

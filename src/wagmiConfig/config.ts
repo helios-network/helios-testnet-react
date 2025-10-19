@@ -1,5 +1,11 @@
 import { createConfig, http } from "wagmi";
 
+const DEFAULT_RPC =
+  process.env.NEXT_PUBLIC_HELIOS_RPC ||
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8545'
+    : 'https://testnet1.helioschainlabs.org/');
+
 export const heliosTestnet = {
   id: 42000,
   name: "Helios Testnet",
@@ -11,10 +17,10 @@ export const heliosTestnet = {
   },
   rpcUrls: {
     default: {
-      http: ["https://testnet1.helioschainlabs.org/"],
+      http: [DEFAULT_RPC],
     },
     public: {
-      http: ["https://testnet1.helioschainlabs.org/"],
+      http: [DEFAULT_RPC],
     },
   },
   blockExplorers: {
@@ -29,6 +35,6 @@ export const heliosTestnet = {
 export const config = createConfig({
   chains: [heliosTestnet],
   transports: {
-    [heliosTestnet.id]: http(),
+    [heliosTestnet.id]: http(DEFAULT_RPC),
   },
 });

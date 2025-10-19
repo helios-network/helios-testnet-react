@@ -8,6 +8,7 @@ import Footer from "./Footer";
 import { toast } from "react-toastify";
 import ChainSelector from "./ChainSelector";
 import TVLChart from "./TVLChart";
+import TVLOverview from "./TVLOverview";
 import HLSRewardsSimulator from "./HLSRewardsSimulator";
 import StakedSummaryBar from "@/components/StakedSummaryBar";
 import StakeInfoSection from "./StakeInfoSection";
@@ -20,28 +21,43 @@ const Dashboard = () => {
   const [showChainSelector, setShowChainSelector] = useState(false);
   const [selectedChain, setSelectedChain] = useState<any>(null);
 
+  // Emulate browser zoom (+15%) while keeping content filling viewport
+  const SCALE = 1.15;
+  const scaledContainerStyle: React.CSSProperties = {
+    transform: `scale(${SCALE})`,
+    transformOrigin: "top left",
+    width: `${100 / SCALE}%`,
+    minHeight: `${100 / SCALE}vh`,
+  };
+
   // Public view for non-authenticated users
   if (!isAuthenticated) {
     return (
-      <div className="bg-[#E6EBFD] min-h-screen flex flex-col">
+      <div className="bg-[#E6EBFD] min-h-screen flex flex-col overflow-auto">
+        <div style={scaledContainerStyle}>
         <div className="flex-grow py-4 px-4">
           <div className="max-w-7xl mx-auto space-y-6">
       
           {/* Top CTA - Immediately visible */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5 mb-4 flex flex-col sm:flex-row items-center justify-between">
-            <div className="text-center sm:text-left mb-3 sm:mb-0">
-              <div className="text-md font-medium">Bring Assets to Helios</div>
-              <div className="text-[#5C6584] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain before mainnet launch.</div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowChainSelector(true)}
-                className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
-              >
-                Bridge to Helios
-              </button>
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5 mb-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between">
+              <div className="text-center sm:text-left mb-3 sm:mb-0">
+                <div className="text-md font-medium">Bring Assets to Helios</div>
+                <div className="text-[#5C6584] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain before mainnet launch.</div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowChainSelector(true)}
+                  className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
+                >
+                  Bridge to Helios
+                </button>
+              </div>
             </div>
           </div>
+
+            {/* TVL Overview compact under CTA */}
+            <TVLOverview compact />
 
             {/* TVL Chart and Rewards Simulator */}
           <div className="grid grid-cols-1 lg:grid-cols-12 mb-4 gap-4">
@@ -81,10 +97,10 @@ const Dashboard = () => {
           </div>
         </div>
         <Footer />
-
+        </div>
         {/* Chain Selector Modal */}
-      {showChainSelector && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        {showChainSelector && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -93,12 +109,12 @@ const Dashboard = () => {
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-[#060F32]">Select Origin Chain</h2>
-          <button
+                  <button
                     onClick={() => setShowChainSelector(false)}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <X className="w-6 h-6" />
-          </button>
+                  </button>
                 </div>
                 <ChainSelector
                   onChainSelect={(chain) => {
@@ -110,7 +126,6 @@ const Dashboard = () => {
             </motion.div>
           </div>
         )}
-
         {/* Removed Staking Flow UI */}
       </div>
     );
@@ -118,29 +133,35 @@ const Dashboard = () => {
 
   // Authenticated user view
   return (
-    <div className="bg-[#E6EBFD] min-h-screen flex flex-col">
+    <div className="bg-[#E6EBFD] min-h-screen flex flex-col overflow-auto">
+      <div style={scaledContainerStyle}>
       {/* Main content */}
       <div className="flex-grow py-6 px-4">
         <div className="max-w-7xl mx-auto space-y-6">
        
-          {/* Compact staked summary for authenticated users */}
-          <StakedSummaryBar />
-
-          {/* Top CTA - Immediately visible */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between">
-            <div className="text-center sm:text-left mb-3 sm:mb-0">
-              <div className="text-[#060F32] font-medium text-md">Bring Assets to Helios</div>
-              <div className="text-[#828DB3] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain before mainnet launch.</div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowChainSelector(true)}
-                className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
-              >
-                Bridge to Helios
-              </button>
+          {/* Top CTA - Immediately visible (moved above summary) */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-6 py-5">
+            <div className="flex flex-col sm:flex-row items-center justify-between">
+              <div className="text-center sm:text-left mb-3 sm:mb-0">
+                <div className="text-[#060F32] font-medium text-md">Bring Assets to Helios</div>
+                <div className="text-[#828DB3] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain before mainnet launch.</div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowChainSelector(true)}
+                  className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
+                >
+                  Bridge to Helios
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* TVL Overview compact under CTA (above summary) */}
+          <TVLOverview compact />
+
+          {/* Compact staked summary for authenticated users */}
+          <StakedSummaryBar />
 
           {/* TVL Chart and Rewards Simulator */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -164,7 +185,7 @@ const Dashboard = () => {
 
       {/* Use the new Footer component */}
       <Footer />
-
+      </div>
       {/* Chain Selector Modal */}
       {showChainSelector && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

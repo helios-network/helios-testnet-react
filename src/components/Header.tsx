@@ -7,7 +7,8 @@ import { useStore } from "../store/onboardingStore";
 import { api } from "../services/api";
 import { Chains } from "../app/(components)/chains";
 import { Wallet } from "../app/(components)/wallet";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
+import { heliosTestnet } from "../wagmiConfig/config";
 import Image from "next/image";
 
 interface HeaderProps {
@@ -181,6 +182,15 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
     }
   }, [address, isAuthenticated]);
 
+  // Native balance on the currently connected chain (wagmi selects active chain)
+  const { data: nativeBalance } = useBalance({ address });
+
+  const formatHlsAmount = (formatted?: string) => {
+    if (!formatted) return null;
+    const [int, dec = ""] = formatted.split(".");
+    return dec ? `${int}.${dec.slice(0, 4)}` : int;
+  };
+
   return (
     <header className="bg-white/90 py-5 px-4 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto">
@@ -283,6 +293,11 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
                     Open Referrals
                   </button>
                 </div>
+              </div>
+            )}
+            {nativeBalance && (
+              <div className="hidden md:flex items-center px-2.5 py-1.5 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[#060F32] text-sm font-semibold">
+                {formatHlsAmount(nativeBalance.formatted)} <span className="ml-1 text-[#002DCB]">HLS</span>
               </div>
             )}
             <div className="xl:ml-2">

@@ -112,7 +112,7 @@ const InviteCodeDisplay: React.FC<InviteCodeDisplayProps> = ({ compact = false }
     if (!referralCode) return;
 
     // Create the full referral URL
-    const referralUrl = `https://testnet.helioschain.network/?code=${referralCode}`;
+    const referralUrl = `https://app.helioschain.network/?code=${referralCode}`;
 
     navigator.clipboard
       .writeText(referralUrl)

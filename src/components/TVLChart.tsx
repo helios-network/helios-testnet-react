@@ -21,7 +21,20 @@ const TVLChart: React.FC = () => {
       try {
         setIsLoading(true);
         const tvlData = await fetchTVLHistory();
-        setData(tvlData);
+        // Dynamic downsample to avoid overcrowding: aim for ~1 point per 14px, cap between 24 and 60
+        const containerApproxWidth = Math.max(360, (containerRef.current?.getBoundingClientRect().width || 600) - 60);
+        const targetPoints = Math.min(60, Math.max(24, Math.floor(containerApproxWidth / 14)));
+        if (tvlData.length > targetPoints) {
+          const step = Math.ceil(tvlData.length / targetPoints);
+          const sampled = tvlData.filter((_, idx) => idx % step === 0);
+          // Ensure last point is included
+          if (sampled[sampled.length - 1] !== tvlData[tvlData.length - 1]) {
+            sampled.push(tvlData[tvlData.length - 1]);
+          }
+          setData(sampled);
+        } else {
+          setData(tvlData);
+        }
       } catch (error) {
         console.error("Failed to fetch TVL history:", error);
       } finally {
@@ -187,25 +200,27 @@ const TVLChart: React.FC = () => {
             transition={{ duration: 2, ease: "easeInOut" }}
           />
 
-          {/* Data points and hover hit areas */}
+          {/* Data points and hover hit areas - hide points when too dense */}
           {points.map((point, index) => (
             <g key={index}>
-              <motion.circle
-                cx={point.x}
-                cy={point.y}
-                r="4.5"
-                fill="#002DCB"
-                stroke="white"
-                strokeWidth="2"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: index * 0.08, duration: 0.25 }}
-              />
+              {data.length <= 40 && (
+                <motion.circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="4.5"
+                  fill="#002DCB"
+                  stroke="white"
+                  strokeWidth="2"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: index * 0.08, duration: 0.25 }}
+                />
+              )}
               {/* Larger transparent hit area to improve hover reliability */}
               <circle
                 cx={point.x}
                 cy={point.y}
-                r="14"
+                r={data.length <= 40 ? 14 : 10}
                 fill="transparent"
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
@@ -247,14 +262,25 @@ const TVLChart: React.FC = () => {
 
         {/* X-axis labels */}
         <div className="flex justify-between mt-3 text-[10px] text-[#5C6584] px-8">
-          {data.map((point, index) => (
-            <span key={index} className="text-center">
-              {new Date(point.date).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric' 
-              })}
-            </span>
-          ))}
+          {(() => {
+            const MAX_TICKS = 8;
+            const n = data.length;
+            if (n <= MAX_TICKS) {
+              return data.map((point, index) => (
+                <span key={index} className="text-center">
+                  {new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              ));
+            }
+            const step = Math.ceil(n / MAX_TICKS);
+            const ticks = data.filter((_, i) => i % step === 0);
+            if (ticks[ticks.length - 1] !== data[n - 1]) ticks.push(data[n - 1]);
+            return ticks.map((point, index) => (
+              <span key={index} className="text-center">
+                {new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            ));
+          })()}
         </div>
       </div>
 

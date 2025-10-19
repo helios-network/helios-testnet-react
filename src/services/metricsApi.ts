@@ -117,16 +117,23 @@ export const mockChainData: ChainData[] = [
   {
     name: 'Arbitrum',
     logo: '/images/chains/arbitrum.svg',
-    tvl: 0,
-    assets: 0,
-    status: 'coming-soon'
+    tvl: 2300000,
+    assets: 1,
+    status: 'active'
   },
   {
     name: 'Optimism',
     logo: '/images/chains/optimism.svg',
-    tvl: 0,
-    assets: 0,
-    status: 'coming-soon'
+    tvl: 1800000,
+    assets: 1,
+    status: 'active'
+  },
+  {
+    name: 'Base',
+    logo: '/images/chains/base.svg',
+    tvl: 3200000,
+    assets: 1,
+    status: 'active'
   }
 ];
 
@@ -138,6 +145,50 @@ export const mockTVLHistory = [
   { date: '2024-01-28', tvl: 25000000 },
   { date: '2024-02-04', tvl: 31000000 }
 ];
+
+// Backend API base
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+// Map chainId (mainnets + testnets) to the canonical family names used in UI
+const familyFromChainId = (chainId?: number): string | null => {
+  switch (chainId) {
+    // Ethereum mainnet + Sepolia
+    case 1:
+    case 11155111:
+      return 'Ethereum';
+    // BNB Chain mainnet + Testnet
+    case 56:
+    case 97:
+      return 'BNB Chain';
+    // Polygon mainnet + Amoy
+    case 137:
+    case 80002:
+      return 'Polygon';
+    // Arbitrum mainnet + Sepolia
+    case 42161:
+    case 421614:
+      return 'Arbitrum';
+    // Optimism mainnet + Sepolia
+    case 10:
+    case 11155420:
+      return 'Optimism';
+    // Base mainnet + Sepolia
+    case 8453:
+    case 84532:
+      return 'Base';
+    default:
+      return null;
+  }
+};
+
+const CANONICAL_CHAIN_LOGOS: Record<string, string> = {
+  'Ethereum': '/images/chains/ethereum.svg',
+  'BNB Chain': '/images/chains/bnb.svg',
+  'Polygon': '/images/chains/polygon.svg',
+  'Arbitrum': '/images/chains/arbitrum.svg',
+  'Optimism': '/images/chains/optimism.svg',
+  'Base': '/images/chains/base.svg'
+};
 
 // API functions
 export const fetchNetworkMetrics = async (): Promise<INetworkMetrics> => {
@@ -152,13 +203,45 @@ export const fetchAssetData = async (): Promise<AssetData[]> => {
 };
 
 export const fetchChainData = async (): Promise<ChainData[]> => {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  return mockChainData;
+  try {
+    const res = await fetch(`${API_URL}/metrics/tvl/chains`, { cache: 'no-store' });
+    const json = await res.json();
+    if (!res.ok || !json?.success) throw new Error(json?.error || 'Failed');
+    const items: Array<{ chainId: number; chainName?: string; tvlUsd: number }> = json.data || [];
+    const grouped = new Map<string, number>();
+    for (const it of items) {
+      const family = familyFromChainId(it.chainId) || (it.chainName || '').split(' ')[0];
+      if (!family) continue;
+      grouped.set(family, (grouped.get(family) || 0) + (it.tvlUsd || 0));
+    }
+    const result: ChainData[] = Array.from(grouped.entries()).map(([name, tvl]) => ({
+      name,
+      logo: CANONICAL_CHAIN_LOGOS[name] || '/images/chains/ethereum.svg',
+      tvl,
+      assets: 0,
+      status: 'active'
+    }));
+    return result;
+  } catch {
+    // fallback to mock on error
+    return mockChainData;
+  }
 };
 
 export const fetchTVLHistory = async (): Promise<typeof mockTVLHistory> => {
-  await new Promise(resolve => setTimeout(resolve, 400));
-  return mockTVLHistory;
+  try {
+    const res = await fetch(`${API_URL}/metrics/tvl/history?limit=500`, { cache: 'no-store' });
+    const json = await res.json();
+    if (!res.ok || !json?.success) throw new Error(json?.error || 'Failed');
+    const items: Array<{ date?: string; tvl?: number; timestamp?: string; totalUsd?: number }> = json.data || [];
+    const normalized = items.map((i) => ({
+      date: (i.date || i.timestamp) as string,
+      tvl: (i.tvl != null ? i.tvl : (i.totalUsd as number))
+    }));
+    return normalized.length ? normalized : mockTVLHistory;
+  } catch {
+    return mockTVLHistory;
+  }
 };
 
 // Utility functions
@@ -169,6 +252,20 @@ export const formatCurrency = (value: number): string => {
     return `$${(value / 1000).toFixed(1)}K`;
   }
   return `$${value.toFixed(2)}`;
+};
+
+// Full currency formatting for precise center labels and tooltips
+export const formatCurrencyFull = (value: number): string => {
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  } catch {
+    return `$${value.toFixed(2)}`;
+  }
 };
 
 export const formatNumber = (value: number): string => {

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Wallet, ChevronRight } from "lucide-react";
+import { api, LiquiditySummaryResponse } from "@/services/api";
+import { useStore } from "@/store/onboardingStore";
 
 interface ChainStakeSummary {
   chain: string;
@@ -15,28 +17,7 @@ interface LiquidityPosition {
   amountUsd: number; // normalized USD value
 }
 
-const mockFetchStakedByChain = async (): Promise<ChainStakeSummary[]> => {
-  return [
-    { chain: "Ethereum", amountUsd: 12500 },
-    { chain: "BNB Chain", amountUsd: 6200 },
-    { chain: "Arbitrum", amountUsd: 2400 },
-    { chain: "Base", amountUsd: 1800 },
-    { chain: "Optimism", amountUsd: 2100 },
-    { chain: "Polygon", amountUsd: 3100 },
-  ];
-};
-
-const mockFetchPositions = async (): Promise<LiquidityPosition[]> => {
-  return [
-    { id: "1", chain: "Ethereum", asset: "USDT", amount: 100, amountUsd: 100 },
-    { id: "2", chain: "BNB Chain", asset: "USDT", amount: 100, amountUsd: 100 },
-    { id: "3", chain: "Ethereum", asset: "WBTC", amount: 0.05, amountUsd: 3500 },
-    { id: "4", chain: "Polygon", asset: "USDC", amount: 500, amountUsd: 500 },
-    { id: "5", chain: "Arbitrum", asset: "ETH", amount: 0.3, amountUsd: 900 },
-    { id: "6", chain: "Base", asset: "USDC", amount: 200, amountUsd: 200 },
-    { id: "7", chain: "Optimism", asset: "USDT", amount: 150, amountUsd: 150 },
-  ];
-};
+// Removed mocks; real data comes from API
 
 const formatCurrency = (value: number) => {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
@@ -56,6 +37,8 @@ const StakedSummaryBar: React.FC = () => {
   const [positions, setPositions] = useState<LiquidityPosition[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [claimableHls, setClaimableHls] = useState<number>(0);
+  const isAuthenticated = useStore((s) => s.step > 0);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const CHAIN_ICON_URLS: Record<string, string> = {
     'Ethereum': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
@@ -65,11 +48,17 @@ const StakedSummaryBar: React.FC = () => {
     'Optimism': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/optimism/info/logo.png',
     'Polygon': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png',
   };
+  const CHAINS: string[] = ['Ethereum', 'BNB Chain', 'Arbitrum', 'Base', 'Optimism', 'Polygon'];
 
   const TOKEN_ICON_BASE = 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/svg/color';
   const TOKEN_SYMBOL_OVERRIDES: Record<string, string> = {
-    'WETH': 'weth',
-    'WBTC': 'wbtc',
+    // Normalize wrapped to base
+    'WETH': 'eth',
+    'WBTC': 'btc',
+    'WBNB': 'bnb',
+    'WMATIC': 'matic',
+    'WAVAX': 'avax',
+    // Base symbols
     'USDT': 'usdt',
     'USDC': 'usdc',
     'DAI': 'dai',
@@ -78,6 +67,8 @@ const StakedSummaryBar: React.FC = () => {
     'MATIC': 'matic',
     'ARB': 'arb',
     'OP': 'op',
+    'AVAX': 'avax',
+    'BTC': 'btc',
   };
   const getTokenIconUrl = (symbol: string): string => {
     const key = TOKEN_SYMBOL_OVERRIDES[symbol?.toUpperCase() || ''] || symbol?.toLowerCase() || 'generic';
@@ -126,15 +117,36 @@ const StakedSummaryBar: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-      const [chainData, pos] = await Promise.all([
-        mockFetchStakedByChain(),
-        mockFetchPositions(),
-      ]);
-      setByChain(chainData);
-      setTotal(chainData.reduce((sum, x) => sum + x.amountUsd, 0));
-      setPositions(pos);
+      try {
+        if (!isAuthenticated) {
+          // When unauthenticated, clear content
+          setByChain([]);
+          setPositions([]);
+          setTotal(0);
+          return;
+        }
+        setLoading(true);
+        const data: LiquiditySummaryResponse = await api.getUserLiquidity();
+        if (data?.success) {
+          const incoming = data.byChain || [];
+          const merged = CHAINS.map(chain => {
+            const found = incoming.find(x => x.chain === chain);
+            return { chain, amountUsd: found?.amountUsd || 0 };
+          });
+          setByChain(merged);
+          setTotal(data.totalUsd || 0);
+          setPositions((data.positions || []).map(p => ({ id: p.id, chain: p.chain, asset: p.asset, amount: p.amount, amountUsd: p.amountUsd })));
+        } else {
+          // Keep previous data to avoid UI flicker
+        }
+      } catch (e) {
+        // Keep previous data on transient errors to avoid flicker
+      }
+      finally {
+        setLoading(false);
+      }
     })();
-  }, []);
+  }, [isAuthenticated]);
 
   const positionsByChain = useMemo(() => {
     const grouped: Record<string, { totalUsd: number; items: LiquidityPosition[] }> = {};
@@ -179,8 +191,16 @@ const StakedSummaryBar: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/50"
+      className="relative bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/50"
     >
+      {loading && (
+        <div className="absolute top-3 right-3 text-[#828DB3]">
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 rounded-lg bg-[#002DCB] text-white flex items-center justify-center">
@@ -201,10 +221,10 @@ const StakedSummaryBar: React.FC = () => {
         </div>
       </div>
 
-      {/* Grouped by chain cards with asset chips */}
-      {positions.length > 0 && (
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {Object.entries(positionsByChain).map(([chain, group]) => {
+      {/* Grouped by chain cards with asset chips (always render all chains) */}
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {CHAINS.map((chain) => {
+            const group = positionsByChain[chain] || { totalUsd: 0, items: [] };
             const isExpanded = !!expanded[chain];
             const visibleItems = isExpanded ? group.items : group.items.slice(0, 4);
             const hiddenCount = Math.max(0, group.items.length - visibleItems.length);
@@ -273,8 +293,7 @@ const StakedSummaryBar: React.FC = () => {
               </div>
             );
           })}
-        </div>
-      )}
+      </div>
 
       {/* Rewards summary - polished (neutral) */}
       <div className="mt-4 rounded-2xl bg-white/90 backdrop-blur-sm border border-[#E2EBFF] p-5 shadow-sm">

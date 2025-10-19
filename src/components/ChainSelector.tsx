@@ -390,7 +390,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
           </div>
           <p className="text-blue-100 mb-6">
             You can bridge {selectedChain.supportedAssets.join(", ")} from {selectedChain.name} to Helios Beta Mainnet.
-            The process takes approximately {selectedChain.estimatedTime} and costs {selectedChain.bridgeFee}.
+            The process takes approximately {selectedChain.estimatedTime}.
           </p>
           <div className="flex items-center space-x-4">
             <button className="bg-white text-[#002DCB] px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors flex items-center">
