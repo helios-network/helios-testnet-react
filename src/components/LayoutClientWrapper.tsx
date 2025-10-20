@@ -19,6 +19,7 @@ import LoadingIndicator from './LoadingIndicator';
 import { api } from "../services/api";
 import { ethers } from "ethers";
 import { SeasonProvider } from "../contexts/SeasonContext";
+import PendingDepositBanner from "./PendingDepositBanner";
 
 // Dynamically import the Faucet content component
 const FaucetContent = dynamic(() => import('../app/faucet/FaucetContent'), { ssr: false });
@@ -190,6 +191,7 @@ function AppContent() {
     <SeasonProvider>
       <ViewContext.Provider value={{ currentView, setCurrentView }}>
         <Header currentView={currentView} />
+        <PendingDepositBanner />
         {currentView === "dashboard" && <Dashboard />}
         {currentView === "season" && isAuthenticated && <GamifiedDashboard />}
         {currentView === "referrals" && isAuthenticated && <ReferralLeaderboard />}

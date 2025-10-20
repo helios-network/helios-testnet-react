@@ -1,25 +1,15 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { api, AvailableTokensResponse, FaucetClaimHistoryResponse } from "@/services/api";
+import { api } from "@/services/api";
 import { Button } from "@/components/button";
-import styles from "./faucet.module.scss";
 import { useAccount } from "wagmi";
-import { ViewContext } from "@/components/LayoutClientWrapper";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import { Droplet, Clock, CheckCircle, AlertCircle, Globe, Database, Shield } from "lucide-react";
+import { Droplet, Clock, CheckCircle, AlertCircle, Globe, Database } from "lucide-react";
 import Footer from "@/components/Footer";
-import { Turnstile } from '@marsidev/react-turnstile';
+import { EXPLORER_URL } from "@/wagmiConfig/app";
 
-interface TokenInfo {
-  token: string;
-  chain: string;
-  maxClaimAmount: number;
-  cooldownHours: number;
-  nativeToken: boolean;
-  contractAddress?: string;
-}
+// No token selection UI in automatic mode
 
 interface ClaimHistoryItem {
   _id: string;
@@ -30,22 +20,19 @@ interface ClaimHistoryItem {
   status: string;
   transactionHash?: string;
   createdAt: string;
+  triggeredByExternalDeposit?: boolean;
+  externalDepositTxHash?: string;
+  externalDepositChainId?: number;
+  externalDepositUsdValue?: number;
+  externalDepositAmountFormatted?: string;
+  externalDepositSymbol?: string;
 }
 
 export default function FaucetContent() {
   const { address, isConnected } = useAccount();
-  const [availableTokens, setAvailableTokens] = useState<TokenInfo[]>([]);
-  const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
-  const [selectedChain, setSelectedChain] = useState<string>("");
-  const [amount, setAmount] = useState<number>(0);
   const [claimHistory, setClaimHistory] = useState<ClaimHistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [claimLoading, setClaimLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
-  const [eligibility, setEligibility] = useState<Record<string, boolean>>({});
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
-  const turnstileRef = useRef<any>(null);
 
   useEffect(() => {
     if (isConnected) {
@@ -53,150 +40,23 @@ export default function FaucetContent() {
     }
   }, [isConnected]);
 
-  useEffect(() => {
-    if (selectedToken) {
-      setSelectedChain(selectedToken.chain);
-    }
-  }, [selectedToken]);
-
-  useEffect(() => {
-    if (selectedToken && selectedChain) {
-      checkEligibility(selectedToken.token, selectedChain);
-    }
-  }, [selectedToken, selectedChain]);
+  // No selection/eligibility logic in auto mode
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [tokensResponse, historyResponse] = await Promise.all([
-        api.getAvailableFaucetTokens(),
-        api.getFaucetClaimHistory(1, 10)
-      ]);
-      
-      if (tokensResponse && tokensResponse.tokens && tokensResponse.tokens.length > 0) {
-        setAvailableTokens(tokensResponse.tokens);
-        setSelectedToken(tokensResponse.tokens[0]);
-        setAmount(tokensResponse.tokens[0].maxClaimAmount);
-        
-        // With new format each token has a single chain, so just use that
-        if (tokensResponse.tokens[0].chain) {
-          setSelectedChain(tokensResponse.tokens[0].chain);
-        }
-      } else {
-        setAvailableTokens([]);
-        setSelectedToken(null);
-        setError("No tokens available. Please try again later.");
-      }
-      
-      if (historyResponse && historyResponse.faucetClaims) {
-        setClaimHistory(historyResponse.faucetClaims);
-      } else {
-        setClaimHistory([]);
-      }
+      const historyResponse = await api.getFaucetClaimHistory(1, 10);
+      setClaimHistory(historyResponse?.faucetClaims || []);
     } catch (error) {
       console.error("Faucet data loading error:", error);
       setError("Failed to load faucet data. Please try again later.");
-      setAvailableTokens([]);
-      setSelectedToken(null);
       setClaimHistory([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const checkEligibility = async (token: string, chain: string) => {
-    if (!token || !chain) {
-      setEligibility(prev => ({
-        ...prev,
-        [`${token}-${chain}`]: false
-      }));
-      return;
-    }
-    
-    try {
-      const response = await api.checkFaucetEligibility(token, chain);
-      
-      if (response && response.isEligible !== undefined) {
-        setEligibility(prev => ({
-          ...prev,
-          [`${token}-${chain}`]: response.isEligible
-        }));
-      } else {
-        setEligibility(prev => ({
-          ...prev,
-          [`${token}-${chain}`]: false
-        }));
-      }
-    } catch (error) {
-      console.error("Eligibility check error:", error);
-      setEligibility(prev => ({
-        ...prev,
-        [`${token}-${chain}`]: false
-      }));
-    }
-  };
-
-  const handleClaimTokens = async () => {
-    if (!selectedToken || !selectedChain) return;
-    
-    // Check if Turnstile token is available
-    if (!turnstileToken) {
-      setError("Please complete the security verification first.");
-      return;
-    }
-    
-    setClaimLoading(true);
-    setError("");
-    setSuccessMessage("");
-    
-    try {
-      const response = await api.requestFaucetTokens(
-        selectedToken.token,
-        selectedChain,
-        amount,
-        turnstileToken
-      );
-      
-      setSuccessMessage(`Successfully claimed ${amount} ${selectedToken.token} on ${selectedChain}!`);
-      
-      // Reset Turnstile for next use
-      setTurnstileToken("");
-      if (turnstileRef.current) {
-        turnstileRef.current.reset();
-      }
-      
-      // Refresh claim history and eligibility
-      const historyResponse = await api.getFaucetClaimHistory(1, 10);
-      setClaimHistory(historyResponse.faucetClaims);
-      checkEligibility(selectedToken.token, selectedChain);
-    } catch (error: any) {
-      setError(error.message || "Failed to claim tokens. Please try again later.");
-      
-      // Reset Turnstile on error
-      setTurnstileToken("");
-      if (turnstileRef.current) {
-        turnstileRef.current.reset();
-      }
-    } finally {
-      setClaimLoading(false);
-    }
-  };
-
-  const handleTokenChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const tokenValue = e.target.value;
-    const token = availableTokens.find(t => t.token === tokenValue) || null;
-    setSelectedToken(token);
-    if (token) {
-      setAmount(token.maxClaimAmount);
-      setSelectedChain(token.chain);
-    }
-    
-    // Reset Turnstile when token changes for security
-    setTurnstileToken("");
-    if (turnstileRef.current) {
-      turnstileRef.current.reset();
-    }
-  };
+  // No selection or manual claim handlers in automatic mode
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -208,9 +68,50 @@ export default function FaucetContent() {
     }).format(date);
   };
 
-  const isEligible = selectedToken && selectedChain 
-    ? (eligibility[`${selectedToken.token}-${selectedChain}`] === true)
-    : false;
+  // Map external chain IDs to their transaction explorer URLs
+  const getExternalExplorerTxUrl = (
+    chainId?: number,
+    txHash?: string
+  ): string | null => {
+    if (!chainId || !txHash) return null;
+    switch (chainId) {
+      // Mainnets
+      case 1: return `https://etherscan.io/tx/${txHash}`;
+      case 56: return `https://bscscan.com/tx/${txHash}`;
+      case 42161: return `https://arbiscan.io/tx/${txHash}`;
+      case 8453: return `https://basescan.org/tx/${txHash}`;
+      case 10: return `https://optimistic.etherscan.io/tx/${txHash}`;
+      case 137: return `https://polygonscan.com/tx/${txHash}`;
+      // Testnets commonly used in our listener config
+      case 11155111: return `https://sepolia.etherscan.io/tx/${txHash}`;
+      case 97: return `https://testnet.bscscan.com/tx/${txHash}`;
+      case 421614: return `https://sepolia.arbiscan.io/tx/${txHash}`;
+      case 84532: return `https://sepolia.basescan.org/tx/${txHash}`;
+      case 11155420: return `https://sepolia-optimistic.etherscan.io/tx/${txHash}`;
+      case 80002: return `https://amoy.polygonscan.com/tx/${txHash}`;
+      default: return null;
+    }
+  };
+
+  const getExternalChainName = (chainId?: number): string | null => {
+    switch (chainId) {
+      case 1: return 'Ethereum';
+      case 56: return 'BNB Chain';
+      case 42161: return 'Arbitrum';
+      case 8453: return 'Base';
+      case 10: return 'Optimism';
+      case 137: return 'Polygon';
+      case 11155111: return 'Ethereum Sepolia';
+      case 97: return 'BSC Testnet';
+      case 421614: return 'Arbitrum Sepolia';
+      case 84532: return 'Base Sepolia';
+      case 11155420: return 'OP Sepolia';
+      case 80002: return 'Polygon Amoy';
+      default: return null;
+    }
+  };
+
+  // No eligibility in automatic mode
 
   const shortenAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -259,7 +160,7 @@ export default function FaucetContent() {
             className="text-3xl font-bold text-[#060F32] mb-8 flex items-center"
           >
             <Droplet className="w-7 h-7 text-[#002DCB] mr-3" />
-            Helios Testnet Faucet
+            Helios Faucet
             <span className="ml-3 text-sm px-3 py-1 bg-[#E2EBFF] text-[#002DCB] rounded-full">Beta</span>
           </motion.h1>
           
@@ -269,278 +170,165 @@ export default function FaucetContent() {
               <p className="mt-4 text-[#002DCB] font-medium">Loading faucet data...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-              {/* Claim Section - Wider column */}
-              <div className="lg:col-span-3 flex flex-col space-y-6">
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="bg-white rounded-2xl shadow-md p-8"
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center">
-                      <div className="bg-[#E2EBFF] p-3 rounded-full relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#002DCB]/10 to-transparent rounded-full"></div>
-                        <Droplet className="w-6 h-6 text-[#002DCB]" />
-                      </div>
-                      <div className="flex-1 ml-4">
-                        <div className="flex items-center gap-1">
-                          <span className="text-2xl text-[#060F32] custom-font font-bold">
-                            Claim Test Tokens
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-[#828DB3]">
-                            Get tokens to test features on the Helios testnet
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="bg-white rounded-2xl shadow-md p-8 mb-8"
+            >
+              <div className="flex items-center mb-6">
+                <div className="bg-[#E2EBFF] p-3 rounded-full relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#002DCB]/10 to-transparent rounded-full"></div>
+                  <Droplet className="w-6 h-6 text-[#002DCB]" />
+                </div>
+                <div className="ml-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl text-[#060F32] custom-font font-bold">Automatic HLS Faucet</span>
+                    <span className="text-xs px-2 py-0.5 bg-[#E2EBFF] text-[#002DCB] rounded-full">Beta</span>
                   </div>
-                  
-                  {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 p-5 rounded-xl mb-6 flex items-start">
-                      <AlertCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">{error}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {successMessage && (
-                    <div className="bg-green-50 border border-green-200 text-green-600 p-5 rounded-xl mb-6 flex items-start">
-                      <CheckCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">{successMessage}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="space-y-5">
-                    <div className="form-group">
-                      <label className="block text-sm font-medium text-[#060F32] mb-2" htmlFor="token">
-                        Select Token
-                      </label>
-                      <select 
-                        id="token" 
-                        value={selectedToken?.token || ""}
-                        onChange={handleTokenChange}
-                        className="w-full p-3 bg-[#F9FAFF] border border-[#D7E0FF] rounded-lg text-[#060F32] focus:outline-none focus:ring-2 focus:ring-[#002DCB] focus:border-transparent"
-                        disabled={!availableTokens || availableTokens.length === 0}
-                      >
-                        {availableTokens && availableTokens.length > 0 ? (
-                          availableTokens.map((token, index) => (
-                            <option key={`${token.token}-${index}`} value={token.token}>
-                              {token.token} on {token.chain} (Max: {token.maxClaimAmount})
-                            </option>
-                          ))
-                        ) : (
-                          <option key="no-tokens" value="">No tokens available</option>
-                        )}
-                      </select>
-                    </div>
-                    
-                    {selectedToken && (
-                      <>
-                        <div className="form-group">
-                          <label className="block text-sm font-medium text-[#060F32] mb-2" htmlFor="chain">
-                            Chain
-                          </label>
-                          <input
-                            type="text"
-                            id="chain"
-                            value={selectedToken.chain}
-                            className="w-full p-3 bg-[#F9FAFF] border border-[#D7E0FF] rounded-lg text-[#060F32]"
-                            disabled={true}
-                          />
-                        </div>
-                        
-                        <div className="form-group">
-                          <label className="block text-sm font-medium text-[#060F32] mb-2" htmlFor="amount">
-                            Amount
-                          </label>
-                          <input 
-                            id="amount" 
-                            type="number" 
-                            min={0}
-                            max={selectedToken.maxClaimAmount || 0}
-                            value={amount}
-                            onChange={(e) => {
-                              setAmount(Number(e.target.value));
-                              // Reset Turnstile when amount changes for security
-                              setTurnstileToken("");
-                              if (turnstileRef.current) {
-                                turnstileRef.current.reset();
-                              }
-                            }}
-                            className="w-full p-3 bg-[#F9FAFF] border border-[#D7E0FF] rounded-lg text-[#060F32] focus:outline-none focus:ring-2 focus:ring-[#002DCB] focus:border-transparent"
-                            disabled={!isEligible}
-                          />
-                          <p className="text-xs text-[#828DB3] mt-1">
-                            Max: {selectedToken.maxClaimAmount || 0}
-                          </p>
-                        </div>
-                        
-                        {/* Turnstile Security Verification */}
-                        <div className="form-group">
-                          <label className="block text-sm font-medium text-[#060F32] mb-2">
-                            <div className="flex items-center">
-                              <Shield className="w-4 h-4 mr-2" />
-                              Security Verification
-                            </div>
-                          </label>
-                          <div className="bg-[#F9FAFF] border border-[#D7E0FF] rounded-lg p-4">
-                            <Turnstile
-                              ref={turnstileRef}
-                              siteKey="0x4AAAAAABhz7Yc1no53_eWA"
-                              onSuccess={(token: string) => {
-                                console.log('Turnstile verified:', token);
-                                setTurnstileToken(token);
-                              }}
-                              onError={() => {
-                                console.error('Turnstile error');
-                                setTurnstileToken("");
-                              }}
-                              onExpire={() => {
-                                console.log('Turnstile expired');
-                                setTurnstileToken("");
-                              }}
-                            />
-                          </div>
-                          {!turnstileToken && (
-                            <p className="text-xs text-[#828DB3] mt-1">
-                              Please complete the security verification to proceed
-                            </p>
-                          )}
-                          {turnstileToken && (
-                            <p className="text-xs text-green-600 mt-1 flex items-center">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Security verification completed
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className={`p-4 rounded-xl ${isEligible ? 'bg-[#E9F7EF] border border-[#00CC00]/30' : 'bg-[#FDEDED] border border-[#FF6666]/30'} mt-4`}>
-                          <div className="flex items-start">
-                            {isEligible ? (
-                              <>
-                                <CheckCircle className="w-5 h-5 text-[#00CC00] mr-3 mt-0.5 flex-shrink-0" />
-                                <p className="text-[#00CC00] font-medium">You are eligible to claim this token!</p>
-                              </>
-                            ) : (
-                              <>
-                                <Clock className="w-5 h-5 text-[#FF6666] mr-3 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <p className="text-[#FF6666] font-medium">Not eligible yet</p>
-                                  <p className="text-[#FF6666] text-sm mt-1">Please wait for the cooldown period ({selectedToken.cooldownHours || "unknown"} hours) to end.</p>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="mt-6">
-                          <Button 
-                            onClick={handleClaimTokens}
-                            disabled={!isEligible || claimLoading || !selectedToken || !selectedChain || !turnstileToken}
-                            variant="primary"
-                            size="medium"
-                            className="w-full py-3"
-                          >
-                            {claimLoading ? "Processing..." : 
-                             !turnstileToken ? "Complete Security Verification" : 
-                             "Claim Tokens"}
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </motion.div>
+                  <p className="text-sm text-[#828DB3] mt-1">Every eligible external deposit (≥ $1) triggers 1 HLS sent automatically to your wallet on Helios.</p>
+                </div>
               </div>
-              
-              {/* History Section - Narrower column */}
-              <div className="lg:col-span-2 space-y-6">
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                  className="bg-white rounded-2xl shadow-md p-8"
-                >
-                  <div className="flex items-center mb-6">
-                    <div className="bg-[#002DCB] p-2 rounded-full mr-4">
-                      <Clock className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-xl font-bold text-[#060F32]">Claim History</h2>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 p-5 rounded-xl mb-6 flex items-start">
+                  <AlertCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">{error}</p>
                   </div>
-                  
-                  {claimHistory && claimHistory.length > 0 ? (
-                    <div className="overflow-hidden">
-                      {claimHistory.map((claim, index) => (
-                        <motion.div
-                          key={claim._id || `claim-${index}`}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05, duration: 0.3 }}
-                          className="border-b border-[#D7E0FF] last:border-b-0 py-4 first:pt-0"
+                </div>
+              )}
+
+              <div className="p-4 rounded-xl bg-[#E9F7EF] border border-[#00CC00]/30 mb-6">
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-[#00CC00] mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[#060F32] font-semibold">How it works</p>
+                    <ul className="list-disc ml-5 mt-2 text-[#4A5775] text-sm space-y-1">
+                      <li>Bridge assets from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon to Helios.</li>
+                      <li>Each deposit worth $1+ gets you <span className="font-semibold">1 HLS</span> sent automatically.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center mb-4">
+                <div className="bg-[#002DCB] p-2 rounded-full mr-3">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-lg font-bold text-[#060F32]">Reward History</h2>
+              </div>
+
+              {claimHistory && claimHistory.length > 0 ? (
+                <div className="overflow-hidden">
+                  {claimHistory.map((claim, index) => (
+                    <motion.div
+                      key={claim._id || `claim-${index}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                      className="border-b border-[#D7E0FF] last:border-b-0 py-4 first:pt-0"
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="flex items-center">
+                          <div className="bg-[#E2EBFF] p-1.5 rounded-full mr-2">
+                            <Database className="w-3.5 h-3.5 text-[#002DCB]" />
+                          </div>
+                          <span className="font-medium text-[#060F32]">{claim.token}</span>
+                        </div>
+                        <div className={`text-sm font-medium px-2 py-1 rounded-full 
+                          ${claim.status?.toLowerCase() === 'completed' ? 'bg-green-100 text-green-700' : 
+                            claim.status?.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                            'bg-red-100 text-red-700'}`}
                         >
-                          <div className="flex justify-between items-center mb-1">
-                            <div className="flex items-center">
-                              <div className="bg-[#E2EBFF] p-1.5 rounded-full mr-2">
-                                <Database className="w-3.5 h-3.5 text-[#002DCB]" />
-                              </div>
-                              <span className="font-medium text-[#060F32]">{claim.token}</span>
-                            </div>
-                            <div className={`text-sm font-medium px-2 py-1 rounded-full 
-                              ${claim.status?.toLowerCase() === 'completed' ? 'bg-green-100 text-green-700' : 
-                                claim.status?.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
-                                'bg-red-100 text-red-700'}`}
-                            >
-                              {claim.status || 'Unknown'}
-                            </div>
+                          {claim.status || 'Unknown'}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="text-sm text-[#4A5775]">
+                          <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                            <span className="inline-flex items-center text-[#828DB3]">
+                              <Globe className="w-3 h-3 mr-1" />
+                              {claim.chain}
+                            </span>
+                            <span className="text-[#828DB3]">•</span>
+                            <span>{claim.amount} HLS</span>
                           </div>
-                          
-                          <div className="flex justify-between items-center">
-                            <div className="text-sm text-[#828DB3]">
-                              <span className="inline-flex items-center">
-                                <Globe className="w-3 h-3 mr-1" />
-                                {claim.chain}
+                          {claim.triggeredByExternalDeposit ? (
+                            <div className="mt-1 text-xs text-[#4A5775]">
+                              <span className="text-[#828DB3]">from deposit</span>
+                              <span className="ml-1">
+                                {claim.externalDepositAmountFormatted || '?' } {claim.externalDepositSymbol || ''}
                               </span>
-                              <span className="mx-2">•</span>
-                              <span>{claim.amount} tokens</span>
+                              {typeof claim.externalDepositUsdValue === 'number' && (
+                                <span className="ml-2">(~${claim.externalDepositUsdValue.toFixed(2)} USD)</span>
+                              )}
+                              {(() => {
+                                const name = getExternalChainName(claim.externalDepositChainId);
+                                return name ? <span className="ml-2 text-[#828DB3]">on {name}</span> : null;
+                              })()}
                             </div>
-                            <div className="text-xs text-[#828DB3]">
-                              {formatDate(claim.createdAt)}
-                            </div>
-                          </div>
-                          
-                          {claim.transactionHash && (
-                            <div className="mt-2">
-                              <a 
-                                href={`https://explorer.helioschainlabs.org/tx/${claim.transactionHash}`}
+                          ) : null}
+                        </div>
+                        <div className="text-xs text-[#828DB3] whitespace-nowrap">
+                          {formatDate(claim.createdAt)}
+                        </div>
+                      </div>
+
+                      {claim.transactionHash && (
+                        <div className="mt-2">
+                          <a 
+                            href={`${EXPLORER_URL}/tx/${claim.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#002DCB] hover:underline"
+                          >
+                            View HLS transfer →
+                          </a>
+                        </div>
+                      )}
+
+                      {claim.triggeredByExternalDeposit && claim.externalDepositTxHash && (
+                        <div className="mt-1 text-xs text-[#4A5775]">
+                          Deposit:
+                          {(() => {
+                            const extUrl = getExternalExplorerTxUrl(
+                              claim.externalDepositChainId,
+                              claim.externalDepositTxHash
+                            );
+                            const short = `${claim.externalDepositTxHash.slice(0, 10)}...`;
+                            return extUrl ? (
+                              <a
+                                href={extUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-[#002DCB] hover:underline"
+                                className="ml-1 text-[#002DCB] hover:underline"
                               >
-                                View transaction →
+                                {short}
                               </a>
-                            </div>
+                            ) : (
+                              <span className="ml-1">{short}</span>
+                            );
+                          })()}
+                          {typeof claim.externalDepositUsdValue === 'number' && (
+                            <span className="ml-2">(~${claim.externalDepositUsdValue.toFixed(2)} USD)</span>
                           )}
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10">
-                      <div className="w-16 h-16 rounded-full bg-[#E2EBFF] mx-auto flex items-center justify-center mb-4">
-                        <Database className="w-8 h-8 text-[#002DCB]" />
-                      </div>
-                      <p className="text-[#060F32] font-medium">No claim history yet</p>
-                      <p className="text-sm text-[#828DB3] mt-1">Your token claims will appear here</p>
-                    </div>
-                  )}
-                </motion.div>
-              </div>
-            </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 rounded-full bg-[#E2EBFF] mx-auto flex items-center justify-center mb-4">
+                    <Database className="w-8 h-8 text-[#002DCB]" />
+                  </div>
+                  <p className="text-[#060F32] font-medium">No reward history yet</p>
+                  <p className="text-sm text-[#828DB3] mt-1">Make a deposit from an external chain to earn HLS</p>
+                </div>
+              )}
+            </motion.div>
           )}
         </div>
       </div>

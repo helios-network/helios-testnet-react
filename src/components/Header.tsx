@@ -10,6 +10,7 @@ import { Wallet } from "../app/(components)/wallet";
 import { useAccount, useBalance } from "wagmi";
 import { heliosTestnet } from "../wagmiConfig/config";
 import Image from "next/image";
+import NetworkSwitcher from "./NetworkSwitcher";
 
 interface HeaderProps {
   currentView: string;
@@ -300,6 +301,9 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
                 {formatHlsAmount(nativeBalance.formatted)} <span className="ml-1 text-[#002DCB]">HLS</span>
               </div>
             )}
+            <div className="hidden md:block">
+              <NetworkSwitcher />
+            </div>
             <div className="xl:ml-2">
               <Wallet />
             </div>

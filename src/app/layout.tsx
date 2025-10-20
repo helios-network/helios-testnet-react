@@ -5,10 +5,10 @@ import type { Metadata, Viewport } from 'next';
 
 // Define metadata for SEO and social sharing
 export const metadata: Metadata = {
-  title: 'Helios Testnet - Gamified Builder Experience',
+  title: 'Helios',
   description: 'Join Helios Testnet to earn XP by completing on-chain activities, claiming from faucets, and inviting friends through our referral system. Experience the Interchain Proof of Stake and Reputation blockchain.',
   keywords: ['Helios', 'blockchain', 'testnet', 'crypto', 'web3', 'XP', 'rewards', 'staking', 'faucet', 'I-PoSR', 'referral'],
-  applicationName: 'Helios Testnet',
+  applicationName: 'Helios',
   authors: [{ name: 'Helios Chain Labs' }],
   creator: 'Helios Chain Labs',
   publisher: 'Helios Chain Labs',
@@ -50,9 +50,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://testnet.helioschain.network',
-    title: 'Helios Testnet - Earn XP Through Blockchain Activities',
+    title: 'Helios',
     description: 'Helios is a blockchain with Interchain Proof of Stake and Reputation (I-PoSR) consensus. Join our testnet to farm XP points by completing on-chain activities.',
-    siteName: 'Helios Testnet',
+    siteName: 'Helios',
     images: [
       {
         url: '/images/helios-social-card.png',
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Helios Testnet - Gamified Builder Experience',
+    title: 'Helios',
     description: 'Earn XP on Helios Testnet by claiming from faucets, completing on-chain activities, and using our referral system.',
     images: ['/images/helios-social-card.png'],
     creator: '@HeliosChain',

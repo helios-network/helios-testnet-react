@@ -1,7 +1,6 @@
 "use client";
 
-import { heliosChain, projectId, wagmiAdapter } from "@/wagmiConfig/wagmi";
-import { mainnet } from "@reown/appkit/networks";
+import { heliosChain, projectId, wagmiAdapter, networks } from "@/wagmiConfig/wagmi";
 import { createAppKit, SIWXMessage, SIWXSession } from "@reown/appkit/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, type ReactNode } from "react";
@@ -98,7 +97,7 @@ const siwxConfig = useSIWX ? {
 const modal = createAppKit({
   adapters: [wagmiAdapter],
   projectId,
-  networks: [heliosChain, mainnet],
+  networks,
   defaultNetwork: heliosChain,
   metadata,
   features: {

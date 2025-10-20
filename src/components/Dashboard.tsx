@@ -20,15 +20,25 @@ const Dashboard = () => {
   const isAuthenticated = step > 0;
   const [showChainSelector, setShowChainSelector] = useState(false);
   const [selectedChain, setSelectedChain] = useState<any>(null);
+  const [useZoom, setUseZoom] = useState(false);
 
   // Emulate browser zoom (+15%) while keeping content filling viewport
   const SCALE = 1.15;
-  const scaledContainerStyle: React.CSSProperties = {
-    transform: `scale(${SCALE})`,
-    transformOrigin: "top left",
-    width: `${100 / SCALE}%`,
-    minHeight: `${100 / SCALE}vh`,
-  };
+  const scaledContainerStyle: React.CSSProperties = useZoom
+    ? ({ zoom: SCALE } as any)
+    : {
+        transform: `scale(${SCALE})`,
+        transformOrigin: "top left",
+        width: `${100 / SCALE}%`,
+        minHeight: `${100 / SCALE}vh`,
+      };
+
+  useEffect(() => {
+    try {
+      const supportsZoom = typeof window !== "undefined" && (CSS as any)?.supports?.("zoom", "1.15");
+      if (supportsZoom) setUseZoom(true);
+    } catch {}
+  }, []);
 
   // Public view for non-authenticated users
   if (!isAuthenticated) {
@@ -121,6 +131,7 @@ const Dashboard = () => {
                     setSelectedChain(chain);
                   }}
                   selectedChain={selectedChain}
+                  onSubmitted={() => setShowChainSelector(false)}
                 />
               </div>
             </motion.div>
@@ -209,6 +220,7 @@ const Dashboard = () => {
                   setSelectedChain(chain);
                 }}
                 selectedChain={selectedChain}
+                onSubmitted={() => setShowChainSelector(false)}
               />
             </div>
           </motion.div>

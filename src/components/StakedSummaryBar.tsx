@@ -39,6 +39,7 @@ const StakedSummaryBar: React.FC = () => {
   const [claimableHls, setClaimableHls] = useState<number>(0);
   const isAuthenticated = useStore((s) => s.step > 0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [chainContracts, setChainContracts] = useState<Record<string, { address: string; explorer?: string }>>({});
 
   const CHAIN_ICON_URLS: Record<string, string> = {
     'Ethereum': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
@@ -75,33 +76,7 @@ const StakedSummaryBar: React.FC = () => {
     return `${TOKEN_ICON_BASE}/${key}.svg`;
   };
 
-  // Hyperion deposit contract config (per chain)
-  const CHAIN_HYPERION_CONTRACTS: Record<string, { address: string; explorer: string }> = {
-    'Ethereum': {
-      address: '0x0f7c41147ad3b58f9804045593b078fdd41919f3',
-      explorer: 'https://sepolia.etherscan.io/address/0x0f7c41147ad3b58f9804045593b078fdd41919f3'
-    },
-    'BNB Chain': {
-      address: '',
-      explorer: ''
-    },
-    'Arbitrum': {
-      address: '',
-      explorer: ''
-    },
-    'Base': {
-      address: '',
-      explorer: ''
-    },
-    'Optimism': {
-      address: '',
-      explorer: ''
-    },
-    'Polygon': {
-      address: '',
-      explorer: ''
-    },
-  };
+  // Deposit contract data is provided by API via chainContracts
 
   const shortenAddress = (addr: string): string => {
     if (!addr) return 'Coming soon';
@@ -136,6 +111,7 @@ const StakedSummaryBar: React.FC = () => {
           setByChain(merged);
           setTotal(data.totalUsd || 0);
           setPositions((data.positions || []).map(p => ({ id: p.id, chain: p.chain, asset: p.asset, amount: p.amount, amountUsd: p.amountUsd })));
+          setChainContracts(data.chainContracts || {});
         } else {
           // Keep previous data to avoid UI flicker
         }
@@ -148,12 +124,59 @@ const StakedSummaryBar: React.FC = () => {
     })();
   }, [isAuthenticated]);
 
+  // Refresh liquidity when a deposit is confirmed
+  useEffect(() => {
+    const refresh = async () => {
+      try {
+        setLoading(true);
+        const data: LiquiditySummaryResponse = await api.getUserLiquidity();
+        if (data?.success) {
+          const incoming = data.byChain || [];
+          const merged = CHAINS.map(chain => {
+            const found = incoming.find(x => x.chain === chain);
+            return { chain, amountUsd: found?.amountUsd || 0 };
+          });
+          setByChain(merged);
+          setTotal(data.totalUsd || 0);
+          setPositions((data.positions || []).map(p => ({ id: p.id, chain: p.chain, asset: p.asset, amount: p.amount, amountUsd: p.amountUsd })));
+          setChainContracts(data.chainContracts || {});
+        }
+      } catch {}
+      finally {
+        setLoading(false);
+      }
+    };
+    const handler = () => { void refresh(); };
+    window.addEventListener('helios:liquidity-refresh', handler);
+    return () => window.removeEventListener('helios:liquidity-refresh', handler);
+  }, []);
+
   const positionsByChain = useMemo(() => {
     const grouped: Record<string, { totalUsd: number; items: LiquidityPosition[] }> = {};
     for (const p of positions) {
-      if (!grouped[p.chain]) grouped[p.chain] = { totalUsd: 0, items: [] };
+      if (!grouped[p.chain]) {
+        grouped[p.chain] = { totalUsd: 0, items: [] };
+      }
       grouped[p.chain].totalUsd += p.amountUsd;
-      grouped[p.chain].items.push(p);
+
+      // Merge positions with the same asset within a chain
+      const existingIndex = grouped[p.chain].items.findIndex(i => i.asset === p.asset);
+      if (existingIndex >= 0) {
+        const existing = grouped[p.chain].items[existingIndex];
+        grouped[p.chain].items[existingIndex] = {
+          ...existing,
+          amount: (existing.amount || 0) + (p.amount || 0),
+          amountUsd: existing.amountUsd + p.amountUsd,
+        };
+      } else {
+        grouped[p.chain].items.push({
+          id: `${p.chain}-${p.asset}`,
+          chain: p.chain,
+          asset: p.asset,
+          amount: p.amount,
+          amountUsd: p.amountUsd,
+        });
+      }
     }
     // Sort items within each chain by USD desc for nicer display
     Object.values(grouped).forEach(g => g.items.sort((a, b) => b.amountUsd - a.amountUsd));
@@ -191,7 +214,7 @@ const StakedSummaryBar: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/50"
+      className="relative bg-white rounded-xl p-4 border border-white/50"
     >
       {loading && (
         <div className="absolute top-3 right-3 text-[#828DB3]">
@@ -267,15 +290,15 @@ const StakedSummaryBar: React.FC = () => {
                 <div className="mt-3 pt-2 border-t border-[#E2EBFF] text-[11px] text-[#5C6584]">
                   <div className="flex items-center justify-between">
                     <span>Deposit Contract</span>
-                    {CHAIN_HYPERION_CONTRACTS[chain]?.address ? (
+                    {chainContracts[chain]?.address ? (
                       <a
-                        href={CHAIN_HYPERION_CONTRACTS[chain].explorer}
+                        href={chainContracts[chain]?.explorer || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[#002DCB] hover:underline"
-                        title={CHAIN_HYPERION_CONTRACTS[chain].address}
+                        title={chainContracts[chain]?.address}
                       >
-                        {shortenAddress(CHAIN_HYPERION_CONTRACTS[chain].address)}
+                        {shortenAddress(chainContracts[chain]?.address || '')}
                       </a>
                     ) : (
                       <span className="italic">Coming soon</span>
@@ -296,7 +319,7 @@ const StakedSummaryBar: React.FC = () => {
       </div>
 
       {/* Rewards summary - polished (neutral) */}
-      <div className="mt-4 rounded-2xl bg-white/90 backdrop-blur-sm border border-[#E2EBFF] p-5 shadow-sm">
+      <div className="mt-4 rounded-2xl bg-white border border-[#E2EBFF] p-5 shadow-sm">
         {/* Overview */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>

@@ -1,0 +1,323 @@
+.networkSwitcher {
+  position: relative;
+  z-index: 100;
+}
+
+.triggerButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 2px solid #E2EBFF;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &:hover {
+    border-color: #E2EBFF;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.currentNetwork {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.networkIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.unknownIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #E2EBFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #5C6584;
+}
+
+.networkName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #060F32;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  color: #5C6584;
+  transition: transform 0.2s ease;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 15, 50, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(6, 15, 50, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #E2EBFF;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #060F32;
+  margin: 0;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #5C6584;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: #F9FAFF;
+    color: #060F32;
+  }
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #E2EBFF;
+}
+
+.filterButton {
+  flex: 1;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid #E2EBFF;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5C6584;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #F9FAFF;
+    color: #060F32;
+  }
+
+  &.active {
+    background: #002DCB;
+    border-color: #002DCB;
+    color: white;
+  }
+}
+
+.networkList {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #E2EBFF;
+    border-radius: 3px;
+
+    &:hover {
+      background: #5C6584;
+    }
+  }
+}
+
+.networkItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  margin-bottom: 0.25rem;
+
+  &:hover:not(:disabled) {
+    background: #F9FAFF;
+    border-color: #E2EBFF;
+  }
+
+  &.active {
+    background: #F9FAFF;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .networkIcon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+}
+
+.networkInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.networkNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.networkLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #060F32;
+}
+
+.testnetBadge {
+  padding: 0.125rem 0.5rem;
+  background: #FFA500;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+
+.networkSymbol {
+  font-size: 12px;
+  color: #5C6584;
+  font-weight: 500;
+}
+
+.checkIcon {
+  width: 20px;
+  height: 20px;
+  color: #00C853;
+  flex-shrink: 0;
+}
+
+.switchingOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 10;
+
+  span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #060F32;
+  }
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  animation: spin 1s linear infinite;
+}
+
+.spinnerCircle {
+  opacity: 0.25;
+  fill: none;
+}
+
+.spinnerPath {
+  opacity: 0.75;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive
+@media (max-width: 640px) {
+  .dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 80vh;
+  }
+
+  .networkList {
+    max-height: calc(80vh - 140px);
+  }
+}
+

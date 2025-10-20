@@ -219,6 +219,12 @@ export interface FaucetClaimHistoryResponse {
     errorMessage?: string;
     createdAt: string;
     updatedAt: string;
+    triggeredByExternalDeposit?: boolean;
+    externalDepositTxHash?: string;
+    externalDepositChainId?: number;
+    externalDepositUsdValue?: number;
+    externalDepositAmountFormatted?: string;
+    externalDepositSymbol?: string;
   }>;
   pagination: {
     currentPage: number;
