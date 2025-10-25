@@ -228,9 +228,15 @@ export const fetchChainData = async (): Promise<ChainData[]> => {
   }
 };
 
-export const fetchTVLHistory = async (): Promise<typeof mockTVLHistory> => {
+export const fetchTVLHistory = async (days: number = 7): Promise<typeof mockTVLHistory> => {
   try {
-    const res = await fetch(`${API_URL}/metrics/tvl/history?limit=500`, { cache: 'no-store' });
+    // Default to last 7 days for better granularity
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - days);
+    const fromISO = fromDate.toISOString();
+    // Request more data points to ensure full coverage (5-min snapshots: 7d=~2016, 1d=~288)
+    const limit = days === 1 ? 500 : 3000;
+    const res = await fetch(`${API_URL}/metrics/tvl/history?from=${fromISO}&limit=${limit}`, { cache: 'no-store' });
     const json = await res.json();
     if (!res.ok || !json?.success) throw new Error(json?.error || 'Failed');
     const items: Array<{ date?: string; tvl?: number; timestamp?: string; totalUsd?: number }> = json.data || [];

@@ -178,6 +178,37 @@ export interface LiquiditySummaryResponse {
   chainContracts: Record<string, { address: string; explorer?: string }>;
 }
 
+export interface ApySummaryResponse {
+  wallet: string;
+  claimableHls: number;
+  claimableUsd: number;
+  estimatedDailyHls: number;
+  estimatedDailyUsd: number;
+  blendedApy: number; // decimal 0..1
+  targetApy: number;  // decimal 0..1
+  multiplier: number;
+  boostCapUsd: number;
+  rawUsd: number;
+  eligibleUsd: number;
+  remainderUsd: number;
+  effectiveUsd: number;
+  hlsPriceUsd: number;
+  lastUpdatedAt?: string;
+  // NEW: Incentive data to show users their potential earnings
+  boostedApy?: number; // What user earns with their multiplier (e.g., 1.0 = 100% APY)
+  hasDeposits?: boolean; // Flag to show if user has deposited yet
+  potentialEarnings?: Array<{
+    depositUsd: number;
+    blendedApy: number;
+    dailyHls: number;
+    dailyUsd: number;
+    yearlyUsd: number;
+    effectiveMultiplier: number;
+  }>;
+}
+
+export type ApyHistoryRow = { cycleAt: string; cycleId: number; distributedHls: number; effectiveUsd: number; rawUsd: number; multiplierApplied: number };
+
 export interface TagsResponse {
   success: boolean;
   tags: Array<{
@@ -867,6 +898,28 @@ class ApiClient {
         throw new NetworkError('A network error occurred while fetching liquidity summary.');
       }
       throw error;
+    }
+  }
+
+  async getApySummary(wallet: string): Promise<ApySummaryResponse> {
+    try {
+      const res = await fetch(`${API_URL}/apy/${wallet}/summary`, { headers: this.getHeaders() });
+      if (!res.ok) throw new Error('Failed to fetch APY summary');
+      return res.json();
+    } catch (e: any) {
+      if (e.name === 'AbortError' || e instanceof TypeError) throw new NetworkError('Network error while fetching APY summary');
+      throw e;
+    }
+  }
+
+  async getApyHistory(wallet: string, limit: number = 168): Promise<ApyHistoryRow[]> {
+    try {
+      const res = await fetch(`${API_URL}/apy/${wallet}/history?limit=${limit}`, { headers: this.getHeaders() });
+      if (!res.ok) throw new Error('Failed to fetch APY history');
+      return res.json();
+    } catch (e: any) {
+      if (e.name === 'AbortError' || e instanceof TypeError) throw new NetworkError('Network error while fetching APY history');
+      throw e;
     }
   }
 

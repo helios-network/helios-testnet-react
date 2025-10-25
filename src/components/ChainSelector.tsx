@@ -548,7 +548,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
             {isChoosingChain ? (
               <>Select the blockchain where your assets are currently located. We'll help you bridge them to Helios.</>
             ) : (
-              <>Select a token and amount to deposit. Deposits are recoverable and withdrawable back to the origin chain closer to mainnet.</>
+              <>Select a token and amount to deposit. Deposits are recoverable and withdrawable back to the origin chain by December 1.</>
             )}
           </p>
         </div>
@@ -665,7 +665,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                     </div>
                   </div>
                   <div className="flex items-start md:items-center justify-between gap-3">
-                    <span className="text-sm text-[#5C6584]">Deposits are recoverable and will be withdrawable back to the origin chain closer to mainnet.</span>
+                    <span className="text-sm text-[#5C6584]">Deposits are recoverable and will be withdrawable back to the origin chain by December 1.</span>
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={handleTransfer}

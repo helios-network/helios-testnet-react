@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Activity } from "lucide-react";
-import { fetchTVLHistory, formatCurrency } from "../services/metricsApi";
+import { fetchTVLHistory, fetchChainData, formatCurrency } from "../services/metricsApi";
 
 interface TVLDataPoint {
   date: string;
@@ -15,12 +15,37 @@ const TVLChart: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [containerHeight, setContainerHeight] = useState<number>(0);
+  const [liveCurrentUsd, setLiveCurrentUsd] = useState<number | null>(null);
+  const [timeRange, setTimeRange] = useState<'daily' | 'weekly'>('weekly');
+
+  // Build display series: append a live "now" point if available and different from last snapshot
+  // This must be before any conditional returns to follow Rules of Hooks
+  const series: TVLDataPoint[] = React.useMemo(() => {
+    const base = data.slice();
+    if (liveCurrentUsd != null && isFinite(liveCurrentUsd) && liveCurrentUsd > 0) {
+      const last = base[base.length - 1];
+      // Only append if it differs meaningfully from last snapshot (>$1 to avoid duplicates)
+      if (!last || Math.abs(liveCurrentUsd - last.tvl) > 1) {
+        base.push({ date: new Date().toISOString(), tvl: liveCurrentUsd });
+      }
+    }
+    return base;
+  }, [data, liveCurrentUsd]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const tvlData = await fetchTVLHistory();
+        const days = timeRange === 'daily' ? 1 : 7;
+        const [tvlData, chains] = await Promise.all([
+          fetchTVLHistory(days),
+          fetchChainData().catch(() => [])
+        ]);
+        // Compute live current from chain breakdown if available (more up-to-date than last snapshot)
+        if (Array.isArray(chains) && chains.length > 0) {
+          const current = chains.reduce((sum: number, c: any) => sum + (Number(c?.tvl) || 0), 0);
+          if (isFinite(current) && current > 0) setLiveCurrentUsd(current);
+        }
         // Dynamic downsample to avoid overcrowding: aim for ~1 point per 14px, cap between 24 and 60
         const containerApproxWidth = Math.max(360, (containerRef.current?.getBoundingClientRect().width || 600) - 60);
         const targetPoints = Math.min(60, Math.max(24, Math.floor(containerApproxWidth / 14)));
@@ -56,7 +81,7 @@ const TVLChart: React.FC = () => {
       ro.observe(containerRef.current);
     }
     return () => ro.disconnect();
-  }, []);
+  }, [timeRange]);
 
   if (isLoading) {
     return (
@@ -66,13 +91,13 @@ const TVLChart: React.FC = () => {
     );
   }
 
-  if (data.length === 0) {
+  if (series.length === 0) {
     return null;
   }
 
-  // Calculate chart dimensions and scaling
-  const maxTVL = Math.max(...data.map(d => d.tvl));
-  const minTVL = Math.min(...data.map(d => d.tvl));
+  // Calculate chart dimensions and scaling using full series (including live point)
+  const maxTVL = Math.max(...series.map(d => d.tvl));
+  const minTVL = Math.min(...series.map(d => d.tvl));
   const range = maxTVL - minTVL;
   const padding = range * 0.1;
   // Derive chart size from container (with fallbacks)
@@ -83,18 +108,18 @@ const TVLChart: React.FC = () => {
   const yAxisPad = 44; // reduced left padding so plot uses more width
   const topPad = 24;   // reduced top padding to increase plot area
 
-  // Calculate growth percentage
-  const firstValue = data[0]?.tvl || 0;
-  const lastValue = data[data.length - 1]?.tvl || 0;
-  const growthPercentage = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
+  // Calculate growth percentage based on start vs end of time range
+  const startValue = series[0]?.tvl || 0;
+  const currentValue = series[series.length - 1]?.tvl || 0;
+  const growthPercentage = startValue > 0 ? ((currentValue - startValue) / startValue) * 100 : 0;
 
   const getPointPosition = (value: number, index: number) => {
-    const x = yAxisPad + (index / (data.length - 1)) * chartWidth;
+    const x = yAxisPad + (index / (series.length - 1)) * chartWidth;
     const y = topPad + chartHeight - ((value - minTVL + padding) / (range + padding * 2)) * chartHeight;
     return { x, y };
   };
 
-  const points = data.map((point, index) => getPointPosition(point.tvl, index));
+  const points = series.map((point, index) => getPointPosition(point.tvl, index));
   const pathData = points.map((point, index) => 
     `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
   ).join(' ');
@@ -105,19 +130,44 @@ const TVLChart: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       className="bg-white/80 backdrop-blur-sm rounded-xl px-7 pt-5 pb-6 h-full"
     >
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="text-md font-medium">TVL Growth</h3>
           <p className="text-[#5C6584] text-xs">Total Value Locked over time</p>
         </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-[#060F32]">
-            {formatCurrency(lastValue)}
+        <div className="flex items-center gap-4">
+          {/* Time range filter */}
+          <div className="flex items-center gap-1 bg-[#F5F7FF] rounded-lg p-1">
+            <button
+              onClick={() => setTimeRange('daily')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                timeRange === 'daily'
+                  ? 'bg-[#002DCB] text-white'
+                  : 'text-[#5C6584] hover:text-[#002DCB]'
+              }`}
+            >
+              24H
+            </button>
+            <button
+              onClick={() => setTimeRange('weekly')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                timeRange === 'weekly'
+                  ? 'bg-[#002DCB] text-white'
+                  : 'text-[#5C6584] hover:text-[#002DCB]'
+              }`}
+            >
+              7D
+            </button>
           </div>
-          <div className={`text-sm font-medium ${
-            growthPercentage > 0 ? 'text-green-500' : 'text-red-500'
-          }`}>
-            {growthPercentage > 0 ? '+' : ''}{growthPercentage.toFixed(1)}% growth
+          <div className="text-right">
+            <div className="text-3xl font-bold text-[#060F32]">
+              {formatCurrency(currentValue)}
+            </div>
+            <div className={`text-sm font-medium ${
+              growthPercentage > 0 ? 'text-green-500' : 'text-red-500'
+            }`}>
+              {growthPercentage > 0 ? '+' : ''}{growthPercentage.toFixed(1)}% growth
+            </div>
           </div>
         </div>
       </div>
@@ -200,27 +250,14 @@ const TVLChart: React.FC = () => {
             transition={{ duration: 2, ease: "easeInOut" }}
           />
 
-          {/* Data points and hover hit areas - hide points when too dense */}
+          {/* Hover hit areas only (no visible point markers) */}
           {points.map((point, index) => (
             <g key={index}>
-              {data.length <= 40 && (
-                <motion.circle
-                  cx={point.x}
-                  cy={point.y}
-                  r="4.5"
-                  fill="#002DCB"
-                  stroke="white"
-                  strokeWidth="2"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: index * 0.08, duration: 0.25 }}
-                />
-              )}
               {/* Larger transparent hit area to improve hover reliability */}
               <circle
                 cx={point.x}
                 cy={point.y}
-                r={data.length <= 40 ? 14 : 10}
+                r={12}
                 fill="transparent"
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
@@ -254,7 +291,7 @@ const TVLChart: React.FC = () => {
                 fill="white"
                 textAnchor="middle"
               >
-                {formatCurrency(data[hoveredIndex].tvl)}
+                {formatCurrency(series[hoveredIndex].tvl)}
               </text>
             </motion.g>
           )}
@@ -264,17 +301,17 @@ const TVLChart: React.FC = () => {
         <div className="flex justify-between mt-3 text-[10px] text-[#5C6584] px-8">
           {(() => {
             const MAX_TICKS = 8;
-            const n = data.length;
+            const n = series.length;
             if (n <= MAX_TICKS) {
-              return data.map((point, index) => (
+              return series.map((point, index) => (
                 <span key={index} className="text-center">
                   {new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </span>
               ));
             }
             const step = Math.ceil(n / MAX_TICKS);
-            const ticks = data.filter((_, i) => i % step === 0);
-            if (ticks[ticks.length - 1] !== data[n - 1]) ticks.push(data[n - 1]);
+            const ticks = series.filter((_, i) => i % step === 0);
+            if (ticks[ticks.length - 1] !== series[n - 1]) ticks.push(series[n - 1]);
             return ticks.map((point, index) => (
               <span key={index} className="text-center">
                 {new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -287,21 +324,21 @@ const TVLChart: React.FC = () => {
       {/* Stats (hidden on small screens to give more space to the chart) */}
       <div className="hidden md:grid grid-cols-3 gap-6 pt-6">
         <div className="pr-6 border-r border-[#D7E0FF]">
-          <div className="text-xs text-[#5C6584]">Starting TVL</div>
+          <div className="text-xs text-[#5C6584]">{timeRange === 'daily' ? '24H Start' : '7D Start'}</div>
           <div className="text-2xl font-bold">
-            {formatCurrency(data[0]?.tvl || 0)}
+            {formatCurrency(startValue)}
           </div>
         </div>
         <div className="pr-6 border-r border-[#D7E0FF]">
           <div className="text-xs text-[#5C6584]">Current TVL</div>
           <div className="text-2xl font-bold">
-            {formatCurrency(lastValue)}
+            {formatCurrency(currentValue)}
           </div>
         </div>
         <div className="">
-          <div className="text-xs text-[#5C6584]">Total Growth</div>
+          <div className="text-xs text-[#5C6584]">Change</div>
           <div className="text-2xl font-bold">
-            {formatCurrency(lastValue - firstValue)}
+            {formatCurrency(currentValue - startValue)}
           </div>
         </div>
       </div>

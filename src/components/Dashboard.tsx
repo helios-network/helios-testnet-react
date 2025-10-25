@@ -40,6 +40,13 @@ const Dashboard = () => {
     } catch {}
   }, []);
 
+  // Open Chain Selector when other components dispatch the global event
+  useEffect(() => {
+    const handler = () => setShowChainSelector(true);
+    window.addEventListener('helios:open-bridge', handler as EventListener);
+    return () => window.removeEventListener('helios:open-bridge', handler as EventListener);
+  }, []);
+
   // Public view for non-authenticated users
   if (!isAuthenticated) {
     return (
@@ -53,7 +60,7 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between">
               <div className="text-center sm:text-left mb-3 sm:mb-0">
                 <div className="text-md font-medium">Bring Assets to Helios</div>
-                <div className="text-[#5C6584] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain before mainnet launch.</div>
+                <div className="text-[#5C6584] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain by December 1.</div>
               </div>
               <div className="flex gap-3">
                 <button
@@ -155,7 +162,7 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between">
               <div className="text-center sm:text-left mb-3 sm:mb-0">
                 <div className="text-[#060F32] font-medium text-md">Bring Assets to Helios</div>
-                <div className="text-[#828DB3] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain before mainnet launch.</div>
+                <div className="text-[#828DB3] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain by December 1.</div>
               </div>
               <div className="flex gap-3">
                 <button

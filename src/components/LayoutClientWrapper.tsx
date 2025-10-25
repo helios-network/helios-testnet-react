@@ -90,10 +90,18 @@ function AppContent() {
       if (response && response.status === 401) {
         try {
           const cloned = response.clone();
-          const data = await cloned.json().catch(() => null);
-          const msg = data?.message || '';
-          if (/jwt expired|token expired|TokenExpiredError/i.test(msg)) {
-            window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: msg } }));
+          // Try to parse JSON; fallback to text if needed
+          const data = await cloned.json().catch(async () => {
+            try {
+              const text = await cloned.text();
+              return { message: text } as any;
+            } catch {
+              return null;
+            }
+          });
+          const combined = `${data?.message || ''} ${data?.error || ''}`.trim();
+          if (/jwt expired|token expired|TokenExpiredError|invalid token|token is not valid|unauthori[sz]ed|not authenticated/i.test(combined)) {
+            window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: combined } }));
           }
         } catch {
           // ignore parsing issues
