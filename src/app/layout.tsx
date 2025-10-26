@@ -5,14 +5,14 @@ import type { Metadata, Viewport } from 'next';
 
 // Define metadata for SEO and social sharing
 export const metadata: Metadata = {
-  title: 'Helios',
-  description: 'Join Helios Testnet to earn XP by completing on-chain activities, claiming from faucets, and inviting friends through our referral system. Experience the Interchain Proof of Stake and Reputation blockchain.',
-  keywords: ['Helios', 'blockchain', 'testnet', 'crypto', 'web3', 'XP', 'rewards', 'staking', 'faucet', 'I-PoSR', 'referral'],
-  applicationName: 'Helios',
+  title: 'Helios Beta Mainnet',
+  description: 'We are live on Helios Beta Mainnet. Earn XP and HLS in our pre-TGE campaign by participating to help secure the Interchain Proof of Stake and Reputation (I-PoSR) consensus.',
+  keywords: ['Helios', 'blockchain', 'beta mainnet', 'crypto', 'web3', 'XP', 'HLS', 'rewards', 'staking', 'I-PoSR', 'pre-TGE', 'referral'],
+  applicationName: 'Helios Beta Mainnet',
   authors: [{ name: 'Helios Chain Labs' }],
   creator: 'Helios Chain Labs',
   publisher: 'Helios Chain Labs',
-  metadataBase: new URL('https://testnet.helioschain.network'),
+  metadataBase: new URL('https://helioschain.network'),
   alternates: {
     canonical: '/',
   },
@@ -49,23 +49,23 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    url: 'https://testnet.helioschain.network',
-    title: 'Helios',
-    description: 'Helios is a blockchain with Interchain Proof of Stake and Reputation (I-PoSR) consensus. Join our testnet to farm XP points by completing on-chain activities.',
-    siteName: 'Helios',
+    url: 'https://helioschain.network',
+    title: 'Helios Beta Mainnet',
+    description: 'Helios Beta Mainnet is live. Earn XP and HLS by joining our pre-TGE campaign and help secure I-PoSR consensus.',
+    siteName: 'Helios Beta Mainnet',
     images: [
       {
         url: '/images/helios-social-card.png',
         width: 1200,
         height: 630,
-        alt: 'Helios Testnet',
+        alt: 'Helios Beta Mainnet',
       }
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Helios',
-    description: 'Earn XP on Helios Testnet by claiming from faucets, completing on-chain activities, and using our referral system.',
+    title: 'Helios Beta Mainnet',
+    description: 'Earn XP and HLS on Helios Beta Mainnet by participating in our pre-TGE campaign to secure I-PoSR consensus.',
     images: ['/images/helios-social-card.png'],
     creator: '@HeliosChain',
   },
