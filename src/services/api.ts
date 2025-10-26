@@ -117,6 +117,9 @@ export interface XPLevelResponse {
   xpNeededForNextLevel: number;
   progressToNextLevel: number;
   isMaxLevel: boolean;
+  // Optional fields returned by backend for seasonal participation
+  participated?: boolean;
+  season?: string;
 }
 
 export interface UserReferralsResponse {
