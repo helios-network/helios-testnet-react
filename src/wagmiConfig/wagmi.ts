@@ -11,7 +11,8 @@ import {
   optimism,
   optimismSepolia,
   polygon,
-  polygonAmoy
+  polygonAmoy,
+  type AppKitNetwork
 } from "@reown/appkit/networks";
 import { cookieStorage, createStorage } from "@wagmi/core";
 import { defineChain } from "viem";
@@ -45,20 +46,20 @@ export const heliosChain = defineChain({
   },
 });
 
-// // Convert the Helios chain to AppKitNetwork format
-// const heliosAppKitNetwork = {
-//   id: heliosChain.id,
-//   name: heliosChain.name,
-//   chainNamespace: "eip155",
-//   caipNetworkId: `eip155:${heliosChain.id}`,
-//   nativeCurrency: heliosChain.nativeCurrency,
-//   rpcUrls: heliosChain.rpcUrls,
-//   blockExplorers: heliosChain.blockExplorers
-// };
+// Convert the Helios chain to AppKitNetwork format
+const heliosAppKitNetwork: AppKitNetwork = {
+  id: heliosChain.id,
+  name: heliosChain.name,
+  chainNamespace: "eip155",
+  caipNetworkId: `eip155:${heliosChain.id}`,
+  nativeCurrency: heliosChain.nativeCurrency,
+  rpcUrls: heliosChain.rpcUrls,
+  blockExplorers: heliosChain.blockExplorers
+};
 
 // Include all major networks for easy switching
-export const networks = [
-  heliosChain, 
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [
+  heliosAppKitNetwork, 
   mainnet, 
   sepolia,
   bsc,

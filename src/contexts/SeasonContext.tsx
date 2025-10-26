@@ -97,7 +97,7 @@ export const SeasonProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         if (response.success && response.seasons) {
           const seasonsWithUpdatedStatus = response.seasons
             .map(updateSeasonStatus)
-            .map(s => s.identifier === 'path' || s.identifier === 'genesis' ? { ...s, status: 'completed' } : s);
+            .map(s => s.identifier === 'path' || s.identifier === 'genesis' ? { ...s, status: 'completed' as const } : s);
           setSeasons(seasonsWithUpdatedStatus);
           
           // Set current season only if user hasn't manually changed it
