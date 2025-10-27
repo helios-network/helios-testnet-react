@@ -334,7 +334,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
   if (compact && inline) {
     return (
       <div className="relative" ref={(el) => { containerRef.current = el; rootRef.current = el; }}>
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-wrap gap-3 items-center justify-center">
           {legendItems.map((item) => (
             <button
               key={`logo-${item.key}`}
@@ -477,7 +477,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
     return (
       <div className="relative">
         <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex flex-col items-center text-center">
             <div className="text-xs text-[#5C6584]">
               These are the 6 chains Helios Beta Mainnet currently supports
             </div>
@@ -487,7 +487,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[11px] text-[#002DCB]"
+                  className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[11px] text-[#002DCB]"
                 >
                   <MousePointer className="w-3.5 h-3.5" />
                   {isTouch ? 'Tap a chain to see TVL' : 'Hover a chain to see TVL'}
@@ -495,7 +495,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
               )}
             </AnimatePresence>
           </div>
-          <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-center justify-center">
             {legendItems.map((item) => (
               <button
                 key={`logo-${item.key}`}
@@ -631,7 +631,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
       </div>
 
       {/* Logos row with hover cue */}
-      <div className="flex flex-wrap gap-3 items-center mb-4">
+      <div className="flex flex-wrap gap-3 items-center justify-center mb-4">
         {legendItems.map((item) => (
           <button
             key={item.key}

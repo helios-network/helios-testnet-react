@@ -12,6 +12,7 @@ import TVLOverview from "./TVLOverview";
 import HLSRewardsSimulator from "./HLSRewardsSimulator";
 import StakedSummaryBar from "@/components/StakedSummaryBar";
 import StakeInfoSection from "./StakeInfoSection";
+import WrapperModal from "./WrapperModal";
 
 const Dashboard = () => {
   const { address } = useAccount();
@@ -21,6 +22,9 @@ const Dashboard = () => {
   const [showChainSelector, setShowChainSelector] = useState(false);
   const [selectedChain, setSelectedChain] = useState<any>(null);
   const [useZoom, setUseZoom] = useState(false);
+  const [showWrapperModal, setShowWrapperModal] = useState(false);
+  const [wrapperChainId, setWrapperChainId] = useState<number | undefined>(undefined);
+  const [wrapperSymbol, setWrapperSymbol] = useState<string | undefined>(undefined);
 
   // Emulate browser zoom (+15%) while keeping content filling viewport
   const SCALE = 1.15;
@@ -47,6 +51,19 @@ const Dashboard = () => {
     return () => window.removeEventListener('helios:open-bridge', handler as EventListener);
   }, []);
 
+  // Open Wrapper Modal when ChainSelector dispatches the wrapper event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      console.log('[Dashboard] Wrapper event received:', detail);
+      setWrapperChainId(detail?.chainId);
+      setWrapperSymbol(detail?.tokenSymbol);
+      setShowWrapperModal(true);
+    };
+    window.addEventListener('helios:open-wrapper', handler as EventListener);
+    return () => window.removeEventListener('helios:open-wrapper', handler as EventListener);
+  }, []);
+
   // Public view for non-authenticated users
   if (!isAuthenticated) {
     return (
@@ -57,12 +74,12 @@ const Dashboard = () => {
       
           {/* Top CTA - Immediately visible */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5 mb-4">
-            <div className="flex flex-col sm:flex-row items-center justify-between">
-              <div className="text-center sm:text-left mb-3 sm:mb-0">
+            <div className="flex flex-col items-center text-center">
+              <div className="text-center mb-3">
                 <div className="text-md font-medium">Bring Assets to Helios</div>
                 <div className="text-[#5C6584] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain by December 1.</div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setShowChainSelector(true)}
                   className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
@@ -159,12 +176,12 @@ const Dashboard = () => {
        
           {/* Top CTA - Immediately visible (moved above summary) */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl px-6 py-5">
-            <div className="flex flex-col sm:flex-row items-center justify-between">
-              <div className="text-center sm:text-left mb-3 sm:mb-0">
+            <div className="flex flex-col items-center text-center">
+              <div className="text-center mb-3">
                 <div className="text-[#060F32] font-medium text-md">Bring Assets to Helios</div>
                 <div className="text-[#828DB3] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain by December 1.</div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setShowChainSelector(true)}
                   className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
@@ -234,6 +251,19 @@ const Dashboard = () => {
                 </div>
       )}
       {/* Removed Staking Flow Modal */}
+
+      {/* Wrapper Modal */}
+      <WrapperModal
+        key={`wrapper-${wrapperChainId || 'default'}`}
+        isOpen={showWrapperModal}
+        onClose={() => {
+          setShowWrapperModal(false);
+          setWrapperChainId(undefined);
+          setWrapperSymbol(undefined);
+        }}
+        defaultChainId={wrapperChainId}
+        defaultSymbol={wrapperSymbol}
+      />
     </div>
   );
 };

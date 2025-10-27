@@ -16,8 +16,9 @@ interface Chain {
   name: string;
   icon: React.ReactNode;
   description: string;
-  supportedAssets: string[];
-  bridgeFee: string;
+  chainId: number;
+  explorerBaseUrl: string;
+  trustWalletSlug: string;
   estimatedTime: string;
 }
 
@@ -27,8 +28,9 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: "Ethereum",
     icon: <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold text-xs">E</div>,
     description: "Bridge from Ethereum mainnet",
-    supportedAssets: ["ETH", "USDC", "USDT", "WETH"],
-    bridgeFee: "0.001 ETH",
+    chainId: 1,
+    explorerBaseUrl: "https://etherscan.io",
+    trustWalletSlug: "ethereum",
     estimatedTime: "5-10 minutes"
   },
   {
@@ -36,8 +38,9 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: "BNB Chain",
     icon: <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-xs">B</div>,
     description: "Bridge from BNB Smart Chain",
-    supportedAssets: ["BNB", "USDC", "USDT", "BUSD"],
-    bridgeFee: "0.001 BNB",
+    chainId: 56,
+    explorerBaseUrl: "https://bscscan.com",
+    trustWalletSlug: "smartchain",
     estimatedTime: "3-5 minutes"
   },
   {
@@ -45,8 +48,9 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: "Polygon",
     icon: <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xs">P</div>,
     description: "Bridge from Polygon network",
-    supportedAssets: ["MATIC", "USDC", "USDT", "WMATIC"],
-    bridgeFee: "0.1 MATIC",
+    chainId: 137,
+    explorerBaseUrl: "https://polygonscan.com",
+    trustWalletSlug: "polygon",
     estimatedTime: "2-3 minutes"
   },
   {
@@ -54,8 +58,9 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: "Arbitrum",
     icon: <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs">A</div>,
     description: "Bridge from Arbitrum One",
-    supportedAssets: ["ETH", "USDC", "USDT", "ARB"],
-    bridgeFee: "0.0001 ETH",
+    chainId: 42161,
+    explorerBaseUrl: "https://arbiscan.io",
+    trustWalletSlug: "arbitrum",
     estimatedTime: "3-5 minutes"
   },
   {
@@ -63,8 +68,9 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: "Optimism",
     icon: <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-xs">O</div>,
     description: "Bridge from Optimism",
-    supportedAssets: ["ETH", "USDC", "USDT", "OP"],
-    bridgeFee: "0.0001 ETH",
+    chainId: 10,
+    explorerBaseUrl: "https://optimistic.etherscan.io",
+    trustWalletSlug: "optimism",
     estimatedTime: "3-5 minutes"
   },
   {
@@ -72,11 +78,22 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: "Base",
     icon: <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">B</div>,
     description: "Bridge from Base",
-    supportedAssets: ["ETH", "USDC"],
-    bridgeFee: "0.0001 ETH",
+    chainId: 8453,
+    explorerBaseUrl: "https://basescan.org",
+    trustWalletSlug: "base",
     estimatedTime: "3-5 minutes"
   }
 ];
+
+// Visual preview for chain cards only
+const CHAIN_ASSET_PREVIEWS: Record<string, string[]> = {
+  ethereum: ["WETH", "USDC", "USDT", "WBTC", "DAI", "stETH"],
+  arbitrum: ["WETH", "ARB", "USDC", "USDT", "DAI", "GMX", "WBTC"],
+  bnb: ["WBNB", "USDT", "USDC", "CAKE", "BTCB"],
+  base: ["WETH", "USDC", "USDT", "DAI", "WBTC", "cbETH", "AERO"],
+  polygon: ["WPOL", "USDC", "USDT", "DAI", "WETH", "WBTC", "AAVE"],
+  optimism: ["WETH", "OP", "USDC", "USDT", "DAI", "SNX", "sUSD"],
+};
 
 interface ChainSelectorProps {
   onChainSelect?: (chain: Chain) => void;
@@ -142,10 +159,37 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     'Optimism': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/optimism/info/logo.png',
     'Polygon': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png',
   };
+  // RPCs for wallet_addEthereumChain fallback
+  const CHAIN_WALLET_RPC: Record<string, string[]> = {
+    ethereum: ['https://mainnet.infura.io/v3/b36a84b61f4f4118a324b9222e2ba344'],
+    bnb: ['https://bsc-mainnet.infura.io/v3/b36a84b61f4f4118a324b9222e2ba344'],
+    arbitrum: ['https://arbitrum-mainnet.infura.io/v3/b36a84b61f4f4118a324b9222e2ba344'],
+    base: ['https://base-mainnet.infura.io/v3/b36a84b61f4f4118a324b9222e2ba344'],
+    optimism: ['https://optimism-mainnet.infura.io/v3/b36a84b61f4f4118a324b9222e2ba344'],
+    polygon: ['https://polygon-mainnet.infura.io/v3/b36a84b61f4f4118a324b9222e2ba344'],
+  };
+  const getExplorerBaseByChainId = (cid?: number): string => {
+    switch (Number(cid)) {
+      case 1: return 'https://etherscan.io';
+      case 56: return 'https://bscscan.com';
+      case 42161: return 'https://arbiscan.io';
+      case 8453: return 'https://basescan.org';
+      case 10: return 'https://optimistic.etherscan.io';
+      case 137: return 'https://polygonscan.com';
+      case 11155111: return 'https://sepolia.etherscan.io';
+      case 97: return 'https://testnet.bscscan.com';
+      default: return 'https://etherscan.io';
+    }
+  };
   const TOKEN_ICON_BASE = 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/svg/color';
   const TOKEN_SYMBOL_OVERRIDES: Record<string, string> = {
-    'WETH': 'weth',
-    'WBTC': 'wbtc',
+    'WETH': 'eth',
+    'WBTC': 'btc',
+    'WBNB': 'bnb',
+    'WtBNB': 'bnb',
+    'WPOL': 'matic',
+    'WAVAX': 'avax',
+    'cbETH': 'eth',
     'USDT': 'usdt',
     'USDC': 'usdc',
     'DAI': 'dai',
@@ -155,28 +199,66 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     'ARB': 'arb',
     'OP': 'op',
   };
-  const getTokenIconUrl = (symbol: string): string => {
-    // For WETH, prefer ETH icon if WETH not present in Spot icons
-    if (symbol?.toUpperCase() === 'WETH') return `${TOKEN_ICON_BASE}/eth.svg`;
-    const key = TOKEN_SYMBOL_OVERRIDES[symbol?.toUpperCase() || ''] || symbol?.toLowerCase() || 'generic';
+  const TESTNET_CHAIN_IDS = new Set([11155111, 97, 84532, 11155420, 80002, 421614]);
+  const getTokenIconUrlByAddress = (tokenAddress?: string, chain?: Chain, fallbackSymbol?: string): string => {
+    try {
+      // TrustWallet repo does not contain testnet assets; for testnets, fall back to symbol icon
+      if (!TESTNET_CHAIN_IDS.has(Number(chain?.chainId)) && tokenAddress && chain?.trustWalletSlug) {
+        const checksum = ethers.getAddress(tokenAddress);
+        return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain.trustWalletSlug}/assets/${checksum}/logo.png`;
+      }
+    } catch {}
+    const sym = (fallbackSymbol || '').toUpperCase();
+    const key = TOKEN_SYMBOL_OVERRIDES[sym] || sym.toLowerCase() || 'generic';
     return `${TOKEN_ICON_BASE}/${key}.svg`;
   };
 
-  // Dynamic Hyperion address fetched from backend based on chainId
+  // Native-to-wrapped symbol mapping for safety
+  const NATIVE_TO_WRAPPED: Record<string, string> = {
+    ETH: 'WETH',
+    BNB: 'WBNB',
+    MATIC: 'WPOL',
+    POL: 'WPOL',
+    AVAX: 'WAVAX'
+  };
+
+  // Dynamic assets + Hyperion by chain
   const [hyperionAddress, setHyperionAddress] = useState<string>("");
+  const [assets, setAssets] = useState<Array<{ symbol: string; name: string; decimals: number; contractAddress: string; nativeWrapsTo?: string }>>([]);
+  const idByChainId: Record<number, string> = {
+    1: 'ethereum',
+    56: 'bnb',
+    42161: 'arbitrum',
+    8453: 'base',
+    10: 'optimism',
+    137: 'polygon',
+    11155111: 'ethereum', // Sepolia as Ethereum family
+    97: 'bnb', // BSC Testnet as BNB family
+  };
+  const walletChainId = useChainId();
+  const effectiveChainId = useMemo(() => {
+    if (!selectedChain) return undefined as number | undefined;
+    const walletId = Number(walletChainId);
+    const walletFamily = idByChainId[walletId];
+    if (walletFamily && walletFamily === selectedChain.id) {
+      return walletId;
+    }
+    return selectedChain.chainId;
+  }, [walletChainId, selectedChain]);
   useEffect(() => {
-    const fetchHyperion = async () => {
-      if (selectedChain?.name === 'Ethereum') {
-        try {
-          const res = await getAssets(11155111);
-          setHyperionAddress(res.hyperionContract || "");
-        } catch {}
-      } else {
+    const fetchAssets = async () => {
+      if (!selectedChain || !effectiveChainId) return;
+      try {
+        const res = await getAssets(effectiveChainId);
+        setHyperionAddress(res.hyperionContract || "");
+        setAssets(res.assets || []);
+      } catch {
         setHyperionAddress("");
+        setAssets([]);
       }
     };
-    fetchHyperion();
-  }, [selectedChain]);
+    fetchAssets();
+  }, [selectedChain, effectiveChainId]);
   const shortenAddress = (addr: string): string => (addr && addr.length > 10 ? `${addr.slice(0,6)}...${addr.slice(-4)}` : addr || 'Coming soon');
 
   const handleSelectChain = (chain: Chain) => {
@@ -195,26 +277,71 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
   };
 
   const { address } = useAccount();
-  const walletChainId = useChainId();
+
+  // Proactively switch network when user acknowledges transfer
+  useEffect(() => {
+    if (!acknowledged || !selectedChain || !address || isTransferring) return;
+
+    const autoSwitchNetwork = async () => {
+      try {
+        const provider = new ethers.BrowserProvider((window as any).ethereum);
+        const network = await provider.getNetwork();
+        const currentChainId = Number(network.chainId);
+        const targetChainId = effectiveChainId || selectedChain.chainId;
+
+        if (currentChainId !== targetChainId) {
+          console.log(`[ChainSelector] Auto-switching wallet from chain ${currentChainId} to ${targetChainId}`);
+          const targetHex = '0x' + targetChainId.toString(16);
+          try {
+            await (window as any).ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: targetHex }]
+            });
+            toast.success(`Network switched to ${selectedChain.name}`);
+          } catch (switchErr: any) {
+            if (switchErr?.code === 4902) {
+              // Chain not added, add it
+              toast.info(`Adding ${selectedChain.name} network to your wallet...`);
+              await (window as any).ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: targetHex,
+                  chainName: selectedChain.name,
+                  nativeCurrency: { 
+                    name: selectedChain.id === 'bnb' ? 'BNB' : selectedChain.id === 'polygon' ? 'MATIC' : 'ETH', 
+                    symbol: selectedChain.id === 'bnb' ? 'BNB' : selectedChain.id === 'polygon' ? 'MATIC' : 'ETH', 
+                    decimals: 18 
+                  },
+                  rpcUrls: CHAIN_WALLET_RPC[selectedChain.id] || [],
+                  blockExplorerUrls: [selectedChain.explorerBaseUrl]
+                }]
+              });
+              toast.success(`${selectedChain.name} network added successfully`);
+            } else if (switchErr?.code === 4001) {
+              toast.warning(`Please switch to ${selectedChain.name} network to continue`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[ChainSelector] Auto-switch error:', err);
+      }
+    };
+
+    // Small delay to avoid too aggressive switching
+    const timer = setTimeout(autoSwitchNetwork, 500);
+    return () => clearTimeout(timer);
+  }, [acknowledged, selectedChain, address, effectiveChainId, isTransferring]);
 
   // Keep selected chain in sync with wallet network
   useEffect(() => {
     if (!walletChainId) return;
     const chainIdMap: Record<number, string> = {
-      // Mainnets
       1: 'ethereum',
       56: 'bnb',
       42161: 'arbitrum',
       8453: 'base',
       10: 'optimism',
       137: 'polygon',
-      // Testnets
-      11155111: 'ethereum', // Sepolia treated as Ethereum in UI
-      97: 'bnb',
-      421614: 'arbitrum',
-      84532: 'base',
-      11155420: 'optimism',
-      80002: 'polygon',
     };
     const uiId = chainIdMap[Number(walletChainId)];
     if (!uiId) return;
@@ -224,10 +351,8 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
   }, [walletChainId]);
 
   // Fetch balance for selected token
-  const { data: balanceData } = useBalance({
+  useBalance({
     address: address,
-    token: selectedToken && selectedToken !== 'ETH' ? undefined : undefined, // Will handle ERC20 tokens separately
-    chainId: selectedChain?.name === 'Ethereum' ? 11155111 : undefined,
   });
 
   const [tokenBalance, setTokenBalance] = useState<string>("0");
@@ -242,38 +367,27 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
       try {
         const provider = new ethers.BrowserProvider((window as any).ethereum);
         
-        if (selectedToken === 'ETH') {
+        const assetMeta = assets.find(a => a.symbol.toUpperCase() === selectedToken.toUpperCase());
+        if (!assetMeta) {
+          setTokenBalance("0");
+          return;
+        }
+        if (selectedToken === 'ETH' || selectedToken === 'BNB' || selectedToken === 'MATIC') {
           // Native ETH balance
           const balance = await provider.getBalance(address);
           setTokenBalance(ethers.formatEther(balance));
         } else {
           // For ERC20 tokens, fetch from backend to get contract address
           try {
-            const chainId = selectedChain.name === 'Ethereum' ? 11155111 : undefined;
-            if (!chainId) {
-              setTokenBalance("0");
-              return;
-            }
-            
-            const assetsResponse = await getAssets(chainId);
-            const asset = assetsResponse.assets?.find(
-              (a: any) => a.symbol.toUpperCase() === selectedToken.toUpperCase()
-            );
-            
-            if (!asset || !asset.contractAddress) {
-              setTokenBalance("0");
-              return;
-            }
-            
             // ERC20 ABI for balanceOf
             const erc20Abi = [
               "function balanceOf(address owner) view returns (uint256)",
               "function decimals() view returns (uint8)"
             ];
             
-            const contract = new ethers.Contract(asset.contractAddress, erc20Abi, provider);
+            const contract = new ethers.Contract(assetMeta.contractAddress, erc20Abi, provider);
             const balance = await contract.balanceOf(address);
-            const decimals = asset.decimals || 18;
+            const decimals = assetMeta.decimals || 18;
             setTokenBalance(ethers.formatUnits(balance, decimals));
           } catch (erc20Err) {
             console.error('Error fetching ERC20 balance:', erc20Err);
@@ -286,7 +400,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
       }
     };
     fetchBalance();
-  }, [address, selectedToken, selectedChain]);
+  }, [address, selectedToken, selectedChain, assets]);
 
   const handlePercentage = (percentage: number) => {
     if (!tokenBalance || tokenBalance === "0") {
@@ -377,15 +491,18 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
       toast.error("Connect your wallet first.");
       return;
     }
+    // Prevent initiating deposits with native tokens; require wrapping first
+    const upperSymbol = selectedToken.toUpperCase();
+    if (NATIVE_TO_WRAPPED[upperSymbol]) {
+      toast.info(`Please wrap ${upperSymbol} to ${NATIVE_TO_WRAPPED[upperSymbol]} before depositing.`);
+      try { window.dispatchEvent(new CustomEvent('helios:open-wrapper')); } catch {}
+      return;
+    }
     setIsTransferring(true);
     setTransferPhase('idle');
     setLastError(null);
     try {
-      const chainId = selectedChain.name === 'Ethereum' ? 11155111 : undefined;
-      if (!chainId) {
-        toast.error("Only Ethereum (Sepolia) supported for now.");
-        return;
-      }
+      const chainId = selectedChain.chainId;
 
       const symbol = selectedToken.toUpperCase();
       const depositId = `helios-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
@@ -409,32 +526,32 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
       }
 
       const provider = new ethers.BrowserProvider((window as any).ethereum);
-      // Ensure wallet is on Sepolia when bridging from Ethereum testnet
+      // Ensure wallet is on selected chain
       try {
         const network = await provider.getNetwork();
-        if (Number(network.chainId) !== 11155111) {
-          toast.info('Please switch your wallet to Sepolia network');
-          const targetHex = '0xaa36a7'; // 11155111
+        if (Number(network.chainId) !== chainId) {
+          toast.info(`Please switch your wallet to ${selectedChain.name} network`);
+          const targetHex = '0x' + chainId.toString(16);
           try {
             await (window as any).ethereum.request({
               method: 'wallet_switchEthereumChain',
               params: [{ chainId: targetHex }]
             });
-            toast.success('Network switched to Sepolia');
+            toast.success(`Network switched to ${selectedChain.name}`);
           } catch (switchErr: any) {
             if (switchErr?.code === 4902) {
-              toast.info('Adding Sepolia network to your wallet...');
+              toast.info(`Adding ${selectedChain.name} network to your wallet...`);
               await (window as any).ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
                   chainId: targetHex,
-                  chainName: 'Ethereum Sepolia',
-                  nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
-                  rpcUrls: ['https://rpc.sepolia.org'],
-                  blockExplorerUrls: ['https://sepolia.etherscan.io']
+                  chainName: selectedChain.name,
+                  nativeCurrency: { name: selectedChain.name.includes('BNB') ? 'BNB' : selectedChain.name.includes('Polygon') ? 'MATIC' : 'ETH', symbol: selectedChain.name.includes('BNB') ? 'BNB' : selectedChain.name.includes('Polygon') ? 'MATIC' : 'ETH', decimals: 18 },
+                  rpcUrls: CHAIN_WALLET_RPC[selectedChain.id] || [],
+                  blockExplorerUrls: [selectedChain.explorerBaseUrl]
                 }]
               });
-              toast.success('Sepolia network added successfully');
+              toast.success(`${selectedChain.name} network added successfully`);
             } else {
               throw switchErr;
             }
@@ -442,7 +559,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
         }
       } catch (netErr: any) {
         if (netErr?.code === 4001) {
-          toast.error('You declined the network switch. Please switch to Sepolia manually.');
+          toast.error(`You declined the network switch. Please switch to ${selectedChain.name} manually.`);
           setIsTransferring(false);
           return;
         }
@@ -601,13 +718,8 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                 <div>
                   <h4 className="text-sm font-semibold text-[#060F32] mb-2">Supported Assets</h4>
                   <div className="flex flex-wrap gap-2">
-                    {chain.supportedAssets.map((asset) => (
-                      <span 
-                        key={asset}
-                        className="px-2 py-1 bg-[#E2EBFF] text-[#002DCB] text-xs rounded-full"
-                      >
-                        {asset}
-                      </span>
+                    {(CHAIN_ASSET_PREVIEWS[chain.id] || []).map((assetSymbol: string) => (
+                      <span key={assetSymbol} className="px-2 py-1 bg-[#E2EBFF] text-[#002DCB] text-xs rounded-full">{assetSymbol}</span>
                     ))}
                   </div>
                 </div>
@@ -640,8 +752,8 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                         onChange={(e) => setSelectedToken(e.target.value)}
                       >
                         <option value="" disabled>Select token</option>
-                        {chain.supportedAssets.map((asset) => (
-                          <option key={asset} value={asset}>{asset}</option>
+                        {(CHAIN_ASSET_PREVIEWS[chain.id] || []).map((assetSymbol: string) => (
+                          <option key={assetSymbol} value={assetSymbol}>{assetSymbol}</option>
                         ))}
                       </select>
                     </div>
@@ -659,8 +771,11 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                     <div>
                       <label className="block text-sm text-[#5C6584] mb-1">Deposit Contract</label>
                       <div className="px-3 py-2 bg-[#F9FAFF] border-2 border-[#E2EBFF] rounded-lg text-sm font-mono text-[#060F32] truncate">
-                        {/* TODO: replace with chain-specific contract + explorer link */}
-                        <a className="text-[#002DCB] hover:underline" href="#" onClick={(e) => e.preventDefault()}>0xHyperion-{chain.id}-contract</a>
+                        {hyperionAddress ? (
+                          <a className="text-[#002DCB] hover:underline" href={`${SUPPORTED_CHAINS.find(c=>c.id===chain.id)?.explorerBaseUrl || ''}/address/${hyperionAddress}`} target="_blank" rel="noopener noreferrer">{shortenAddress(hyperionAddress)}</a>
+                        ) : (
+                          <span className="italic">Coming soon</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -713,19 +828,47 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
             <div>
               <label className="block text-sm text-[#5C6584] mb-1">Token</label>
               <div className="flex flex-wrap gap-2">
-                {selectedChain?.supportedAssets.map((asset) => (
+                {assets.map((asset) => (
                   <button
                     type="button"
-                    key={asset}
-                    onClick={() => setSelectedToken(asset)}
+                    key={asset.symbol}
+                    onClick={() => setSelectedToken(asset.symbol)}
                     className={`px-2.5 py-1.5 rounded-md border text-sm flex items-center gap-1.5 ${
-                      selectedToken === asset ? 'bg-[#F5F7FF] border-[#002DCB] text-[#060F32]' : 'bg-white border-[#E2EBFF] text-[#060F32] hover:bg-[#F9FAFF]'
+                      selectedToken === asset.symbol ? 'bg-[#F5F7FF] border-[#002DCB] text-[#060F32]' : 'bg-white border-[#E2EBFF] text-[#060F32] hover:bg-[#F9FAFF]'
                     }`}
                   >
-                    <img src={getTokenIconUrl(asset)} alt={asset} className="w-4 h-4 object-contain" />
-                    <span className="font-medium">{asset}</span>
+                    <img src={getTokenIconUrlByAddress(asset.contractAddress || asset.nativeWrapsTo, selectedChain, asset.symbol)} alt={asset.symbol} className="w-4 h-4 object-contain" />
+                    <span className="font-medium">{asset.symbol}</span>
                   </button>
                 ))}
+              </div>
+              <div className="mt-2 text-xs text-[#5C6584] flex flex-col gap-1">
+                <span>
+                  Want to use native {selectedChain?.id === 'bnb' ? 'BNB' : selectedChain?.id === 'polygon' ? 'POL' : 'ETH'}?
+                </span>
+                <button
+                  type="button"
+                  className="text-left text-[#002DCB] hover:underline font-semibold"
+                  onClick={() => {
+                    try {
+                      const nativeSymbol = selectedChain?.id === 'bnb' ? 'BNB' : selectedChain?.id === 'polygon' ? 'POL' : 'ETH';
+                      const wrappedSymbol = selectedChain?.id === 'bnb' ? 'WBNB' : selectedChain?.id === 'polygon' ? 'WPOL' : 'WETH';
+                      const chainIdToUse = effectiveChainId || selectedChain?.chainId;
+                      console.log('[ChainSelector] Opening wrapper - effectiveChainId:', effectiveChainId, 'selectedChain.chainId:', selectedChain?.chainId, 'using:', chainIdToUse);
+                      window.dispatchEvent(new CustomEvent('helios:open-wrapper', { 
+                        detail: { 
+                          chainId: chainIdToUse, 
+                          tokenSymbol: nativeSymbol,
+                          wrappedSymbol 
+                        } 
+                      }));
+                    } catch (err) {
+                      console.error('[ChainSelector] Wrapper dispatch error:', err);
+                    }
+                  }}
+                >
+                  Click here to wrap from {selectedChain?.id === 'bnb' ? 'BNB' : selectedChain?.id === 'polygon' ? 'POL' : 'ETH'} to {selectedChain?.id === 'bnb' ? 'WBNB' : selectedChain?.id === 'polygon' ? 'WPOL' : 'WETH'} →
+                </button>
               </div>
             </div>
             <div>
@@ -777,7 +920,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                 {selectedChain && hyperionAddress ? (
                   <a
                     className="text-[#002DCB] hover:underline"
-                    href={`https://sepolia.etherscan.io/address/${hyperionAddress}`}
+                    href={`${getExplorerBaseByChainId(effectiveChainId)}/address/${hyperionAddress}`}
                     target="_blank" rel="noopener noreferrer"
                     title={hyperionAddress}
                   >
@@ -949,7 +1092,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
             <h3 className="text-2xl font-bold">Ready to Bridge from {selectedChain.name}?</h3>
           </div>
           <p className="text-blue-100 mb-6">
-            You can bridge {selectedChain.supportedAssets.join(", ")} from {selectedChain.name} to Helios Beta Mainnet.
+            You can bridge supported assets from {selectedChain.name} to Helios Beta Mainnet.
             The process takes approximately {selectedChain.estimatedTime}.
           </p>
           <div className="flex items-center space-x-4">

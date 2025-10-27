@@ -32,9 +32,19 @@ export default function PendingDepositBanner() {
 
   const etherscanTxUrl = useMemo(() => {
     const tx = record?.rec?.txHash || record?.rec?.lastTxHash;
-    if (!tx) return null;
-    // Currently we support Sepolia only
-    return `https://sepolia.etherscan.io/tx/${tx}`;
+    const chainId = record?.rec?.chainId;
+    if (!tx || !chainId) return null;
+    const explorerByChainId: Record<number, string> = {
+      1: 'https://etherscan.io',
+      56: 'https://bscscan.com',
+      42161: 'https://arbiscan.io',
+      8453: 'https://basescan.org',
+      10: 'https://optimistic.etherscan.io',
+      137: 'https://polygonscan.com',
+      11155111: 'https://sepolia.etherscan.io'
+    };
+    const base = explorerByChainId[Number(chainId)] || 'https://etherscan.io';
+    return `${base}/tx/${tx}`;
   }, [record]);
 
   useEffect(() => {
@@ -59,7 +69,7 @@ export default function PendingDepositBanner() {
       if (pending.length > 0) {
         setRecord(pending[0]);
         setStatus("waiting");
-        setMessage("Deposit submitted. Waiting for confirmation on Helios...");
+        setMessage("Deposit submitted.");
       } else {
         setRecord(null);
         setStatus("idle");
@@ -80,7 +90,7 @@ export default function PendingDepositBanner() {
         if (record.sender?.toLowerCase() !== address.toLowerCase()) return;
         setRecord({ key, rec: record });
         setStatus("waiting");
-        setMessage("Deposit submitted. Waiting for confirmation on Helios...");
+        setMessage("Deposit submitted.");
       } catch {}
     };
     window.addEventListener('helios:deposit-updated', onDepositUpdated as any);
@@ -208,7 +218,7 @@ export default function PendingDepositBanner() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
           {etherscanTxUrl && (
             <a
               href={etherscanTxUrl}
@@ -216,7 +226,7 @@ export default function PendingDepositBanner() {
               rel="noopener noreferrer"
               className="px-3 md:px-4 py-2 rounded-full bg-white border border-[#E2EBFF] text-[#002DCB] text-sm font-semibold hover:bg-gray-50"
             >
-              View on Etherscan
+              View on Explorer
             </a>
           )}
           {!isConfirmed && (

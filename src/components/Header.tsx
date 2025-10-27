@@ -193,49 +193,52 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   };
 
   return (
-    <header className="bg-white/90 py-5 px-4 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-row items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center w-40 sm:w-56 lg:w-64 flex-shrink-0">
-            <button
-              onClick={() => handleNavClick("dashboard", "/")}
-              className="flex items-center hover:opacity-90 transition-opacity"
-              aria-label="Go to home page"
-            >
-              <Image
-                src="/images/helios_beta_mainnet.svg"
-                alt="Helios Beta Mainnet"
-                width={320}
-                height={320}
-                className="w-full h-auto"
-                priority
-              />
-            </button>
+    <header className="bg-white/90 py-5 px-6 md:px-10 sticky top-0 z-50">
+      <div className="w-full">
+        <div className="flex items-center justify-between w-full">
+          {/* Left: Logo + Navigation */}
+          <div className="flex items-center flex-1 min-w-0">
+            <div className="flex items-center w-40 sm:w-56 lg:w-64 flex-shrink-0">
+              <button
+                onClick={() => handleNavClick("dashboard", "/")}
+                className="flex items-center hover:opacity-90 transition-opacity"
+                aria-label="Go to home page"
+              >
+                <Image
+                  src="/images/helios_beta_mainnet.svg"
+                  alt="Helios Beta Mainnet"
+                  width={320}
+                  height={320}
+                  className="w-full h-auto"
+                  priority
+                />
+              </button>
+            </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-2 ml-6 justify-start">
+              {navItems.map((item) => {
+                const isActive = currentView === item.key;
+                const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-md transition-colors border ${
+                  isActive
+                    ? "bg-[#002DCB] text-white border-[#002DCB]"
+                    : "hover:bg-[#E2EBFF] text-[#060F32] border-transparent"
+                }`;
+                const iconWrapperClass = isActive ? "text-white" : "text-[#002DCB]";
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => handleNavClick(item.key, item.path)}
+                    className={buttonClass}
+                  >
+                    <span className={`${iconWrapperClass} inline-flex`}>{item.icon}</span>
+                    <span className="text-sm font-semibold">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-2 mx-8 flex-1 justify-start">
-            {navItems.map((item) => {
-              const isActive = currentView === item.key;
-              const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-md transition-colors border ${
-                isActive
-                  ? "bg-[#002DCB] text-white border-[#002DCB]"
-                  : "hover:bg-[#E2EBFF] text-[#060F32] border-transparent"
-              }`;
-              const iconWrapperClass = isActive ? "text-white" : "text-[#002DCB]";
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => handleNavClick(item.key, item.path)}
-                  className={buttonClass}
-                >
-                  <span className={`${iconWrapperClass} inline-flex`}>{item.icon}</span>
-                  <span className="text-sm font-semibold">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+          {/* Right: Controls (mobile menu, referral, balance, network, wallet) */}
           <div className="flex items-center space-x-2 flex-shrink-0 relative" ref={referralRef}>
             {/* Mobile Menu Button */}
             <button
@@ -304,7 +307,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             <div className="hidden md:block">
               <NetworkSwitcher />
             </div>
-            <div className="xl:ml-2">
+            <div>
               <Wallet />
             </div>
           </div>
