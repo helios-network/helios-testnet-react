@@ -198,17 +198,47 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     'MATIC': 'matic',
     'ARB': 'arb',
     'OP': 'op',
+    'sUSD': 'susd',
+    'SUSD': 'susd',
+    'SNX': 'snx',
+    'AAVE': 'aave',
+    'GMX': 'gmx',
+    'CAKE': 'cake',
+    'BTCB': 'btc',
+    'AERO': 'aero',
+    'stETH': 'steth',
   };
   const TESTNET_CHAIN_IDS = new Set([11155111, 97, 84532, 11155420, 80002, 421614]);
+  // Tokens that should always use symbol fallback (TrustWallet doesn't have good coverage)
+  const FORCE_SYMBOL_FALLBACK = new Set(['sUSD', 'SUSD', 'SNX', 'AERO', 'CAKE', 'BTCB', 'stETH', 'GMX']);
+  
   const getTokenIconUrlByAddress = (tokenAddress?: string, chain?: Chain, fallbackSymbol?: string): string => {
+    const sym = (fallbackSymbol || '').toUpperCase();
+    
+    // Force symbol fallback for certain tokens that TrustWallet doesn't have good coverage for
+    // Also force for WBTC on Base specifically
+    if (FORCE_SYMBOL_FALLBACK.has(sym) || (sym === 'WBTC' && chain?.chainId === 8453)) {
+      const key = TOKEN_SYMBOL_OVERRIDES[sym] || sym.toLowerCase() || 'generic';
+      return `${TOKEN_ICON_BASE}/${key}.svg`;
+    }
+    
+    // For testnets, always use symbol fallback (TrustWallet doesn't have testnet assets)
+    if (TESTNET_CHAIN_IDS.has(Number(chain?.chainId))) {
+      const key = TOKEN_SYMBOL_OVERRIDES[sym] || sym.toLowerCase() || 'generic';
+      return `${TOKEN_ICON_BASE}/${key}.svg`;
+    }
+    
+    // Try TrustWallet for mainnet tokens
     try {
-      // TrustWallet repo does not contain testnet assets; for testnets, fall back to symbol icon
-      if (!TESTNET_CHAIN_IDS.has(Number(chain?.chainId)) && tokenAddress && chain?.trustWalletSlug) {
+      if (tokenAddress && chain?.trustWalletSlug) {
         const checksum = ethers.getAddress(tokenAddress);
-        return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain.trustWalletSlug}/assets/${checksum}/logo.png`;
+        const trustWalletUrl = `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain.trustWalletSlug}/assets/${checksum}/logo.png`;
+        // Return TrustWallet URL (browser will fallback via onError if it doesn't exist)
+        return trustWalletUrl;
       }
     } catch {}
-    const sym = (fallbackSymbol || '').toUpperCase();
+    
+    // Final fallback to Spot icons
     const key = TOKEN_SYMBOL_OVERRIDES[sym] || sym.toLowerCase() || 'generic';
     return `${TOKEN_ICON_BASE}/${key}.svg`;
   };
@@ -502,7 +532,8 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     setTransferPhase('idle');
     setLastError(null);
     try {
-      const chainId = selectedChain.chainId;
+      // Use effectiveChainId to handle mainnet/testnet family switching
+      const chainId = effectiveChainId || selectedChain.chainId;
 
       const symbol = selectedToken.toUpperCase();
       const depositId = `helios-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;

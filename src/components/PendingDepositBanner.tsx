@@ -41,7 +41,8 @@ export default function PendingDepositBanner() {
       8453: 'https://basescan.org',
       10: 'https://optimistic.etherscan.io',
       137: 'https://polygonscan.com',
-      11155111: 'https://sepolia.etherscan.io'
+      11155111: 'https://sepolia.etherscan.io',
+      97: 'https://testnet.bscscan.com'
     };
     const base = explorerByChainId[Number(chainId)] || 'https://etherscan.io';
     return `${base}/tx/${tx}`;
