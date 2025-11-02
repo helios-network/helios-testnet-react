@@ -3,21 +3,10 @@ import Image from "next/image";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-white/90 py-5 pt-6 pb-7">
+    <footer className="pt-0 pb-5">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-end">
-          <div className="flex items-center mb-4 sm:mb-0">
-            <Image 
-              src="/images/helios_beta_mainnet.svg" 
-              alt="Helios Beta Mainnet"
-              width={250}
-              height={250}
-              className="h-8 w-auto object-contain"
-              priority
-            />
-          </div>
-          
-          <div className="text-center mb-4 sm:mb-0 sm:mx-auto">
+          <div className="text-center mb-4 sm:mb-0">
             <span className="text-sm text-[#5C6584]">Helios Blockchain © 2025 - All rights reserved.</span>
           </div>
           

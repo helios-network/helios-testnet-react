@@ -193,7 +193,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   };
 
   return (
-    <header className="bg-white/90 py-5 px-6 md:px-10 sticky top-0 z-50">
+    <header className="bg-white/88 py-5 px-6 md:px-10 sticky top-0 z-50">
       <div className="w-full">
         <div className="flex items-center justify-between w-full">
           {/* Left: Logo + Navigation */}
@@ -218,7 +218,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             <nav className="hidden lg:flex items-center space-x-2 ml-6 justify-start">
               {navItems.map((item) => {
                 const isActive = currentView === item.key;
-                const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-md transition-colors border ${
+                const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-[12px] transition-colors border cursor-pointer ${
                   isActive
                     ? "bg-[#002DCB] text-white border-[#002DCB]"
                     : "hover:bg-[#E2EBFF] text-[#060F32] border-transparent"

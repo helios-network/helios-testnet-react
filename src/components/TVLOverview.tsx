@@ -323,7 +323,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
 
   if (loading) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5">
+      <div className="bg-white/80 backdrop-blur-sm rounded-[25px] px-7 py-5">
         <div className="h-64 bg-gray-200 rounded animate-pulse" />
       </div>
     );
@@ -351,7 +351,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
               aria-pressed={activeKey === item.key}
               title={`${isTouch ? 'Tap' : 'Hover'} to see TVL chart`}
             >
-              <span className="w-7 h-7 rounded-md overflow-hidden bg-white flex items-center justify-center border border-[#E2EBFF]">
+              <span className="w-6 h-6 overflow-hidden flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={item.logo} alt={`${item.key} logo`} className="w-6 h-6" />
               </span>
@@ -434,7 +434,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="w-6 h-6 rounded-md overflow-hidden bg-white flex items-center justify-center border border-[#E2EBFF]">
+                            <span className="w-6 h-6 overflow-hidden flex items-center justify-center">
                               <img src={item.logo} alt={`${item.key} logo`} className="w-5 h-5" />
                             </span>
                             <span className="text-xs font-medium text-[#060F32]">{item.key}</span>
@@ -475,34 +475,24 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
 
   if (compact) {
     return (
-      <div className="relative">
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5">
-          <div className="mb-3 flex flex-col items-center text-center">
-            <div className="text-xs text-[#5C6584]">
-              These are the 6 chains Helios Beta Mainnet currently supports
+      <div className="relative mb-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-[25px] px-7 py-5">
+          <div className="mb-4 flex flex-col items-center text-center">
+            <div className="text-md font-medium">
+              Helios Beta Mainnet expands across 6 chains
             </div>
-            <AnimatePresence>
-              {showHint && (
-                <motion.span
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[11px] text-[#002DCB]"
-                >
-                  <MousePointer className="w-3.5 h-3.5" />
-                  {isTouch ? 'Tap a chain to see TVL' : 'Hover a chain to see TVL'}
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <span className="mt-2 inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50/40 text-xs text-blue-400/80 font-medium border border-[#E2EBFF]">
+              {isTouch ? 'Tap a chain to see TVL' : 'Hover a chain to see TVL'}
+            </span>
           </div>
-          <div className="flex flex-wrap gap-3 items-center justify-center">
+          <div className="flex flex-wrap gap-2 items-center justify-center">
             {legendItems.map((item) => (
               <button
                 key={`logo-${item.key}`}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition relative ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-[12px] border transition relative ${
                   showAttention ? 'animate-glow' : ''
                 } ${
-                  (hoverKey === item.key || activeKey === item.key) ? 'bg-blue-50 border-[#BFD0FF]' : 'bg-white border-[#E2EBFF]'
+                  (hoverKey === item.key || activeKey === item.key) ? 'bg-blue-50 border-blue-100' : 'bg-blue-50/50 border-blue-50'
                 }`}
                           onMouseEnter={() => handleHover(item.key)}
                           onMouseLeave={() => handleHover(null)}
@@ -512,7 +502,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
                 aria-pressed={activeKey === item.key}
                 title={`${isTouch ? 'Tap' : 'Hover'} to see TVL chart`}
               >
-                <span className="w-7 h-7 rounded-md overflow-hidden bg-white flex items-center justify-center border border-[#E2EBFF]">
+                <span className="w-6 h-6 overflow-hidden flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.logo} alt={`${item.key} logo`} className="w-6 h-6" />
                 </span>
@@ -533,14 +523,14 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
               onMouseEnter={() => setPanelHover(true)}
               onMouseLeave={() => setPanelHover(false)}
             >
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#E2EBFF] px-6 py-5 max-w-6xl mx-auto shadow-xl">
+              <div className="bg-white/90 backdrop-blur-sm rounded-[25px] border border-[#E2EBFF] px-8 py-7 max-w-5xl mx-auto shadow-xl">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="text-sm font-medium">TVL Overview</h3>
+                    <h3 className="text-md font-medium">TVL Overview</h3>
                     <p className="text-[#5C6584] text-xs">Hover a chain to see its share</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-[11px] text-[#5C6584]">Total TVL</div>
+                    <div className="text-xs text-[#5C6584]">Total TVL</div>
                     <div className="text-xl font-bold text-[#060F32]">{centerLabel}</div>
                   </div>
                 </div>
@@ -562,8 +552,8 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
                       {legendItems.map((item) => (
                         <button
                           key={`legend-${item.key}`}
-                          className={`flex sm:flex-row flex-col items-start sm:items-center justify-between gap-3 px-3 py-2 rounded-lg border transition text-left w-full ${
-                            (hoverKey === item.key || activeKey === item.key) ? 'bg-blue-50 border-[#BFD0FF]' : 'bg-white border-[#E2EBFF]'
+                          className={`flex sm:flex-row flex-col items-start sm:items-center justify-between gap-3 px-3 py-2 rounded-[12px] transition border text-left w-full ${
+                            (hoverKey === item.key || activeKey === item.key) ? 'bg-blue-50 border-blue-100' : 'bg-blue-50/50 border-blue-50'
                           }`}
                           onMouseEnter={() => setHoverKey(item.key)}
                           onMouseLeave={() => setHoverKey((prev) => prev === item.key ? null : prev)}
@@ -574,7 +564,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="w-6 h-6 rounded-md overflow-hidden bg-white flex items-center justify-center border border-[#E2EBFF]">
+                            <span className="w-6 h-6 overflow-hidden flex items-center justify-center">
                               <img src={item.logo} alt={`${item.key} logo`} className="w-5 h-5" />
                             </span>
                             <span className="text-xs font-medium text-[#060F32]">{item.key}</span>
@@ -647,7 +637,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
             onClick={() => handleToggle(item.key)}
             aria-pressed={activeKey === item.key}
           >
-            <span className="w-6 h-6 rounded-md overflow-hidden bg-white flex items-center justify-center border border-[#E2EBFF]">
+            <span className="w-6 h-6 overflow-hidden flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={chains.find(c => c.name === item.key)?.logo} alt={`${item.key} logo`} className="w-5 h-5" />
             </span>
@@ -689,7 +679,7 @@ const TVLOverview: React.FC<TVLOverviewProps> = ({ compact = false, inline = fal
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="w-6 h-6 rounded-md overflow-hidden bg-white flex items-center justify-center border border-[#E2EBFF]">
+                  <span className="w-6 h-6 overflow-hidden flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item.logo} alt={`${item.key} logo`} className="w-5 h-5" />
                   </span>

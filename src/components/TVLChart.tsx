@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Activity } from "lucide-react";
+import { ChartLine } from "lucide-react";
 import { fetchTVLHistory, fetchChainData, formatCurrency } from "../services/metricsApi";
 
 interface TVLDataPoint {
@@ -128,19 +128,24 @@ const TVLChart: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/80 backdrop-blur-sm rounded-xl px-7 pt-5 pb-6 h-full"
+      className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-7"
     >
       <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="text-md font-medium">TVL Growth</h3>
-          <p className="text-[#5C6584] text-xs">Total Value Locked over time</p>
+        <div className="flex items-center space-x-3 mb-5">
+          <div className="w-10 h-10 bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl flex items-center justify-center">
+            <ChartLine className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-md font-medium">TVL Growth</h3>
+            <p className="text-[#5C6584] text-xs">Total Value Locked over time</p>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           {/* Time range filter */}
-          <div className="flex items-center gap-1 bg-[#F5F7FF] rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-blue-50/50 rounded-[12px] p-1">
             <button
               onClick={() => setTimeRange('daily')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+              className={`px-3 py-1 rounded-[8px] text-xs font-medium transition-colors cursor-pointer ${
                 timeRange === 'daily'
                   ? 'bg-[#002DCB] text-white'
                   : 'text-[#5C6584] hover:text-[#002DCB]'
@@ -150,7 +155,7 @@ const TVLChart: React.FC = () => {
             </button>
             <button
               onClick={() => setTimeRange('weekly')}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+              className={`px-3 py-1 rounded-[8px] text-xs font-semibold transition-colors cursor-pointer ${
                 timeRange === 'weekly'
                   ? 'bg-[#002DCB] text-white'
                   : 'text-[#5C6584] hover:text-[#002DCB]'

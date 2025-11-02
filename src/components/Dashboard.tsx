@@ -67,34 +67,34 @@ const Dashboard = () => {
   // Public view for non-authenticated users
   if (!isAuthenticated) {
     return (
-      <div className="bg-[#E6EBFD] min-h-screen flex flex-col overflow-auto">
+      <div className="min-h-screen flex flex-col overflow-auto">
         <div style={scaledContainerStyle}>
         <div className="flex-grow py-4 px-4">
           <div className="max-w-7xl mx-auto space-y-6">
       
-          {/* Top CTA - Immediately visible */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-5 mb-4">
-            <div className="flex flex-col items-center text-center">
-              <div className="text-center mb-3">
-                <div className="text-md font-medium">Bring Assets to Helios</div>
-                <div className="text-[#5C6584] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain by December 1.</div>
-              </div>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => setShowChainSelector(true)}
-                  className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
-                >
-                  Bridge to Helios
-                </button>
+            {/* Top CTA - Immediately visible */}
+            <div className="bg-[url(/images/header-background.png)] backdrop-blur-sm rounded-[25px] px-8 py-6 mb-4">
+              <div className="flex flex-col items-center text-center">
+                <div className="text-center mb-3 text-white">
+                  <div className="text-md font-medium">Bring Assets to Helios</div>
+                  <div className="text-blue-100 text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly.<br/>Your assets stay safe and can be sent back to their source chain by December 1.</div>
+                </div>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setShowChainSelector(true)}
+                    className="bg-white px-4 py-2 rounded-[12px] text-sm font-medium hover:bg-blue-50 transition-colors cursor-pointer"
+                  >
+                    Bridge to Helios
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
             {/* TVL Overview compact under CTA */}
             <TVLOverview compact />
 
             {/* TVL Chart and Rewards Simulator */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 mb-4 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 mb-4 gap-4">
               <div className="lg:col-span-7">
                 <TVLChart />
               </div>
@@ -106,23 +106,20 @@ const Dashboard = () => {
             {/* Full-width staking info */}
             <StakeInfoSection />
 
-
             {/* Call to Action */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl px-7 py-6 text-white items-center justify-between"
+              className="bg-[url(/images/header-background.png)] backdrop-blur-sm rounded-[25px] px-8 py-6"
             >
-              <div className="mr-4">
+              <div className="text-center mb-3 text-white">
                 <h2 className="text-md font-medium">Ready to Start Earning?</h2>
-                <p className="text-blue-100 max-w-2xl mx-auto text-xs">
-                  Connect your wallet to start bridging assets and earning HLS rewards on the Helios Beta Mainnet.
-                </p>
+                <p className="text-blue-100 text-xs">Connect your wallet to start bridging assets and earning HLS rewards on the Helios Beta Mainnet.</p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex gap-3 justify-center">
                 <button 
                   onClick={() => setShowChainSelector(true)}
-                  className="bg-white text-[#002DCB] border-2 border-transparent px-3 py-2 h-min rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+                  className="bg-white px-4 py-2 rounded-[12px] text-sm font-medium hover:bg-blue-50 transition-colors cursor-pointer"
                 >
                   Bridge Assets Now
                 </button>
@@ -134,18 +131,18 @@ const Dashboard = () => {
         </div>
         {/* Chain Selector Modal */}
         {showChainSelector && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 py-0">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white max-w-6xl w-full h-full overflow-y-auto"
             >
-              <div className="p-6">
+              <div className="px-10 pt-8 pb-10">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-[#060F32]">Select Origin Chain</h2>
+                  <h2 className="text-2xl font-semibold">Select Origin Chain</h2>
                   <button
                     onClick={() => setShowChainSelector(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -175,16 +172,16 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto space-y-6">
        
           {/* Top CTA - Immediately visible (moved above summary) */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl px-6 py-5">
+          <div className="bg-[url(/images/header-background.png)] backdrop-blur-sm rounded-[25px] px-8 py-6 mb-4">
             <div className="flex flex-col items-center text-center">
-              <div className="text-center mb-3">
-                <div className="text-[#060F32] font-medium text-md">Bring Assets to Helios</div>
-                <div className="text-[#828DB3] text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain by December 1.</div>
+              <div className="text-center mb-3 text-white">
+                <div className="text-md font-medium">Bring Assets to Helios</div>
+                <div className="text-blue-100 text-xs">Deposit from Ethereum, BNB, Arbitrum, Base, Optimism, or Polygon and start earning HLS instantly. Your assets stay safe and can be sent back to their source chain by December 1.</div>
               </div>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setShowChainSelector(true)}
-                  className="bg-[#002DCB] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#0045FF] transition-colors"
+                  className="bg-blue-50/90 px-4 py-2 rounded-[12px] text-sm font-medium hover:bg-blue-50 transition-colors cursor-pointer"
                 >
                   Bridge to Helios
                 </button>
@@ -223,18 +220,18 @@ const Dashboard = () => {
       </div>
       {/* Chain Selector Modal */}
       {showChainSelector && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 py-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white max-w-6xl w-full h-full overflow-y-auto"
           >
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-[#060F32]">Select Origin Chain</h2>
+                <h2 className="text-2xl font-semibold text-[#060F32]">Select Origin Chain</h2>
                 <button
                   onClick={() => setShowChainSelector(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <X className="w-6 h-6" />
                 </button>

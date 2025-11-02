@@ -59,15 +59,15 @@ const HLSRewardsSimulator: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/80 backdrop-blur-sm rounded-xl p-7"
+      className="bg-white/80 backdrop-blur-sm rounded-xl p-7 h-full"
     >
-      <div className="flex items-center space-x-3 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl flex items-center justify-center">
-          <Calculator className="w-6 h-6 text-white" />
+      <div className="flex items-center space-x-3 mb-5">
+        <div className="w-10 h-10 bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl flex items-center justify-center">
+          <Calculator className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-[#060F32]">HLS Rewards Calculator</h2>
-          <p className="text-sm text-[#828DB3]">
+          <h2 className="text-md font-medium">HLS Rewards Calculator</h2>
+          <p className="text-[#5C6584] text-xs">
             Estimate your earnings at {APY}% APY
           </p>
         </div>
@@ -77,7 +77,7 @@ const HLSRewardsSimulator: React.FC = () => {
       <div className="space-y-5">
         {/* Dollar Amount Input */}
         <div>
-          <label className="block text-sm font-medium text-[#060F32] mb-2">
+          <label className="block text-sm font-medium text-[#060F32] mb-1">
             Asset Value (USD)
           </label>
           <div className="relative">
@@ -91,25 +91,25 @@ const HLSRewardsSimulator: React.FC = () => {
               step="100"
             />
           </div>
-          <p className="text-xs text-[#828DB3] mt-2">
+          <p className="text-xs text-[#5C6584]">
             The total USD value of assets you plan to bridge to Helios
           </p>
         </div>
 
         {/* Timeframe Selection */}
-        <div>
+        <div className="mb-3">
           <label className="block text-sm font-medium text-[#060F32] mb-2">
             Timeframe
           </label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {(["daily", "monthly", "yearly"] as const).map((tf) => (
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}
-                className={`py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+                className={`py-2.5 px-4 rounded-[12px] font-medium text-sm transition-all cursor-pointer ${
                   timeframe === tf
                     ? "bg-[#002DCB] text-white shadow-md"
-                    : "bg-[#F5F7FF] text-[#828DB3] hover:bg-[#E6EBFD]"
+                    : "bg-blue-50/50 text-[#828DB3] hover:bg-blue-50"
                 }`}
               >
                 {tf.charAt(0).toUpperCase() + tf.slice(1)}
@@ -119,10 +119,10 @@ const HLSRewardsSimulator: React.FC = () => {
         </div>
 
         {/* Results Section (neutral) */}
-        <div className="rounded-xl p-6 bg-white/90 backdrop-blur-sm border border-[#E2EBFF] space-y-4">
+        <div className="rounded-[12px] p-6 bg-white backdrop-blur-sm border border-[#E2EBFF] space-y-4 mb-6">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[#5C6584]">Your Estimated Rewards</span>
-            <span className="text-xs bg-[#F5F7FF] text-[#002DCB] px-3 py-1 rounded-full border border-[#E2EBFF]">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50/40 text-xs text-blue-400/80 font-medium border border-[#E2EBFF]">
               per {period}
             </span>
           </div>
@@ -163,7 +163,7 @@ const HLSRewardsSimulator: React.FC = () => {
         </div>
 
         {/* Additional Info */}
-        <div className="bg-[#F5F7FF] rounded-lg p-4 space-y-2">
+        <div className="bg-blue-50/50 rounded-[12px] p-4 space-y-2">
           <div className="flex items-start space-x-2">
             <TrendingUp className="w-5 h-5 text-[#002DCB] mt-0.5 flex-shrink-0" />
             <div className="text-sm text-[#060F32]">

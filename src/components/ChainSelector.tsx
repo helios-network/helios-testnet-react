@@ -689,10 +689,10 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-[#060F32] mb-1">
+          <h2 className="text-xl font-semibold mt-1">
             {isChoosingChain ? "Choose Your Origin Chain" : `Deposit from ${selectedChain?.name}`}
           </h2>
-          <p className="text-[#5C6584] max-w-2xl">
+          <p className="text-sm text-[#5C6584]">
             {isChoosingChain ? (
               <>Select the blockchain where your assets are currently located. We'll help you bridge them to Helios.</>
             ) : (
@@ -701,7 +701,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
           </p>
         </div>
         {!isChoosingChain && (
-          <button onClick={handleBackToChains} className="text-sm text-[#002DCB] hover:underline">← Back to chains</button>
+          <button onClick={handleBackToChains} className="text-sm text-[#002DCB] hover:underline cursor-pointer">← Back to chains</button>
         )}
       </div>
 
@@ -714,7 +714,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
           return (
             <motion.div
               key={chain.id}
-              className={`relative bg-white rounded-2xl shadow-sm border border-[#E2EBFF] p-6 cursor-pointer transition-all duration-300 ${
+              className={`relative bg-white rounded-[25px] shadow-sm border border-[#E2EBFF] p-6 cursor-pointer transition-all duration-250 ${
                 isSelected 
                   ? "ring-2 ring-[#002DCB] bg-[#F5F7FF]" 
                   : "hover:shadow-md hover:border-[#002DCB] hover:-translate-y-0.5"
@@ -801,7 +801,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                     </div>
                     <div>
                       <label className="block text-sm text-[#5C6584] mb-1">Deposit Contract</label>
-                      <div className="px-3 py-2 bg-[#F9FAFF] border-2 border-[#E2EBFF] rounded-lg text-sm font-mono text-[#060F32] truncate">
+                      <div className="px-3 py-2 bg-[#F9FAFF] border-2 border-[#E2EBFF] rounded-[12px] text-sm font-mono text-[#060F32] truncate">
                         {hyperionAddress ? (
                           <a className="text-[#002DCB] hover:underline" href={`${SUPPORTED_CHAINS.find(c=>c.id===chain.id)?.explorerBaseUrl || ''}/address/${hyperionAddress}`} target="_blank" rel="noopener noreferrer">{shortenAddress(hyperionAddress)}</a>
                         ) : (
@@ -836,9 +836,9 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
         })}
       </div>
       ) : (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-[#E2EBFF] p-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-[25px] border border-[#E2EBFF] p-6 mb-4">
           <div className="flex items-center mb-4">
-            <div className="w-12 h-12 rounded-full bg-white border border-[#E2EBFF] flex items-center justify-center mr-4 overflow-hidden">
+            <div className="w-12 h-12 flex items-center justify-center mr-4 overflow-hidden">
               {selectedChain && (
                 <img
                   src={CHAIN_ICON_URLS[selectedChain.name] || CHAIN_ICON_URLS['Ethereum']}
@@ -963,7 +963,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
               </div>
             </div>
           </div>
-          <div className="mt-3 p-4 rounded-lg border-2 border-[#002DCB]/20 bg-gradient-to-br from-[#F9FAFF] to-[#E2EBFF]/30">
+          <div className="mt-3 p-4 rounded-[8px] border-2 border-[#002DCB]/20 bg-gradient-to-br from-[#F9FAFF] to-[#E2EBFF]/30">
             <div className="flex items-center gap-2 mb-2">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-[#002DCB]">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
@@ -991,7 +991,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
             <button
               type="button"
               onClick={() => setAcknowledged(!acknowledged)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer text-left ${
+              className={`w-full flex items-center gap-3 p-3 rounded-[8px] border-2 transition-all cursor-pointer text-left ${
                 acknowledged
                   ? 'bg-[#002DCB] border-[#002DCB] text-white'
                   : 'bg-white border-gray-300 text-[#060F32] hover:border-[#002DCB]'
@@ -1014,7 +1014,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
             </button>
           </div>
           {selectedToken && amount && Number(amount) > 0 && acknowledged && (
-            <div className="mt-3 p-3 rounded-lg border border-green-200 bg-green-50">
+            <div className="mt-3 p-3 rounded-[12px] border border-green-200 bg-green-50">
               <div className="text-xs font-semibold text-green-900 mb-1">✓ Ready to deposit</div>
               <div className="text-xs text-green-800">
                 You will deposit <strong>{amount} {selectedToken}</strong> from <strong>{selectedChain?.name}</strong> to <strong>Helios</strong>. 
@@ -1038,7 +1038,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
             <button 
               onClick={handleTransfer}
               disabled={isTransferring || !acknowledged || !selectedToken || !amount || Number(amount) <= 0}
-              className="w-full md:w-auto bg-[#002DCB] text-white px-6 py-3 rounded-full text-sm font-bold hover:bg-[#0045FF] transition-colors flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="w-full md:w-auto bg-[#002DCB] text-white px-5 py-3 rounded-[12px] text-sm font-bold hover:bg-[#0045FF] transition-colors flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl cursor-pointer"
             >
               {isTransferring ? (
                 <>
@@ -1116,22 +1116,21 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-2xl p-8 text-white"
+          className="bg-[url(/images/header-background.png)] backdrop-blur-sm rounded-[25px] px-8 py-6 mb-4"
         >
-          <div className="flex items-center mb-4">
-            <Zap className="w-6 h-6 mr-3" />
-            <h3 className="text-2xl font-bold">Ready to Bridge from {selectedChain.name}?</h3>
+          <div className="mb-4 text-white">
+            <h3 className="text-lg font-medium">Ready to Bridge from {selectedChain.name}?</h3>
+            <p className="text-blue-100 text-sm">
+              You can bridge supported assets from {selectedChain.name} to Helios Beta Mainnet.
+              The process takes approximately {selectedChain.estimatedTime}.
+            </p>
           </div>
-          <p className="text-blue-100 mb-6">
-            You can bridge supported assets from {selectedChain.name} to Helios Beta Mainnet.
-            The process takes approximately {selectedChain.estimatedTime}.
-          </p>
           <div className="flex items-center space-x-4">
-            <button className="bg-white text-[#002DCB] px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors flex items-center">
+            <button className="bg-white px-5 py-3 rounded-[12px] text-sm font-medium hover:bg-blue-50 transition-colors cursor-pointer flex items-center">
               Start Bridging
               <ExternalLink className="w-4 h-4 ml-2" />
             </button>
-            <button className="text-blue-100 hover:text-white transition-colors">
+            <button className="bg-white/10 px-5 py-3 rounded-[12px] border border-blue-100 text-blue-100 hover:text-white hover:hover-white transition-colors cursor-pointer">
               Learn More About Bridging
             </button>
           </div>
