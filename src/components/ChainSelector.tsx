@@ -182,6 +182,13 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     }
   };
   const TOKEN_ICON_BASE = 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/svg/color';
+  // Local overrides for tokens that lack reliable icons in TrustWallet/Spot
+  const LOCAL_TOKEN_ICON_OVERRIDES: Record<string, string> = {
+    'CAKE': '/images/tokens/cake.png',
+    'GMX': '/images/tokens/gmx.png',
+    'SUSD': '/images/tokens/susd.png',
+    'AERO': '/images/tokens/aero.png',
+  };
   const TOKEN_SYMBOL_OVERRIDES: Record<string, string> = {
     'WETH': 'eth',
     'WBTC': 'btc',
@@ -215,6 +222,11 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
   const getTokenIconUrlByAddress = (tokenAddress?: string, chain?: Chain, fallbackSymbol?: string): string => {
     const sym = (fallbackSymbol || '').toUpperCase();
     
+    // Prefer local icon overrides when available
+    if (sym && LOCAL_TOKEN_ICON_OVERRIDES[sym]) {
+      return LOCAL_TOKEN_ICON_OVERRIDES[sym];
+    }
+
     // Force symbol fallback for certain tokens that TrustWallet doesn't have good coverage for
     // Also force for WBTC on Base specifically
     if (FORCE_SYMBOL_FALLBACK.has(sym) || (sym === 'WBTC' && chain?.chainId === 8453)) {
