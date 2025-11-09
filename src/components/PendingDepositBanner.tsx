@@ -29,6 +29,8 @@ export default function PendingDepositBanner() {
   const [message, setMessage] = useState<string>("");
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [xpBase, setXpBase] = useState<number | undefined>(undefined);
+  const [usdValue, setUsdValue] = useState<number | undefined>(undefined);
 
   const etherscanTxUrl = useMemo(() => {
     const tx = record?.rec?.txHash || record?.rec?.lastTxHash;
@@ -119,6 +121,8 @@ export default function PendingDepositBanner() {
             setRecord({ key: record.key, rec: updated });
             setStatus("confirmed");
             setMessage("Deposit confirmed on Helios.");
+            setXpBase(typeof res.deposit?.xpBase === 'number' ? res.deposit.xpBase : undefined);
+            setUsdValue(typeof res.deposit?.usdValue === 'number' ? res.deposit.usdValue : undefined);
             try { window.dispatchEvent(new Event('helios:liquidity-refresh')); } catch {}
             setPolling(false);
             return;
@@ -157,6 +161,8 @@ export default function PendingDepositBanner() {
         setRecord({ key: record.key, rec: updated });
         setStatus("confirmed");
         setMessage("Deposit confirmed on Helios.");
+        setXpBase(typeof res.deposit?.xpBase === 'number' ? res.deposit.xpBase : undefined);
+        setUsdValue(typeof res.deposit?.usdValue === 'number' ? res.deposit.usdValue : undefined);
         try { window.dispatchEvent(new Event('helios:liquidity-refresh')); } catch {}
       } else {
         setStatus("waiting");
@@ -181,7 +187,7 @@ export default function PendingDepositBanner() {
       animate={{ opacity: 1, y: 0 }}
       className={`sticky top-0 w-full ${
         isConfirmed
-          ? "bg-gradient-to-r from-green-50 to-emerald-100 border-b-2 border-emerald-300"
+          ? "bg-gradient-to-r from-green-50 via-emerald-100 to-green-50 border-b-2 border-emerald-300"
           : "bg-gradient-to-r from-amber-50 to-yellow-100 border-b-2 border-amber-300"
       } text-[#060F32] px-4 md:px-6 py-3 md:py-4 shadow-md z-50`}
     >
@@ -209,14 +215,37 @@ export default function PendingDepositBanner() {
                   {message} Your funds are safe and being tracked. This typically takes 2-5 minutes.
                 </>
               ) : (
-                <>
-                  Your deposit has been successfully received on Helios! You should see your funds in your wallet shortly and also HLS rewards in your wallet.
-                </>
+                <div className="space-y-1">
+                  <div>
+                    Congrats! Your tokens will be sent directly to your wallet and will appear on the Helios Portal shortly.
+                    {" "}
+                    <a href="https://portal.helioschain.network" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-[#002DCB]">Open Portal</a>
+                  </div>
+                  <div>
+                    Put them to work across the Helios ecosystem to earn APY:
+                    {" "}
+                    <a href="https://helioschain.network/ecosystem/" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-[#002DCB]">Explore Ecosystem</a>
+                  </div>
+                </div>
               )}
             </div>
             <div className="text-sm md:text-base text-[#060F32] mt-1 font-semibold">
               {record.rec.amount} {record.rec.tokenSymbol} • From {formatShort(record.rec.sender)}
             </div>
+            {isConfirmed && (
+              <div className="mt-1 flex items-center gap-3 text-sm">
+                {typeof xpBase === 'number' && (
+                  <div className="inline-flex items-center px-2 py-1 rounded-full bg-white border border-emerald-300 text-green-700 font-semibold">
+                    +{xpBase} XP
+                  </div>
+                )}
+                {typeof usdValue === 'number' && (
+                  <div className="inline-flex items-center px-2 py-1 rounded-full bg-white border border-[#E2EBFF] text-[#5C6584]">
+                    ~${usdValue.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
           <div className="flex items-center gap-2 md:gap-3">
@@ -250,6 +279,13 @@ export default function PendingDepositBanner() {
           </svg>
         </button>
       </div>
+      {isConfirmed && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* subtle confetti sparkles */}
+          <div className="absolute -top-6 right-10 w-24 h-24 rounded-full bg-emerald-300 opacity-20 blur-2xl animate-pulse"></div>
+          <div className="absolute -bottom-8 left-20 w-28 h-28 rounded-full bg-green-300 opacity-20 blur-2xl animate-pulse"></div>
+        </div>
+      )}
     </motion.div>
   );
 }

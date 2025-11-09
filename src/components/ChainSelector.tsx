@@ -558,7 +558,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
           tokenSymbol: symbol,
           amount: amount,
           destination: destinationBytes32,
-          data: depositId
+          data: JSON.stringify(depositId)
         });
       } catch (e: any) {
         setLastError(e?.message || 'Failed to prepare bridge');
@@ -1096,7 +1096,27 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                   </div>
                   <div className="text-[#5C6584] text-sm">
                     {lastTxHash ? (
-                      <a className="text-[#002DCB] hover:underline" target="_blank" rel="noopener noreferrer" href={`https://sepolia.etherscan.io/tx/${lastTxHash}`}>View on Etherscan →</a>
+                      <a
+                        className="text-[#002DCB] hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href={`${(() => {
+                          const explorerByChainId: Record<number, string> = {
+                            1: 'https://etherscan.io',
+                            56: 'https://bscscan.com',
+                            137: 'https://polygonscan.com',
+                            42161: 'https://arbiscan.io',
+                            10: 'https://optimistic.etherscan.io',
+                            8453: 'https://basescan.org',
+                            11155111: 'https://sepolia.etherscan.io',
+                            97: 'https://testnet.bscscan.com'
+                          };
+                          const cid = Number(effectiveChainId || selectedChain?.chainId);
+                          return explorerByChainId[cid] || selectedChain?.explorerBaseUrl || 'https://etherscan.io';
+                        })()}/tx/${lastTxHash}`}
+                      >
+                        View on Etherscan →
+                      </a>
                     ) : (
                       transferPhase !== 'error' ? 'Please confirm the action in your wallet.' : (
                         <span className="text-red-600">{lastError || 'An error occurred'}</span>

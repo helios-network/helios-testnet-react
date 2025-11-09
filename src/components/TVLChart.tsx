@@ -92,7 +92,24 @@ const TVLChart: React.FC = () => {
   }
 
   if (series.length === 0) {
-    return null;
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-7">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl flex items-center justify-center">
+              <ChartLine className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 className="text-md font-medium">TVL Growth</h3>
+              <p className="text-[#5C6584] text-xs">Total Value Locked over time</p>
+            </div>
+          </div>
+        </div>
+        <div className="min-h-[260px] sm:min-h-[360px] md:min-h-[420px] flex items-center justify-center text-[#5C6584] text-sm">
+          TVL data unavailable. Please try again later.
+        </div>
+      </div>
+    );
   }
 
   // Calculate chart dimensions and scaling using full series (including live point)

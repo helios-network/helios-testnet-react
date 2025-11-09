@@ -223,12 +223,12 @@ export const fetchChainData = async (): Promise<ChainData[]> => {
     }));
     return result;
   } catch {
-    // fallback to mock on error
-    return mockChainData;
+    // On error, return empty data to avoid showing mock values
+    return [];
   }
 };
 
-export const fetchTVLHistory = async (days: number = 7): Promise<typeof mockTVLHistory> => {
+export const fetchTVLHistory = async (days: number = 7): Promise<Array<{ date: string; tvl: number }>> => {
   try {
     // Default to last 7 days for better granularity
     const fromDate = new Date();
@@ -244,9 +244,11 @@ export const fetchTVLHistory = async (days: number = 7): Promise<typeof mockTVLH
       date: (i.date || i.timestamp) as string,
       tvl: (i.tvl != null ? i.tvl : (i.totalUsd as number))
     }));
-    return normalized.length ? normalized : mockTVLHistory;
+    // Do not fallback to mock data; return whatever we have (possibly empty)
+    return normalized;
   } catch {
-    return mockTVLHistory;
+    // On error, return empty to allow UI to render an error/empty state
+    return [];
   }
 };
 
