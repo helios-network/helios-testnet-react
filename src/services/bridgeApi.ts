@@ -14,12 +14,30 @@ export async function getAssets(chainId: number): Promise<{ success: boolean; ch
 }
 
 export type PreparedStep = {
-  type: 'wrap' | 'approve' | 'send';
-  to: string;
-  tx: any; // ethers populated tx object
+  type: 'wrap' | 'approve' | 'approve-reset' | 'send' | 'permit-available';
+  to?: string;
+  tx?: any; // ethers populated tx object
+  tokenAddress?: string;
+  spender?: string;
+  amount?: string;
+  metadata?: {
+    reason?: string;
+    tokenSymbol?: string;
+    hasPermit?: boolean;
+    message?: string;
+    isInfinite?: boolean;
+  };
 };
 
-export async function prepareBridge(body: { chainId: number; tokenSymbol: string; amount: string; destination: string; data?: string }) {
+export async function prepareBridge(body: { 
+  chainId: number; 
+  tokenSymbol: string; 
+  amount: string; 
+  destination: string; 
+  data?: string;
+  userAddress: string;
+  useInfiniteApproval?: boolean;
+}) {
   const res = await fetch(`${API_URL}/bridge/prepare`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,7 +47,18 @@ export async function prepareBridge(body: { chainId: number; tokenSymbol: string
     const e = await res.json().catch(() => ({}));
     throw new Error(e.message || 'Failed to prepare bridge');
   }
-  return res.json() as Promise<{ success: true; chainId: number; token: string; steps: PreparedStep[] }>;
+  return res.json() as Promise<{ 
+    success: true; 
+    chainId: number; 
+    token: string; 
+    steps: PreparedStep[];
+    metadata?: {
+      tokenBehavior?: { requiresZeroFirst: boolean; hasPermit: boolean };
+      hyperionContract?: string;
+      approvalStrategy?: string;
+      revokeLink?: string;
+    };
+  }>;
 }
 
 export async function checkStatus(body: { chainId: number; tokenSymbol: string; sender: string; amount: string; destination?: string; depositId?: string }) {

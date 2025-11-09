@@ -109,12 +109,14 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
   const [amount, setAmount] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferPhase, setTransferPhase] = useState<
-    'idle' | 'wrapping' | 'approving' | 'sending' | 'submitted' | 'waiting' | 'confirmed' | 'error'
+    'idle' | 'wrapping' | 'approving' | 'resetting' | 'sending' | 'submitted' | 'waiting' | 'confirmed' | 'error'
   >('idle');
   const [activeDepositId, setActiveDepositId] = useState<string | null>(null);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState<boolean>(false);
+  const [useInfiniteApproval, setUseInfiniteApproval] = useState<boolean>(true);
+  const [revokeLink, setRevokeLink] = useState<string>("");
   // Guards to avoid duplicate polling/render flicker
   const isMountedRef = useRef<boolean>(false);
   const pollingActiveRef = useRef<boolean>(false);
@@ -565,8 +567,15 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
           tokenSymbol: symbol,
           amount: amount,
           destination: destinationAddressToBytes32(address),
-          data: JSON.stringify(depositId)
+          data: JSON.stringify(depositId),
+          userAddress: address,
+          useInfiniteApproval: useInfiniteApproval
         });
+        
+        // Store revoke link if provided
+        if (prep.metadata?.revokeLink) {
+          setRevokeLink(prep.metadata.revokeLink);
+        }
       } catch (e: any) {
         setLastError(e?.message || 'Failed to prepare bridge');
         toast.error(e?.message || 'Failed to prepare bridge');
@@ -630,11 +639,28 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
       };
       localStorage.setItem(key, JSON.stringify(record));
 
-      // Execute steps in order
+      // Execute steps in order (STRICTLY SEQUENTIAL)
       for (const step of prep.steps) {
+        // Skip permit-available (informational only)
+        if (step.type === 'permit-available') {
+          console.log('[ChainSelector] Token supports permit:', step.metadata?.message);
+          continue;
+        }
+
         // Update phase for UX and persist phase early
-        const phaseForStep = step.type === 'wrap' ? 'wrapping' : step.type === 'approve' ? 'approving' : step.type === 'send' ? 'sending' : 'idle';
+        const phaseForStep = 
+          step.type === 'wrap' ? 'wrapping' : 
+          step.type === 'approve-reset' ? 'resetting' :
+          step.type === 'approve' ? 'approving' : 
+          step.type === 'send' ? 'sending' : 
+          'idle';
         setTransferPhase(phaseForStep as any);
+
+        // Show user-friendly messages for special cases
+        if (step.type === 'approve-reset') {
+          toast.info(`Resetting token allowance (required for ${step.metadata?.tokenSymbol || 'this token'})`);
+        }
+
         const txRequest: any = {
           ...step.tx,
         };
@@ -647,6 +673,8 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
         try {
           const tx = await signer.sendTransaction(txRequest);
           setLastTxHash(tx.hash);
+          console.log(`[ChainSelector] Step ${step.type} tx sent:`, tx.hash);
+          
           // persist progress
           try {
             const cur = JSON.parse(localStorage.getItem(key) || '{}');
@@ -661,13 +689,25 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
               } catch {}
             }
           } catch {}
+          
           if (step.type !== 'send') {
-            // wait for confirmation for non-final steps
-            await tx.wait();
+            // CRITICAL: wait for confirmation for non-final steps (SEQUENTIAL EXECUTION)
+            console.log(`[ChainSelector] Waiting for ${step.type} confirmation...`);
+            const receipt = await tx.wait();
+            if (receipt) {
+              console.log(`[ChainSelector] Step ${step.type} confirmed in block ${receipt.blockNumber}`);
+            }
+            
+            // Show success for reset step
+            if (step.type === 'approve-reset') {
+              toast.success('Allowance reset confirmed');
+            } else if (step.type === 'approve') {
+              toast.success('Token approval confirmed');
+            }
           } else {
             // Final send step: do not keep modal open; notify and hand off to global banner
             setTransferPhase('submitted');
-            toast.success('Transaction sent successfully');
+            toast.success('Deposit transaction sent successfully');
             // Close modal (parent) and stop local UI spinner; banner will take over
             try {
               try {
@@ -838,6 +878,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                         className="bg-[#002DCB] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#0045FF] transition-colors flex items-center disabled:opacity-60"
                       >
             {isTransferring ? (
+              transferPhase === 'resetting' ? 'Resetting approval...' :
               transferPhase === 'approving' ? 'Approving...' :
               transferPhase === 'wrapping' ? 'Wrapping...' :
               transferPhase === 'sending' ? 'Sending...' :
@@ -1007,6 +1048,55 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                 <span><strong>Gas fees apply:</strong> You'll pay network fees on {selectedChain?.name}. No additional bridge fees.</span>
               </li>
             </ul>
+            
+            {/* Approval Strategy Toggle */}
+            <div className="mb-3 p-3 rounded-lg border border-[#D7E0FF] bg-white">
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => setUseInfiniteApproval(!useInfiniteApproval)}
+                  className="flex-shrink-0 mt-0.5"
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                    useInfiniteApproval
+                      ? 'bg-[#002DCB] border-[#002DCB]'
+                      : 'bg-white border-gray-300'
+                  }`}>
+                    {useInfiniteApproval && (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-white">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 11.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-[#060F32] mb-1">
+                    Grant infinite allowance (recommended)
+                  </div>
+                  <div className="text-xs text-[#5C6584]">
+                    Save gas on future deposits by approving unlimited token access. You can revoke this anytime.
+                    {revokeLink && address && (
+                      <>
+                        {' '}
+                        <a 
+                          href={revokeLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[#002DCB] hover:underline font-medium"
+                        >
+                          Manage approvals →
+                        </a>
+                      </>
+                    )}
+                  </div>
+                  {!useInfiniteApproval && (
+                    <div className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      ⚠ You'll need to approve each deposit separately, costing more gas
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => setAcknowledged(!acknowledged)}
@@ -1065,7 +1155,8 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                   </svg>
-                  {transferPhase === 'approving' ? 'Approving token...' :
+                  {transferPhase === 'resetting' ? 'Resetting allowance...' :
+                  transferPhase === 'approving' ? 'Approving token...' :
                   transferPhase === 'wrapping' ? 'Wrapping ETH...' :
                   transferPhase === 'sending' ? 'Sending deposit...' :
                   transferPhase === 'waiting' ? 'Confirming...' :
@@ -1094,6 +1185,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                 )}
                 <div>
                   <div className="text-[#060F32] font-semibold">
+                    {transferPhase === 'resetting' && 'Resetting token allowance (required for legacy tokens)...'}
                     {transferPhase === 'approving' && 'Waiting for token approval...'}
                     {transferPhase === 'wrapping' && 'Wrapping native ETH to WETH...'}
                     {transferPhase === 'sending' && 'Sending deposit to Hyperion...'}
