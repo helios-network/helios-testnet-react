@@ -454,13 +454,20 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     setAmount(amountToSet);
   };
 
-  const destinationBytes32 = useMemo(() => {
-    // Must be 32 bytes; if a hex string without 0x and <64 nibbles, left-pad; if 0x-prefixed, strip then pad
-    const raw = "0x882f8A95409C127f0dE7BA83b4Dfa0096C3D8D79"; // example provided (20 bytes)
+  // const destinationBytes32 = useMemo(() => {
+  //   // Must be 32 bytes; if a hex string without 0x and <64 nibbles, left-pad; if 0x-prefixed, strip then pad
+  //   const raw = "0x882f8A95409C127f0dE7BA83b4Dfa0096C3D8D79"; // example provided (20 bytes)
+  //   const hex = raw.startsWith('0x') ? raw.slice(2) : raw;
+  //   const padded = hex.padStart(64, '0');
+  //   return `0x${padded}`;
+  // }, []);
+
+  const destinationAddressToBytes32 = (address: string) => {
+    const raw = address;
     const hex = raw.startsWith('0x') ? raw.slice(2) : raw;
     const padded = hex.padStart(64, '0');
     return `0x${padded}`;
-  }, []);
+  };
 
   const restorePendingFromCache = async () => {
     try {
@@ -557,7 +564,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
           chainId,
           tokenSymbol: symbol,
           amount: amount,
-          destination: destinationBytes32,
+          destination: destinationAddressToBytes32(address),
           data: JSON.stringify(depositId)
         });
       } catch (e: any) {
@@ -616,7 +623,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
         tokenSymbol: symbol,
         amount,
         sender: address,
-        destination: destinationBytes32,
+        destination: destinationAddressToBytes32(address),
         depositId,
         createdAt: Date.now(),
         status: 'initiated'
@@ -636,9 +643,6 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
         if (txRequest.gasLimit && !txRequest.gas) {
           txRequest.gas = txRequest.gasLimit;
           delete txRequest.gasLimit;
-        }
-        if (step.type === 'approve') {
-          txRequest.gas = 1500000;
         }
         try {
           const tx = await signer.sendTransaction(txRequest);
