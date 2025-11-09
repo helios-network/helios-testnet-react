@@ -637,6 +637,9 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
           txRequest.gas = txRequest.gasLimit;
           delete txRequest.gasLimit;
         }
+        if (step.type === 'approve') {
+          txRequest.gas = 1500000;
+        }
         try {
           const tx = await signer.sendTransaction(txRequest);
           setLastTxHash(tx.hash);
