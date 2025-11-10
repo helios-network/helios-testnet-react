@@ -147,8 +147,8 @@ const TVLChart: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       className="bg-white/80 backdrop-blur-sm rounded-xl px-7 py-7"
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-3 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 gap-3">
+        <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-r from-[#002DCB] to-[#4A6CF7] rounded-xl flex items-center justify-center">
             <ChartLine className="w-4 h-4 text-white" />
           </div>
@@ -157,7 +157,7 @@ const TVLChart: React.FC = () => {
             <p className="text-[#5C6584] text-xs">Total Value Locked over time</p>
           </div>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 md:gap-6">
           {/* Time range filter */}
           <div className="flex items-center gap-1 bg-blue-50/50 rounded-[12px] p-1">
             <button
@@ -182,13 +182,13 @@ const TVLChart: React.FC = () => {
             </button>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold text-[#060F32]">
+            <div className="text-xl sm:text-2xl md:text-3xl font-bold text-[#060F32]">
               {formatCurrency(currentValue)}
             </div>
-            <div className={`text-sm font-medium ${
+            <div className={`text-xs sm:text-sm font-medium ${
               growthPercentage > 0 ? 'text-green-500' : 'text-red-500'
             }`}>
-              {growthPercentage > 0 ? '+' : ''}{growthPercentage.toFixed(1)}% growth
+              {growthPercentage > 0 ? '+' : ''}{growthPercentage.toFixed(1)}%
             </div>
           </div>
         </div>

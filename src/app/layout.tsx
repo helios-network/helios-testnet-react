@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     siteName: 'Helios Beta Mainnet',
     images: [
       {
-        url: '/images/helios-social-card.png',
+        url: '/images/newthumbnail.png',
         width: 1200,
         height: 630,
         alt: 'Helios Beta Mainnet',
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Helios Beta Mainnet',
     description: 'Earn XP and HLS on Helios Beta Mainnet by participating in our pre-TGE campaign to secure I-PoSR consensus.',
-    images: ['/images/helios-social-card.png'],
+    images: ['/images/newthumbnail.png'],
     creator: '@HeliosChain',
   },
   robots: {
