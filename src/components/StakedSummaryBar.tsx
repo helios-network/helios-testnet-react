@@ -55,13 +55,33 @@ const StakedSummaryBar: React.FC = () => {
   const CHAINS: string[] = ['Ethereum', 'BNB Chain', 'Arbitrum', 'Base', 'Optimism', 'Polygon'];
 
   const TOKEN_ICON_BASE = 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/svg/color';
+  
+  // TrustWallet contract addresses for tokens (for better icon coverage)
+  const TRUSTWALLET_TOKEN_ADDRESSES: Record<string, { chain: string; address: string }> = {
+    'ARB': { chain: 'arbitrum', address: '0x912CE59144191C1204E64559FE8253a0e49E6548' },
+    'OP': { chain: 'optimism', address: '0x4200000000000000000000000000000000000042' },
+    'AAVE': { chain: 'ethereum', address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9' },
+    'SNX': { chain: 'ethereum', address: '0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F' },
+  };
+  
+  // Local overrides for tokens that lack reliable icons in external repos
+  const LOCAL_TOKEN_ICON_OVERRIDES: Record<string, string> = {
+    'CAKE': '/images/tokens/cake.png',
+    'GMX': '/images/tokens/gmx.png',
+    'SUSD': '/images/tokens/susd.png',
+    'AERO': '/images/tokens/aero.png',
+  };
+  
   const TOKEN_SYMBOL_OVERRIDES: Record<string, string> = {
     // Normalize wrapped to base
     'WETH': 'eth',
     'WBTC': 'btc',
     'WBNB': 'bnb',
+    'WtBNB': 'bnb',
+    'WPOL': 'matic',
     'WMATIC': 'matic',
     'WAVAX': 'avax',
+    'cbETH': 'eth',
     // Base symbols
     'USDT': 'usdt',
     'USDC': 'usdc',
@@ -69,13 +89,41 @@ const StakedSummaryBar: React.FC = () => {
     'ETH': 'eth',
     'BNB': 'bnb',
     'MATIC': 'matic',
-    'ARB': 'arb',
-    'OP': 'op',
+    'POL': 'matic',
     'AVAX': 'avax',
     'BTC': 'btc',
+    'BTCB': 'btc',
+    'stETH': 'steth',
+    // Tokens in local folder
+    'GMX': 'gmx',
+    'CAKE': 'cake',
+    'AERO': 'aero',
+    'sUSD': 'susd',
+    'SUSD': 'susd',
   };
+  
   const getTokenIconUrl = (symbol: string): string => {
-    const key = TOKEN_SYMBOL_OVERRIDES[symbol?.toUpperCase() || ''] || symbol?.toLowerCase() || 'generic';
+    const sym = (symbol || '').toUpperCase();
+    
+    // Check local overrides first
+    if (LOCAL_TOKEN_ICON_OVERRIDES[sym]) {
+      return LOCAL_TOKEN_ICON_OVERRIDES[sym];
+    }
+    
+    // Check if we have a TrustWallet address for this token
+    if (TRUSTWALLET_TOKEN_ADDRESSES[sym]) {
+      const { chain, address } = TRUSTWALLET_TOKEN_ADDRESSES[sym];
+      return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain}/assets/${address}/logo.png`;
+    }
+    
+    // Check symbol overrides (for Spot icon keys)
+    const override = TOKEN_SYMBOL_OVERRIDES[sym];
+    if (override) {
+      return `${TOKEN_ICON_BASE}/${override}.svg`;
+    }
+    
+    // Final fallback to lowercase symbol
+    const key = symbol?.toLowerCase() || 'generic';
     return `${TOKEN_ICON_BASE}/${key}.svg`;
   };
 
@@ -357,7 +405,19 @@ const StakedSummaryBar: React.FC = () => {
                 <div className="flex flex-wrap gap-1.5">
                   {visibleItems.map(item => (
                     <div key={item.id} className="px-2 py-1 rounded-md bg-white border border-[#E2EBFF] text-[11px] text-[#060F32] flex items-center gap-1.5">
-                      <img src={getTokenIconUrl(item.asset)} alt={item.asset} className="w-3.5 h-3.5 object-contain" />
+                      <img 
+                        src={getTokenIconUrl(item.asset)} 
+                        alt={item.asset} 
+                        className="w-3.5 h-3.5 object-contain"
+                        onError={(e) => {
+                          try {
+                            const target = e.target as HTMLImageElement;
+                            if (!target.src.includes('/images/helios-icon.svg')) {
+                              target.src = '/images/helios-icon.svg';
+                            }
+                          } catch {}
+                        }}
+                      />
                       <span className="font-semibold text-[#060F32]">{formatTokenAmount(item.amount)} {item.asset}</span>
                       <span className="opacity-60">·</span>
                       <span className="text-[#002DCB]">{formatCurrency(item.amountUsd)}</span>
