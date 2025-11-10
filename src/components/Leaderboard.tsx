@@ -17,7 +17,7 @@ interface LeaderboardItem {
 interface TVLLeaderboardItem {
   _id: string;
   wallet: string;
-  tvl: number;
+  totalTVL: number;
   discordUsername: string;
 }
 
@@ -341,7 +341,7 @@ const Leaderboard: React.FC = () => {
                         {selectedSeason === 'tvl' ? (
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              ${(player as TVLLeaderboardItem).tvl.toLocaleString()}
+                              ${(player as TVLLeaderboardItem).totalTVL.toLocaleString()}
                             </div>
                           </td>
                         ) : (
