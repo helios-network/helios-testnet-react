@@ -484,6 +484,8 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
         .filter(x => x.rec
           && x.rec.sender?.toLowerCase() === address.toLowerCase()
           && x.rec.status === 'submitted'
+          && x.rec.status !== 'dismissed'
+          && x.rec.status !== 'error'
           && x.rec.lastTxHash
           && (x.rec.createdAt && (now - x.rec.createdAt) < 30 * 60 * 1000)
         )
@@ -511,12 +513,25 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
               if (onComplete) onComplete();
               pollingActiveRef.current = false;
               if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+              // Clear the transferring state so new deposits can be made
+              setIsTransferring(false);
               return;
             }
           } catch {}
           if (!isMountedRef.current) return;
           if (Date.now() - start < 15 * 60 * 1000 && pollingActiveRef.current) {
             pollTimeoutRef.current = setTimeout(poll, 5000);
+          } else if (Date.now() - start >= 15 * 60 * 1000) {
+            // Timeout after 15 minutes - mark as error and allow new deposits
+            console.log('[ChainSelector] Polling timeout - marking as stale');
+            try {
+              const staleRecord = { ...rec, status: 'timeout' };
+              localStorage.setItem(key, JSON.stringify(staleRecord));
+            } catch {}
+            setTransferPhase('error');
+            setLastError('Deposit confirmation timeout. Please check status manually.');
+            setIsTransferring(false);
+            pollingActiveRef.current = false;
           }
         };
         pollTimeoutRef.current = setTimeout(poll, 1000);
@@ -1222,17 +1237,29 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                       )
                     )}
                   </div>
-                  {transferPhase === 'error' && (
-                    <div className="mt-3">
+                  {(transferPhase === 'error' || transferPhase === 'waiting') && (
+                    <div className="mt-3 flex gap-3">
                       <button
                         onClick={() => {
                           setTransferPhase('idle');
                           setLastError(null);
                           setIsTransferring(false);
+                          pollingActiveRef.current = false;
+                          hasRestoredRef.current = false;
+                          if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+                          // Mark the current deposit as cancelled
+                          if (activeDepositId) {
+                            try {
+                              const key = `helios:deposit:${activeDepositId}`;
+                              const cur = JSON.parse(localStorage.getItem(key) || '{}');
+                              cur.status = 'cancelled';
+                              localStorage.setItem(key, JSON.stringify(cur));
+                            } catch {}
+                          }
                         }}
                         className="text-sm text-[#002DCB] hover:underline font-semibold"
                       >
-                        ← Try again
+                        {transferPhase === 'error' ? '← Try again' : '✕ Cancel & Reset'}
                       </button>
                     </div>
                   )}

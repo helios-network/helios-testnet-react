@@ -65,7 +65,10 @@ export default function PendingDepositBanner() {
           (x) =>
             x.rec &&
             x.rec.sender?.toLowerCase() === address.toLowerCase() &&
-            (x.rec.status === "submitted" || x.rec.status === "pending" || x.rec.status === "initiated")
+            // Only show submitted, pending, or initiated deposits (not dismissed, error, cancelled, timeout, or success)
+            (x.rec.status === "submitted" || x.rec.status === "pending" || x.rec.status === "initiated") &&
+            // Ignore stale records older than 30 minutes
+            (x.rec.createdAt && (now - x.rec.createdAt) < 30 * 60 * 1000)
         )
         .sort((a, b) => (b.rec.createdAt || 0) - (a.rec.createdAt || 0));
 
@@ -271,7 +274,16 @@ export default function PendingDepositBanner() {
         </div>
         <button
           aria-label="Dismiss"
-          onClick={() => setRecord(null)}
+          onClick={() => {
+            if (record) {
+              // Mark as dismissed in localStorage so it won't be restored
+              try {
+                const updated: DepositRecord = { ...record.rec, status: "dismissed" };
+                localStorage.setItem(record.key, JSON.stringify(updated));
+              } catch {}
+            }
+            setRecord(null);
+          }}
           className="absolute right-0 top-1 text-[#5C6584] hover:text-[#060F32]"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">

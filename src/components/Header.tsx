@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Home, Trophy, Droplet, Menu, X, Shield, CalendarDays } from "lucide-react";
+import { Home, Trophy, Droplet, Menu, X, Shield, CalendarDays, ExternalLink } from "lucide-react";
 import { ViewContext } from "./LayoutClientWrapper";
 import InviteCodeDisplay from "./InviteCodeDisplay";
 import { useRouter } from "next/navigation";
@@ -86,12 +86,24 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       icon: <Shield className="w-4 h-4" />,
       path: "/admin",
     }] : []),
+    {
+      key: "portal",
+      label: "Portal",
+      icon: <ExternalLink className="w-4 h-4" />,
+      path: "https://portal.helioschain.network/",
+      isExternal: true,
+    },
   ];
 
-  const handleNavClick = (view: string, path: string) => {
-    setCurrentView(view);
-    router.push(path);
-    setMobileMenuOpen(false);
+  const handleNavClick = (view: string, path: string, isExternal?: boolean) => {
+    if (isExternal) {
+      window.open(path, '_blank', 'noopener,noreferrer');
+      setMobileMenuOpen(false);
+    } else {
+      setCurrentView(view);
+      router.push(path);
+      setMobileMenuOpen(false);
+    }
   };
 
   // Function to refresh user data from the API
@@ -217,7 +229,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-2 ml-6 justify-start">
               {navItems.map((item) => {
-                const isActive = currentView === item.key;
+                const isActive = !item.isExternal && currentView === item.key;
                 const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-[12px] transition-colors border cursor-pointer ${
                   isActive
                     ? "bg-[#002DCB] text-white border-[#002DCB]"
@@ -227,7 +239,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
                 return (
                   <button
                     key={item.key}
-                    onClick={() => handleNavClick(item.key, item.path)}
+                    onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
                     className={buttonClass}
                   >
                     <span className={`${iconWrapperClass} inline-flex`}>{item.icon}</span>
@@ -331,9 +343,9 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             {navItems.map((item) => (
               <button
                 key={item.key}
-                onClick={() => handleNavClick(item.key, item.path)}
+                onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  currentView === item.key
+                  !item.isExternal && currentView === item.key
                     ? "bg-[#002DCB] text-white"
                     : "hover:bg-[#E2EBFF] text-[#060F32]"
                 }`}
