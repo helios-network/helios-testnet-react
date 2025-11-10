@@ -89,7 +89,7 @@ export interface TVLLeaderboardResponse {
   leaderboard: Array<{
     _id: string;
     wallet: string;
-    tvl: number;
+    totalTVL: number;
     discordUsername: string;
   }>;
   pagination: {
