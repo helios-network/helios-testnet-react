@@ -3,6 +3,9 @@ import ContextProvider from "@/context";
 import LayoutClientWrapper from "@/components/LayoutClientWrapper";
 import type { Metadata, Viewport } from 'next';
 
+// Get the site URL from environment variable or use a default
+const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://helioschain.network';
+
 // Define metadata for SEO and social sharing
 export const metadata: Metadata = {
   title: 'Helios Beta Mainnet',
@@ -12,7 +15,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Helios Chain Labs' }],
   creator: 'Helios Chain Labs',
   publisher: 'Helios Chain Labs',
-  metadataBase: new URL('https://helioschain.network'),
+  metadataBase: new URL(siteUrl),
   alternates: {
     canonical: '/',
   },
@@ -49,7 +52,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    url: 'https://helioschain.network',
+    url: siteUrl,
     title: 'Helios Beta Mainnet',
     description: 'Helios Beta Mainnet is live. Earn XP and HLS by joining our pre-TGE campaign and help secure I-PoSR consensus.',
     siteName: 'Helios Beta Mainnet',
