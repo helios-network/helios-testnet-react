@@ -40,6 +40,7 @@ const StakedSummaryBar: React.FC = () => {
   const [claimableHls, setClaimableHls] = useState<number>(0);
   const isAuthenticated = useStore((s) => s.step > 0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [hasLoaded, setHasLoaded] = useState<boolean>(false);
   const [chainContracts, setChainContracts] = useState<Record<string, { address: string; explorer?: string }>>({});
   const [showBonuses, setShowBonuses] = useState<boolean>(false);
 
@@ -98,6 +99,7 @@ const StakedSummaryBar: React.FC = () => {
         setPositions([]);
         setTotal(0);
         setApy(null);
+        setHasLoaded(false);
         return;
       }
       setLoading(true);
@@ -121,6 +123,9 @@ const StakedSummaryBar: React.FC = () => {
         setChainContracts(liq.chainContracts || {});
       }
       setApy(apySummary);
+      if (liq?.success) {
+        setHasLoaded(true);
+      }
     } catch (e) {
       // Keep previous data on transient errors to avoid flicker
     }
@@ -172,6 +177,9 @@ const StakedSummaryBar: React.FC = () => {
           setChainContracts(liq.chainContracts || {});
         }
         setApy(apySummary);
+        if (liq?.success) {
+          setHasLoaded(true);
+        }
       } catch {}
       finally {
         setLoading(false);
@@ -266,6 +274,21 @@ const StakedSummaryBar: React.FC = () => {
   const ex1000Year = yearlyFor(1000);
 
   return (
+    loading && !hasLoaded ? (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative bg-white rounded-xl p-4 border border-white/50"
+      >
+        <div className="flex items-center justify-center h-32 text-[#828DB3]">
+          <svg className="animate-spin h-6 w-6 mr-2" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span className="text-sm">Loading your liquidity…</span>
+        </div>
+      </motion.div>
+    ) : (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -531,6 +554,7 @@ const StakedSummaryBar: React.FC = () => {
         </div>
       </div>
     </motion.div>
+    )
   );
 };
 
