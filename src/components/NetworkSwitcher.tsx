@@ -24,14 +24,14 @@ type NetworkConfig = {
 const NETWORKS: NetworkConfig[] = [
   // Helios
   {
-    id: 7001,
+    id: 42000,
     name: "Helios",
     shortName: "Helios",
     icon: "/images/logo.png",
     category: 'mainnet',
     color: "#002DCB",
-    rpcUrls: ["https://rpc.helioschain.com"],
-    blockExplorerUrls: ["https://explorer.helioschain.com"],
+    rpcUrls: ["https://testnet1.helioschainlabs.org/"],
+    blockExplorerUrls: ["https://explorer.helioschainlabs.org/"],
     nativeCurrency: { name: "Helios", symbol: "HLS", decimals: 18 }
   },
   // Ethereum
