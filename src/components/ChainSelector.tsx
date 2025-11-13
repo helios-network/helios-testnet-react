@@ -1052,6 +1052,10 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-600 mt-0.5">✓</span>
+                <span><strong>Minimum detected amount:</strong> Minimum detected amount is 1$ to be sure the deposit should be detected please add more than 1$.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 mt-0.5">✓</span>
                 <span><strong>Automatic tracking:</strong> We'll monitor your deposit and notify you when it's confirmed on Helios.</span>
               </li>
               <li className="flex items-start gap-2">
