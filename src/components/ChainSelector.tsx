@@ -1052,7 +1052,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-600 mt-0.5">✓</span>
-                <span><strong>Minimum detected amount:</strong> Minimum detected amount is 1$ to be sure the deposit should be detected please add more than 1$.</span>
+                <span><strong>Minimum detected amount:</strong> Minimum detected amount is 1$ to be sure the deposit should be detected please deposit 1$ or more.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-600 mt-0.5">✓</span>
