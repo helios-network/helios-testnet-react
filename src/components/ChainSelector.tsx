@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { prepareBridge, checkStatus, getAssets } from "@/services/bridgeApi";
 import { useAccount, useBalance, useChainId } from "wagmi";
 import { ethers } from "ethers";
+import { normalizeTokenSymbol } from "@/lib/tokenUtils";
 
 interface Chain {
   id: string;
@@ -200,6 +201,9 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     'WAVAX': 'avax',
     'cbETH': 'eth',
     'USDT': 'usdt',
+    'USD₮0': 'usdt',
+    'USDT0': 'usdt',
+    'USD₮': 'usdt',
     'USDC': 'usdc',
     'DAI': 'dai',
     'ETH': 'eth',
@@ -220,9 +224,13 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
   const TESTNET_CHAIN_IDS = new Set([11155111, 97, 84532, 11155420, 80002, 421614]);
   // Tokens that should always use symbol fallback (TrustWallet doesn't have good coverage)
   const FORCE_SYMBOL_FALLBACK = new Set(['sUSD', 'SUSD', 'SNX', 'AERO', 'CAKE', 'BTCB', 'stETH', 'GMX']);
+  const getDisplaySymbol = (symbol?: string | null) => normalizeTokenSymbol(symbol) || symbol || '';
   
   const getTokenIconUrlByAddress = (tokenAddress?: string, chain?: Chain, fallbackSymbol?: string): string => {
-    const sym = (fallbackSymbol || '').toUpperCase();
+    const normalizedSymbol = normalizeTokenSymbol(fallbackSymbol);
+    const symbolForKey = normalizedSymbol || fallbackSymbol || '';
+    const sym = symbolForKey.toUpperCase();
+    const lowerKey = symbolForKey.toLowerCase();
     
     // Prefer local icon overrides when available
     if (sym && LOCAL_TOKEN_ICON_OVERRIDES[sym]) {
@@ -232,13 +240,13 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     // Force symbol fallback for certain tokens that TrustWallet doesn't have good coverage for
     // Also force for WBTC on Base specifically
     if (FORCE_SYMBOL_FALLBACK.has(sym) || (sym === 'WBTC' && chain?.chainId === 8453)) {
-      const key = TOKEN_SYMBOL_OVERRIDES[sym] || sym.toLowerCase() || 'generic';
+      const key = TOKEN_SYMBOL_OVERRIDES[sym] || lowerKey || 'generic';
       return `${TOKEN_ICON_BASE}/${key}.svg`;
     }
     
     // For testnets, always use symbol fallback (TrustWallet doesn't have testnet assets)
     if (TESTNET_CHAIN_IDS.has(Number(chain?.chainId))) {
-      const key = TOKEN_SYMBOL_OVERRIDES[sym] || sym.toLowerCase() || 'generic';
+      const key = TOKEN_SYMBOL_OVERRIDES[sym] || lowerKey || 'generic';
       return `${TOKEN_ICON_BASE}/${key}.svg`;
     }
     
@@ -253,7 +261,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     } catch {}
     
     // Final fallback to Spot icons
-    const key = TOKEN_SYMBOL_OVERRIDES[sym] || sym.toLowerCase() || 'generic';
+    const key = TOKEN_SYMBOL_OVERRIDES[sym] || lowerKey || 'generic';
     return `${TOKEN_ICON_BASE}/${key}.svg`;
   };
 
@@ -944,7 +952,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                     }`}
                   >
                     <img src={getTokenIconUrlByAddress(asset.contractAddress || asset.nativeWrapsTo, selectedChain, asset.symbol)} alt={asset.symbol} className="w-4 h-4 object-contain" />
-                    <span className="font-medium">{asset.symbol}</span>
+                    <span className="font-medium">{getDisplaySymbol(asset.symbol)}</span>
                   </button>
                 ))}
               </div>
@@ -982,7 +990,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
                 <label className="block text-sm text-[#5C6584]">Amount</label>
                 {selectedToken && tokenBalance && Number(tokenBalance) > 0 && (
                   <span className="text-xs text-[#5C6584]">
-                    Balance: <span className="font-semibold text-[#060F32]">{Number(tokenBalance).toFixed(4)} {selectedToken}</span>
+                    Balance: <span className="font-semibold text-[#060F32]">{Number(tokenBalance).toFixed(4)} {getDisplaySymbol(selectedToken)}</span>
                   </span>
                 )}
               </div>
@@ -1145,7 +1153,7 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
             <div className="mt-3 p-3 rounded-[12px] border border-green-200 bg-green-50">
               <div className="text-xs font-semibold text-green-900 mb-1">✓ Ready to deposit</div>
               <div className="text-xs text-green-800">
-                You will deposit <strong>{amount} {selectedToken}</strong> from <strong>{selectedChain?.name}</strong> to <strong>Helios</strong>. 
+                You will deposit <strong>{amount} {getDisplaySymbol(selectedToken)}</strong> from <strong>{selectedChain?.name}</strong> to <strong>Helios</strong>. 
                 {selectedToken === 'ETH' && ' Your ETH will be wrapped to WETH automatically.'}
                 {selectedToken !== 'ETH' && selectedToken !== 'Native' && ' You may need to approve the token first.'}
               </div>

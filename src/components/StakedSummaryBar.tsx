@@ -4,6 +4,7 @@ import { Wallet, ChevronRight } from "lucide-react";
 import { api, LiquiditySummaryResponse, ApySummaryResponse } from "@/services/api";
 import { useAccount } from "wagmi";
 import { useStore } from "@/store/onboardingStore";
+import { normalizeTokenSymbol } from "@/lib/tokenUtils";
 
 interface ChainStakeSummary {
   chain: string;
@@ -84,6 +85,9 @@ const StakedSummaryBar: React.FC = () => {
     'cbETH': 'eth',
     // Base symbols
     'USDT': 'usdt',
+    'USD₮0': 'usdt',
+    'USDT0': 'usdt',
+    'USD₮': 'usdt',
     'USDC': 'usdc',
     'DAI': 'dai',
     'ETH': 'eth',
@@ -100,6 +104,19 @@ const StakedSummaryBar: React.FC = () => {
     'AERO': 'aero',
     'sUSD': 'susd',
     'SUSD': 'susd',
+  };
+
+  const mapIncomingPositions = (incomingPositions: any[] = []): LiquidityPosition[] => {
+    return (incomingPositions || []).map((p: any) => {
+      const normalizedAsset = normalizeTokenSymbol(p?.asset);
+      return {
+        id: p.id,
+        chain: p.chain,
+        asset: normalizedAsset || p.asset || '',
+        amount: p.amount,
+        amountUsd: p.amountUsd,
+      };
+    });
   };
   
   const getTokenIconUrl = (symbol: string): string => {
@@ -167,7 +184,7 @@ const StakedSummaryBar: React.FC = () => {
         });
         setByChain(merged);
         setTotal(liq.totalUsd || 0);
-        setPositions((liq.positions || []).map((p: any) => ({ id: p.id, chain: p.chain, asset: p.asset, amount: p.amount, amountUsd: p.amountUsd })));
+        setPositions(mapIncomingPositions(liq.positions));
         setChainContracts(liq.chainContracts || {});
       }
       setApy(apySummary);
@@ -221,7 +238,7 @@ const StakedSummaryBar: React.FC = () => {
           });
           setByChain(merged);
           setTotal(liq.totalUsd || 0);
-          setPositions((liq.positions || []).map((p: any) => ({ id: p.id, chain: p.chain, asset: p.asset, amount: p.amount, amountUsd: p.amountUsd })));
+          setPositions(mapIncomingPositions(liq.positions));
           setChainContracts(liq.chainContracts || {});
         }
         setApy(apySummary);

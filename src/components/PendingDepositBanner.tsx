@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import { checkStatus } from "@/services/bridgeApi";
 import { motion } from "framer-motion";
+import { normalizeTokenSymbol } from "@/lib/tokenUtils";
 
 type DepositRecord = {
   chainId: number;
@@ -31,6 +32,7 @@ export default function PendingDepositBanner() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [xpBase, setXpBase] = useState<number | undefined>(undefined);
   const [usdValue, setUsdValue] = useState<number | undefined>(undefined);
+  const displayTokenSymbol = (symbol?: string) => normalizeTokenSymbol(symbol) || symbol || '';
 
   const etherscanTxUrl = useMemo(() => {
     const tx = record?.rec?.txHash || record?.rec?.lastTxHash;
@@ -233,7 +235,7 @@ export default function PendingDepositBanner() {
               )}
             </div>
             <div className="text-sm md:text-base text-[#060F32] mt-1 font-semibold">
-              {record.rec.amount} {record.rec.tokenSymbol} • From {formatShort(record.rec.sender)}
+              {record.rec.amount} {displayTokenSymbol(record.rec.tokenSymbol)} • From {formatShort(record.rec.sender)}
             </div>
             {isConfirmed && (
               <div className="mt-1 flex items-center gap-3 text-sm">
@@ -301,5 +303,4 @@ export default function PendingDepositBanner() {
     </motion.div>
   );
 }
-
 
