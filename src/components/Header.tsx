@@ -198,11 +198,17 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   // Native balance on the currently connected chain (wagmi selects active chain)
   const { data: nativeBalance } = useBalance({ address });
 
-  const formatHlsAmount = (formatted?: string) => {
+  const formatTokenAmount = (formatted?: string) => {
     if (!formatted) return null;
     const [int, dec = ""] = formatted.split(".");
     return dec ? `${int}.${dec.slice(0, 4)}` : int;
   };
+  
+  const nativeSymbol = React.useMemo(() => {
+    const symbol = nativeBalance?.symbol;
+    if (!symbol) return "HLS";
+    return symbol.toLowerCase() === "helios" ? "HLS" : symbol;
+  }, [nativeBalance?.symbol]);
 
   return (
     <header className="bg-white/88 py-5 px-6 md:px-10 sticky top-0 z-50">
@@ -313,7 +319,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             )}
             {nativeBalance && (
               <div className="hidden md:flex items-center px-2.5 py-1.5 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[#060F32] text-sm font-semibold">
-                {formatHlsAmount(nativeBalance.formatted)} <span className="ml-1 text-[#002DCB]">HLS</span>
+                {formatTokenAmount(nativeBalance.formatted)} <span className="ml-1 text-[#002DCB]">{nativeSymbol}</span>
               </div>
             )}
             <div className="hidden md:block">
