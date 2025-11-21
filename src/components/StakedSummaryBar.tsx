@@ -30,6 +30,14 @@ const formatCurrency = (value: number) => {
 const formatTokenAmount = (amount: number) => {
   if (amount >= 1000) return amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
   if (amount >= 1) return amount.toLocaleString(undefined, { maximumFractionDigits: 3 });
+  if (amount >= 0.001) return amount.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  if (amount >= 0.0001) return amount.toLocaleString(undefined, { maximumFractionDigits: 5 });
+  if (amount >= 0.00001) return amount.toLocaleString(undefined, { maximumFractionDigits: 6 });
+  if (amount >= 0.000001) return amount.toLocaleString(undefined, { maximumFractionDigits: 7 });
+  if (amount >= 0.0000001) return amount.toLocaleString(undefined, { maximumFractionDigits: 8 });
+  if (amount >= 0.00000001) return amount.toLocaleString(undefined, { maximumFractionDigits: 9 });
+  if (amount >= 0.000000001) return amount.toLocaleString(undefined, { maximumFractionDigits: 10 });
+  if (amount >= 0.0000000001) return amount.toLocaleString(undefined, { maximumFractionDigits: 11 });
   return amount.toLocaleString(undefined, { maximumFractionDigits: 6 });
 };
 
