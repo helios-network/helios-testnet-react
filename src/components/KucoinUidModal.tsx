@@ -163,7 +163,7 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
           <div className="mt-4 space-y-3 rounded-xl border border-[#E8ECFF] bg-[#F6F8FF] px-4 py-3 text-sm text-[#46517C]">
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 text-[#1F2CA6]" />
-              <p>Open KuCoin > Profile > UID and copy the digits only.</p>
+              <p>Open KuCoin &gt; Profile &gt; UID and copy the digits only.</p>
             </div>
             <ul className="list-disc space-y-1 pl-5 text-xs text-[#5A638E]">
               {HELPER_TIPS.map((tip) => (
@@ -181,7 +181,6 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           <Button
-            type="button"
             variant="secondary"
             border
             onClick={onClose}
@@ -191,7 +190,6 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
             Cancel
           </Button>
           <Button
-            type="submit"
             variant="primary"
             hovering
             disabled={submitting}
