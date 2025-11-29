@@ -26,7 +26,7 @@
   height: var(--btn-height, var(--btn-base-height));
   padding: 0 var(--btn-padding-x, var(--btn-base-padding-x));
   background-color: var(--btn-bg, var(--btn-base-bg));
-  border-radius: var(--btn-radius, var(--btn-base-radius));
+  border-radius: var(--radius-2xs);
   color: var(--btn-color, var(--btn-base-color));
   white-space: nowrap;
   line-height: 1.1;

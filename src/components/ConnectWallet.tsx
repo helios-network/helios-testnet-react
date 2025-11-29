@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useConnect, useAccount, useDisconnect } from "wagmi";
 import { useStore } from "../store/onboardingStore";
 import { metaMask } from "wagmi/connectors";
 import { useAppKit } from "@reown/appkit/react";
+import Image from "next/image";
 import {
   Sparkles,
   Wallet,
@@ -30,8 +31,8 @@ const ConnectWallet = () => {
   const setUser = useStore((state) => state.setUser);
   const resetStore = useStore((state) => state.resetStore);
   const user = useStore((state) => state.user);
-  const requiresBotVerification = useStore((state) => state.requiresBotVerification);
-  const setRequiresBotVerification = useStore((state) => state.setRequiresBotVerification);
+  const requiresBotVerification = false;
+  const setRequiresBotVerification = () => {};
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,12 +53,8 @@ const ConnectWallet = () => {
 
   // Check if Discord is linked when bot verification is required
   useEffect(() => {
-    if (requiresBotVerification && user && !user.discord) {
-      setShowDiscordLink(true);
-    } else {
-      setShowDiscordLink(false);
-    }
-  }, [requiresBotVerification, user]);
+    setShowDiscordLink(false);
+  }, [user]);
 
   // Get search params for checking Discord linking status and referral code
   const searchParams = useSearchParams();
@@ -102,19 +99,8 @@ const ConnectWallet = () => {
   // This avoids TypeScript errors with window.ethereum while still providing better connection stability
   const isReallyConnected = isConnected || wasEverConnected;
 
-  // Track connection state changes and handle disconnections
-  useEffect(() => {
-    // If we had a connection and now we don't, handle the disconnect
-    if (previousConnectionState === true && !isReallyConnected) {
-      handleDisconnect();
-    }
-
-    // Update previous connection state with proper type safety
-    setPreviousConnectionState(isReallyConnected ? true : false);
-  }, [isReallyConnected]);
-
   // Handle wallet disconnection - this runs when the wallet gets disconnected directly from metamask
-  const handleDisconnect = () => {
+  const handleDisconnect = useCallback(() => {
     console.log("Wallet disconnected, clearing session data");
 
     // Clear JWT token from localStorage
@@ -130,21 +116,49 @@ const ConnectWallet = () => {
     setPendingWallet(null);
     setInviteCode(referralCodeFromUrl || ""); // Keep the referral code from URL if available
     setInviteError(null);
-  };
+  }, [resetStore, referralCodeFromUrl, setStep, setUser]);
 
-  // Explicitly check token on mount
+  // Track connection state changes and handle disconnections
   useEffect(() => {
-    // Double-check to ensure we're not showing the connect UI when no token exists
-    if (isReallyConnected && pendingSignature !== "pending") {
-      const token = localStorage.getItem("jwt_token");
-      if (!token) {
-        console.log(
-          "No token found but wallet connected, resetting to initial state"
-        );
-        handleDisconnect();
-      }
+    // If we had a connection and now we don't, handle the disconnect
+    if (previousConnectionState === true && !isReallyConnected) {
+      handleDisconnect();
     }
-  }, []);
+
+    // Update previous connection state with proper type safety
+    setPreviousConnectionState(isReallyConnected ? true : false);
+  }, [isReallyConnected, handleDisconnect, previousConnectionState]);
+
+
+  // Auto-continue (signature) once wallet is connected and no JWT exists
+  // Guard with a ref to avoid infinite retries
+  const autoSignTriggeredRef = useRef(false);
+  useEffect(() => {
+    const maybeAutoSign = async () => {
+      if (!isReallyConnected || !address) return;
+      if (isLoading) return;
+      if (pendingSignature === "pending") return;
+      // Don't auto-sign if other gates are active
+      if (needsInviteCode) return;
+
+      const token = localStorage.getItem("jwt_token");
+      if (token) return;
+
+      if (autoSignTriggeredRef.current) return;
+      autoSignTriggeredRef.current = true;
+
+      try {
+        await handleSignAndAuthenticate();
+      } catch (e) {
+        // Do not loop; allow user to press Continue manually
+        console.error("Auto-continue failed:", e);
+      }
+    };
+
+    void maybeAutoSign();
+    // We intentionally exclude isLoading changes to avoid rapid re-invocations
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReallyConnected, address, needsInviteCode, requiresBotVerification, pendingSignature]);
 
   // // Automatically trigger signing when wallet is connected
   // useEffect(() => {
@@ -230,13 +244,9 @@ const ConnectWallet = () => {
 
       // 2. Try to log in
       try {
-        const loginResponse = await api.login(address, signature);
+        const loginResponse = await api.login(address, signature, referralCodeFromUrl || undefined);
         // The store is now updated by the api service directly, so this check is redundant but safe
-        if (loginResponse.requiresBotVerification) {
-          // setNeedsBotVerification(true); // Now handled by global state
-          setError("Please verify you are not a bot to continue.");
-          return;
-        }
+        // No bot verification in beta mainnet
         setUser(loginResponse.user);
         // After successful login, re-initialize to route to the correct step
         await useStore.getState().initialize(loginResponse.user);
@@ -303,7 +313,7 @@ const ConnectWallet = () => {
       setError(null);
 
       // The message for this signature must match what the backend's /verify-bot expects
-      const message = `I am verifying my account for Helios Testnet: ${address}`;
+      const message = `I am verifying my account for Helios Beta Mainnet: ${address}`;
       let signature: string;
       try {
         signature = await (
@@ -329,7 +339,6 @@ const ConnectWallet = () => {
 
       if (result.success) {
         toast.success("Verification successful! You can now proceed.");
-        setRequiresBotVerification(false);
         // Re-initialize to fetch latest user status and move to next step
         useStore.getState().initialize();
       } else {
@@ -370,11 +379,7 @@ const ConnectWallet = () => {
 
       try {
         const response = await api.login(walletAddress, signature, inviteCode);
-        if (response.requiresBotVerification) {
-          setRequiresBotVerification(true);
-          setError("Please verify you are not a bot to continue.");
-          return;
-        }
+        // No bot verification in beta mainnet
         setUser(response.user);
         // Let the layout wrapper handle the state change
         return;
@@ -522,10 +527,7 @@ const ConnectWallet = () => {
       }
 
       // If we have a wallet address but need bot verification
-      if (requiresBotVerification && address) {
-        await handleBotVerification();
-        return;
-      }
+      // No bot verification in beta mainnet
 
       // Specific case for Discord-linked accounts that need activation
       if (requireInvite === "true" && address) {
@@ -551,7 +553,6 @@ const ConnectWallet = () => {
 
   const clearInviteState = () => {
     setNeedsInviteCode(false);
-    setRequiresBotVerification(false);
     setShowDiscordLink(false);
     setPendingSignature(null);
     setPendingWallet(null);
@@ -563,13 +564,12 @@ const ConnectWallet = () => {
   const renderButtonText = () => {
     if (isLoading) {
       if (needsInviteCode) return "Verifying code...";
-      if (requiresBotVerification) return "Verifying...";
       return "Processing...";
     }
 
     if (!isReallyConnected) return "Connect Wallet";
 
-    if (requiresBotVerification) return "Verify Account";
+    // No bot verification state on beta mainnet
 
     if (needsInviteCode) {
       if (pendingWallet && !pendingSignature) {
@@ -604,23 +604,26 @@ const ConnectWallet = () => {
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
                 <div className="mb-6">
-                  <img
-                    src="/images/Helios-Testnet-Logo.svg"
-                    alt="Helios Testnet"
-                    className="h-24 mx-auto mb-4 mt-8 md:mt-0"
+                  <Image
+                    src="/images/helios_beta_mainnet.svg"
+                    alt="Helios Beta Mainnet"
+                    width={200}
+                    height={200}
+                    className="h-24 sm:h-28 md:h-32 w-auto mx-auto mb-4 mt-8 md:mt-0"
+                    priority
                   />
                 </div>
 
                 <h1 className="text-4xl xl:text-7xl lg:text-6xl md:text-5xl sm:text-4xl text-[#002DCB] mb-6 leading-tight">
-                  Welcome to the
+                  Welcome to
                   <span className="block font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#002DCB] to-[#4F6BFF]">
-                    Helios Mission Hub
+                    Helios Beta Mainnet
                   </span>
                 </h1>
 
                 <p className="text-lg text-[#5C6584] max-w-2xl mx-auto mb-10">
-                  Start testing Helios, a scalable blockchain network built for
-                  secure cross-chain interaction.
+                  Bridge your assets, stake, and earn HLS rewards on the Helios ecosystem.
+                 
                 </p>
               </motion.div>
 
@@ -783,7 +786,7 @@ const ConnectWallet = () => {
                   </motion.div>
                 ) : null}
 
-                {isReallyConnected && requiresBotVerification && (
+                {false && (
                   <motion.div
                     key="bot-verification"
                     initial={{ opacity: 0, y: 20 }}
@@ -844,11 +847,7 @@ const ConnectWallet = () => {
                 )}
 
                 <motion.button
-                  onClick={
-                    requiresBotVerification
-                      ? handleBotVerification
-                      : handleConnect
-                  }
+                  onClick={handleConnect}
                   disabled={isLoading}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
@@ -880,12 +879,7 @@ const ConnectWallet = () => {
                   ) : (
                     <>
                       {isReallyConnected ? (
-                        requiresBotVerification ? (
-                          <>
-                            <ShieldCheck className="h-5 w-5" />
-                            <span>{renderButtonText()}</span>
-                          </>
-                        ) : needsInviteCode ? (
+                        needsInviteCode ? (
                           <span>{renderButtonText()}</span>
                         ) : (
                           <>
@@ -903,7 +897,7 @@ const ConnectWallet = () => {
                   )}
                 </motion.button>
 
-                {isReallyConnected && (needsInviteCode || requiresBotVerification) && (
+                {isReallyConnected && (needsInviteCode) && (
                   <button
                     onClick={clearInviteState}
                     className="mt-2 text-sm text-[#002DCB] hover:underline flex items-center"
@@ -959,12 +953,11 @@ const ConnectWallet = () => {
                         <Sparkles className="h-7 w-7 text-white" />
                       </div>
                       <h3 className="text-[#002DCB] font-bold text-xl mb-3">
-                        Explore Helios
+                        Bridge Assets
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Use the Helios Testnet to run real transactions, test
-                        cross-chain features, and interact directly with the
-                        network.
+                        Bridge assets from Ethereum, BNB Chain, Polygon, and other
+                        supported chains to start earning HLS rewards.
                       </p>
                     </div>
 
@@ -986,11 +979,11 @@ const ConnectWallet = () => {
                         </svg>
                       </div>
                       <h3 className="text-[#002DCB] font-bold text-xl mb-3">
-                        Earn Rewards
+                        Stake & Earn
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Earn XP by completing on-chain tasks, testing features,
-                        and helping improve the network.
+                        Stake your assets to earn HLS rewards and participate
+                        in the Helios ecosystem governance.
                       </p>
                     </div>
 
@@ -1012,11 +1005,11 @@ const ConnectWallet = () => {
                         </svg>
                       </div>
                       <h3 className="text-[#002DCB] font-bold text-xl mb-3">
-                        Contribute
+                        Participate
                       </h3>
                       <p className="text-[#002DCB] font-medium">
-                        Share feedback, report issues, and play a role in
-                        shaping Helios ecosystem as it grows.
+                        Join the Helios community, participate in governance,
+                        and help shape the future of cross-chain DeFi.
                       </p>
                     </div>
                   </div>

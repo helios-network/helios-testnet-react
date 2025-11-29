@@ -1,13 +1,21 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { ViewContext } from "./LayoutClientWrapper";
 import { api } from "../services/api";
 import { Share2, Users, Copy, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { useStore } from "../store/onboardingStore";
 
-const InviteCodeDisplay = () => {
+interface InviteCodeDisplayProps {
+  compact?: boolean;
+}
+
+const InviteCodeDisplay: React.FC<InviteCodeDisplayProps> = ({ compact = false }) => {
   const { address } = useAccount();
   const { setCurrentView } = React.useContext(ViewContext);
+  const step = useStore((state) => state.step);
+  const requiresBotVerification = useStore((state) => state.requiresBotVerification);
+  const isAuthenticated = step > 0 && !requiresBotVerification;
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralCount, setReferralCount] = useState<number | null>(null);
   const [referralXP, setReferralXP] = useState<number | null>(null);
@@ -26,8 +34,8 @@ const InviteCodeDisplay = () => {
   const [quotaLoading, setQuotaLoading] = useState(false);
 
   // Function to fetch invite quota information
-  const fetchInviteQuota = async () => {
-    if (!address) return;
+  const fetchInviteQuota = useCallback(async () => {
+    if (!address || !isAuthenticated) return;
     
     try {
       setQuotaLoading(true);
@@ -45,13 +53,17 @@ const InviteCodeDisplay = () => {
     } finally {
       setQuotaLoading(false);
     }
-  };
+  }, [address]);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      // If the wallet is not connected yet, we'll just wait. The component will show its
-      // default loading state, and this effect will re-run when the address becomes available.
-      if (!address) {
+      // Wait until wallet is connected AND authenticated (JWT available) to avoid 401s
+      if (!address || !isAuthenticated) {
+        setLoading(false);
+        setError(null);
+        setReferralCode(null);
+        setReferralCount(null);
+        setReferralXP(null);
         return;
       }
 
@@ -86,7 +98,7 @@ const InviteCodeDisplay = () => {
     };
 
     fetchUserData();
-  }, [address]);
+  }, [address, isAuthenticated, fetchInviteQuota]);
 
   function formatReferralCount(count: number): string {
     if (count >= 1_000_000)
@@ -100,7 +112,7 @@ const InviteCodeDisplay = () => {
     if (!referralCode) return;
 
     // Create the full referral URL
-    const referralUrl = `https://testnet.helioschain.network/?code=${referralCode}`;
+    const referralUrl = `https://app.helioschain.network/?code=${referralCode}`;
 
     navigator.clipboard
       .writeText(referralUrl)
@@ -133,7 +145,55 @@ const InviteCodeDisplay = () => {
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
 
-  // Mobile-optimized display
+  // Hide entirely when not authenticated or no wallet
+  if (!address || !isAuthenticated) {
+    return null;
+  }
+
+  // Display
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-2 w-full">
+        {loading ? (
+          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+        ) : error ? (
+          <div className="text-xs text-red-500">Error loading</div>
+        ) : referralCode ? (
+          <>
+            <div className="text-sm font-medium text-[#060F32]">
+              {formatReferralCount(referralCount ?? 0)} Referrals
+            </div>
+            {inviteQuota && (
+              <div className="text-xs text-[#5C6584]">{inviteQuota.remainingInvites} left today</div>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-bold text-[#060F32] break-all">
+                {referralCode.length > 5
+                  ? `${referralCode.slice(0, 3)}...${referralCode.slice(-2)}`
+                  : referralCode}
+              </div>
+              <button
+                onClick={handleCopy}
+                className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-[#002DCB] rounded-md hover:bg-[#E2EBFF] active:bg-[#D7E0FF] focus:outline-none focus:ring-2 focus:ring-[#002DCB]"
+                aria-label="Copy invite link"
+                title="Copy your invite link"
+              >
+                {copied ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="text-xs text-[#5C6584]">No referral code</div>
+        )}
+      </div>
+    );
+  }
+
+  // Mobile-optimized display (default)
   return (
     <div className="flex gap-2 items-center justify-end">
       {loading ? (
@@ -197,14 +257,14 @@ const InviteCodeDisplay = () => {
             
             <button
               onClick={handleCopy}
-              className="text-[#002DCB] p-1.5 rounded-full hover:bg-[#E2EBFF] active:bg-[#D7E0FF] transition-colors"
-              aria-label="Copy invite code"
-              title="Copy to clipboard"
+              className="ml-2 flex-shrink-0 w-8 h-8 flex items-center justify-center text-[#002DCB] rounded-full hover:bg-[#E2EBFF] active:bg-[#D7E0FF] focus:outline-none focus:ring-2 focus:ring-[#002DCB] cursor-pointer"
+              aria-label="Copy invite link"
+              title="Copy your invite link"
             >
               {copied ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
               ) : (
-                <Copy className="h-4 w-4" />
+                <Copy className="h-5 w-5" />
               )}
             </button>
           </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
 import { api } from "../services/api";
@@ -31,13 +31,7 @@ export function ReferralLeaderboard() {
   const [topReferrers, setTopReferrers] = useState<TopReferrer[]>([]);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (address) {
-      fetchStats();
-    }
-  }, [address]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.getGlobalReferralStats();
@@ -69,7 +63,14 @@ export function ReferralLeaderboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [address]);
+
+  useEffect(() => {
+    if (address) {
+      fetchStats();
+    }
+  }, [address, fetchStats]);
+
 
   const abbreviateAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;

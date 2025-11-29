@@ -1,16 +1,13 @@
 import React from "react";
+import Image from "next/image";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-white border-t border-[#D7E0FF] py-5 px-6">
+    <footer className="pt-0 pb-5">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-center">
-          <div className="flex items-center mb-4 sm:mb-0">
-            <img src="/images/Helios-Testnet-Logo.svg" alt="Helios Testnet" className="h-8" />
-          </div>
-          
-          <div className="text-center mb-4 sm:mb-0 sm:mx-auto">
-            <span className="text-sm text-[#828DB3]">Helios Blockchain © 2025 - All rights reserved.</span>
+        <div className="flex flex-col sm:flex-row justify-between items-end">
+          <div className="text-center mb-4 sm:mb-0">
+            <span className="text-sm text-[#5C6584]">Helios Blockchain © 2025 - All rights reserved.</span>
           </div>
           
           <div className="flex space-x-6">

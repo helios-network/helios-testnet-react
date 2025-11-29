@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface MascotProps {
   text: string;
@@ -73,9 +74,11 @@ const Mascot: React.FC<MascotProps> = ({
 
         <div className="flex flex-col sm:flex-row items-center">
           {/* Floating Mascot */}
-          <img
+          <Image
             src="/images/Avatar1.png"
             alt="logo"
+            width={240}
+            height={240}
             className="w-60 aspect-auto text-white"
           />
 

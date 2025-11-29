@@ -84,6 +84,21 @@ export interface LeaderboardResponse {
   };
 }
 
+export interface TVLLeaderboardResponse {
+  success: boolean;
+  leaderboard: Array<{
+    _id: string;
+    wallet: string;
+    totalTVL: number;
+    discordUsername: string;
+  }>;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalUsers: number;
+  };
+}
+
 export interface UserRankResponse {
   success: boolean;
   globalRank: number;
@@ -102,6 +117,9 @@ export interface XPLevelResponse {
   xpNeededForNextLevel: number;
   progressToNextLevel: number;
   isMaxLevel: boolean;
+  // Optional fields returned by backend for seasonal participation
+  participated?: boolean;
+  season?: string;
 }
 
 export interface UserReferralsResponse {
@@ -147,6 +165,53 @@ export interface GlobalReferralStatsResponse {
   }>;
 }
 
+export interface LiquidityPositionDTO {
+  id: string;
+  chain: string;
+  asset: string;
+  amount: number;
+  amountUsd: number;
+}
+
+export interface LiquiditySummaryResponse {
+  success: boolean;
+  totalUsd: number;
+  byChain: Array<{ chain: string; amountUsd: number }>;
+  positions: LiquidityPositionDTO[];
+  chainContracts: Record<string, { address: string; explorer?: string }>;
+}
+
+export interface ApySummaryResponse {
+  wallet: string;
+  claimableHls: number;
+  claimableUsd: number;
+  estimatedDailyHls: number;
+  estimatedDailyUsd: number;
+  blendedApy: number; // decimal 0..1
+  targetApy: number;  // decimal 0..1
+  multiplier: number;
+  boostCapUsd: number;
+  rawUsd: number;
+  eligibleUsd: number;
+  remainderUsd: number;
+  effectiveUsd: number;
+  hlsPriceUsd: number;
+  lastUpdatedAt?: string;
+  // NEW: Incentive data to show users their potential earnings
+  boostedApy?: number; // What user earns with their multiplier (e.g., 1.0 = 100% APY)
+  hasDeposits?: boolean; // Flag to show if user has deposited yet
+  potentialEarnings?: Array<{
+    depositUsd: number;
+    blendedApy: number;
+    dailyHls: number;
+    dailyUsd: number;
+    yearlyUsd: number;
+    effectiveMultiplier: number;
+  }>;
+}
+
+export type ApyHistoryRow = { cycleAt: string; cycleId: number; distributedHls: number; effectiveUsd: number; rawUsd: number; multiplierApplied: number };
+
 export interface TagsResponse {
   success: boolean;
   tags: Array<{
@@ -188,6 +253,12 @@ export interface FaucetClaimHistoryResponse {
     errorMessage?: string;
     createdAt: string;
     updatedAt: string;
+    triggeredByExternalDeposit?: boolean;
+    externalDepositTxHash?: string;
+    externalDepositChainId?: number;
+    externalDepositUsdValue?: number;
+    externalDepositAmountFormatted?: string;
+    externalDepositSymbol?: string;
   }>;
   pagination: {
     currentPage: number;
@@ -448,79 +519,28 @@ class ApiClient {
   }
 
   async getOnboardingProgress(): Promise<OnboardingProgress> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/progress`, {
-        headers: this.getHeaders(),
-      });
-
-      if (response.status === 403) {
-        const errorData = await response.json();
-        if (errorData.requiresInviteCode || errorData.message?.includes("not confirmed")) {
-          const error = new Error(errorData.message || "Account not confirmed. Please provide an invite code.");
-          (error as any).requiresInviteCode = true;
-          throw error;
-        }
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch onboarding progress");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while fetching onboarding progress.");
-      }
-      throw error;
-    }
+    // Onboarding is disabled on beta mainnet; return a static, completed-like payload
+    return {
+      success: true,
+      progress: [],
+      completedSteps: [],
+      totalSteps: 0,
+    } as OnboardingProgress;
   }
 
   async startOnboardingStep(
     stepKey: string
   ): Promise<{ success: boolean; step: any }> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/start`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ stepKey }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to start onboarding step");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while starting an onboarding step.");
-      }
-      throw error;
-    }
+    // No-op: onboarding disabled
+    return { success: true, step: null };
   }
 
   async completeOnboardingStep(
     stepKey: string,
     evidence: string
   ): Promise<{ success: boolean; step: any; rewards: any[] }> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/complete`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ stepKey, evidence }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to complete onboarding step");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while completing an onboarding step.");
-      }
-      throw error;
-    }
+    // No-op: onboarding disabled
+    return { success: true, step: null, rewards: [] };
   }
 
   async claimReward(rewardType: "xp" | "nft"): Promise<{
@@ -529,24 +549,8 @@ class ApiClient {
     message: string;
     transactionHash?: string;
   }> {
-    try {
-      const response = await fetch(`${API_URL}/users/onboarding/claim-reward`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ rewardType }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to claim reward");
-      }
-
-      return response.json();
-    } catch (error: any) {
-      if (error.name === 'AbortError' || error instanceof TypeError) {
-        throw new NetworkError("A network error occurred while claiming a reward.");
-      }
-      throw error;
-    }
+    // No-op: onboarding disabled
+    return { success: true, reward: null, message: "Onboarding disabled" };
   }
 
   async getUserXPHistory(): Promise<XPHistoryResponse> {
@@ -568,13 +572,24 @@ class ApiClient {
     }
   }
 
-  async getUserDailyMission(): Promise<DailyMissionResponse> {
+  async getUserDailyMission(season?: string): Promise<DailyMissionResponse> {
     try {
-      const response = await fetch(`${API_URL}/users/daily-missions`, {
+      const response = await fetch(`${API_URL}/users/daily-missions?season=${season}`, {
         headers: this.getHeaders(),
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         throw new Error("Failed to fetch Daily Mission");
       }
 
@@ -590,11 +605,12 @@ class ApiClient {
   getXPHistoryPage = async (
     page: number = 1,
     limit: number = 50,
-    timeframe: string = "alltime"
+    timeframe: string = "alltime",
+    seasonId?: string
   ): Promise<XPHistoryResponse | null> => {
     try {
       const res = await fetch(
-        `${API_URL}/users/xp/history?timeframe=${timeframe}&page=${page}&limit=${limit}`,
+        `${API_URL}/users/xp/history?timeframe=${timeframe}&page=${page}&limit=${limit}&seasonId=${seasonId}`,
         {
           headers: this.getHeaders(),
         }
@@ -619,9 +635,9 @@ class ApiClient {
     }
   };
 
-  async getLeaderboard(): Promise<LeaderboardResponse> {
-    try {
-      const response = await fetch(`${API_URL}/leaderboard/global`, {
+  async getLeaderboard(season?: string): Promise<LeaderboardResponse> {
+    try {      
+      const response = await fetch(`${API_URL}/leaderboard/global?season=${season}`, {
         headers: this.getHeaders(),
       });
 
@@ -638,9 +654,60 @@ class ApiClient {
     }
   }
 
-  async getUserRank(): Promise<UserRankResponse> {
+  async getLeaderboardPage(
+    page: number = 1,
+    limit: number = 50,
+    season?: string
+  ): Promise<LeaderboardResponse> {
     try {
-      const response = await fetch(`${API_URL}/leaderboard/user-rank`, {
+      const response = await fetch(
+        `${API_URL}/leaderboard/global?season=${season}&page=${page}&limit=${limit}`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch leaderboard page");
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError("A network error occurred while fetching the leaderboard page.");
+      }
+      throw error;
+    }
+  }
+
+  async getTVLLeaderboardPage(
+    page: number = 1,
+    limit: number = 50
+  ): Promise<TVLLeaderboardResponse> {
+    try {
+      const response = await fetch(
+        `${API_URL}/leaderboard/tvl?page=${page}&limit=${limit}`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch TVL leaderboard page");
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError("A network error occurred while fetching the TVL leaderboard page.");
+      }
+      throw error;
+    }
+  }
+
+  async getUserRank(season?: string): Promise<UserRankResponse> {
+    try {
+      const response = await fetch(`${API_URL}/leaderboard/user-rank?season=${season}`, {
         headers: this.getHeaders(),
       });
 
@@ -657,13 +724,24 @@ class ApiClient {
     }
   }
 
-  async getUserXPLevel(): Promise<XPLevelResponse> {
+  async getUserXPLevel(season?: string): Promise<XPLevelResponse> {
     try {
-      const response = await fetch(`${API_URL}/users/xp/level`, {
+      const response = await fetch(`${API_URL}/users/xp/level?season=${season}`, {
         headers: this.getHeaders(),
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         const errorData = await response.json();
         throw errorData;
       }
@@ -677,6 +755,26 @@ class ApiClient {
     }
   }
 
+  async getSeasons(): Promise<{ success: boolean; seasons: any[] }> {
+    try {
+      const response = await fetch(`${API_URL}/users/seasons`, {
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData;
+      }
+
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError("A network error occurred while fetching seasons.");
+      }
+      throw error;
+    }
+  }
+
   async getUserProfile(wallet: string): Promise<User> {
     try {
       const response = await fetch(`${API_URL}/users/profile/${wallet}`, {
@@ -684,6 +782,19 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        // Detect JWT expiry
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              // Clear token and notify app
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         throw new Error("Failed to fetch user profile");
       }
 
@@ -714,6 +825,17 @@ class ApiClient {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          try {
+            const data = await response.clone().json();
+            if (/jwt expired|token expired|TokenExpiredError/i.test(data?.message || '')) {
+              localStorage.removeItem('jwt_token');
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:expired', { detail: { message: data.message } }));
+              }
+            }
+          } catch {}
+        }
         throw new Error("Failed to fetch user referrals");
       }
 
@@ -761,6 +883,46 @@ class ApiClient {
         throw new NetworkError("A network error occurred while fetching tags.");
       }
       throw error;
+    }
+  }
+
+  async getUserLiquidity(): Promise<LiquiditySummaryResponse> {
+    try {
+      const response = await fetch(`${API_URL}/users/liquidity`, {
+        headers: this.getHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch liquidity summary');
+      }
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError('A network error occurred while fetching liquidity summary.');
+      }
+      throw error;
+    }
+  }
+
+  async getApySummary(wallet: string): Promise<ApySummaryResponse> {
+    try {
+      const res = await fetch(`${API_URL}/apy/${wallet}/summary`, { headers: this.getHeaders() });
+      if (!res.ok) throw new Error('Failed to fetch APY summary');
+      return res.json();
+    } catch (e: any) {
+      if (e.name === 'AbortError' || e instanceof TypeError) throw new NetworkError('Network error while fetching APY summary');
+      throw e;
+    }
+  }
+
+  async getApyHistory(wallet: string, limit: number = 168): Promise<ApyHistoryRow[]> {
+    try {
+      const res = await fetch(`${API_URL}/apy/${wallet}/history?limit=${limit}`, { headers: this.getHeaders() });
+      if (!res.ok) throw new Error('Failed to fetch APY history');
+      return res.json();
+    } catch (e: any) {
+      if (e.name === 'AbortError' || e instanceof TypeError) throw new NetworkError('Network error while fetching APY history');
+      throw e;
     }
   }
 

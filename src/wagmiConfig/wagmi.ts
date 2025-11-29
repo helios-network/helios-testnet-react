@@ -1,5 +1,19 @@
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { mainnet } from "@reown/appkit/networks";
+import { 
+  mainnet, 
+  sepolia, 
+  bsc, 
+  bscTestnet,
+  arbitrum,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+  optimism,
+  optimismSepolia,
+  polygon,
+  polygonAmoy,
+  type AppKitNetwork
+} from "@reown/appkit/networks";
 import { cookieStorage, createStorage } from "@wagmi/core";
 import { defineChain } from "viem";
 import { HELIOS_NETWORK_ID, RPC_URL } from "./app";
@@ -32,19 +46,33 @@ export const heliosChain = defineChain({
   },
 });
 
-// // Convert the Helios chain to AppKitNetwork format
-// const heliosAppKitNetwork = {
-//   id: heliosChain.id,
-//   name: heliosChain.name,
-//   chainNamespace: "eip155",
-//   caipNetworkId: `eip155:${heliosChain.id}`,
-//   nativeCurrency: heliosChain.nativeCurrency,
-//   rpcUrls: heliosChain.rpcUrls,
-//   blockExplorers: heliosChain.blockExplorers
-// };
+// Convert the Helios chain to AppKitNetwork format
+const heliosAppKitNetwork: AppKitNetwork = {
+  id: heliosChain.id,
+  name: heliosChain.name,
+  chainNamespace: "eip155",
+  caipNetworkId: `eip155:${heliosChain.id}`,
+  nativeCurrency: heliosChain.nativeCurrency,
+  rpcUrls: heliosChain.rpcUrls,
+  blockExplorers: heliosChain.blockExplorers
+};
 
-// Use only the Helios chain in the networks array
-export const networks = [heliosChain, mainnet];
+// Include all major networks for easy switching
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [
+  heliosAppKitNetwork, 
+  mainnet, 
+  sepolia,
+  bsc,
+  bscTestnet,
+  arbitrum,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+  optimism,
+  optimismSepolia,
+  polygon,
+  polygonAmoy
+];
 
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({

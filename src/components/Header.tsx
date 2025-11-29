@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Home, Trophy, Droplet, Menu, X, Shield } from "lucide-react";
+import { Home, Trophy, Droplet, Menu, X, Shield, CalendarDays, ExternalLink } from "lucide-react";
 import { ViewContext } from "./LayoutClientWrapper";
 import InviteCodeDisplay from "./InviteCodeDisplay";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,10 @@ import { useStore } from "../store/onboardingStore";
 import { api } from "../services/api";
 import { Chains } from "../app/(components)/chains";
 import { Wallet } from "../app/(components)/wallet";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
+import { heliosTestnet } from "../wagmiConfig/config";
+import Image from "next/image";
+import NetworkSwitcher from "./NetworkSwitcher";
 
 interface HeaderProps {
   currentView: string;
@@ -31,9 +34,14 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const setUser = useStore((state) => state.setUser);
   const isUserLoading = useStore((state) => state.isUserLoading);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showReferralMenu, setShowReferralMenu] = useState(false);
+  const referralRef = React.useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const [isPollingForDiscord, setIsPollingForDiscord] = useState(false);
   const { address } = useAccount();
+  const step = useStore((state) => state.step);
+  const requiresBotVerification = useStore((state) => state.requiresBotVerification);
+  const isAuthenticated = step > 0 && !requiresBotVerification;
 
   // Admin wallet addresses (should match the ones in admin page)
   const ADMIN_WALLETS = [
@@ -55,10 +63,16 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       path: "/",
     },
     {
-      key: "referrals",
-      label: "Referrals",
+      key: "season",
+      label: "Season",
+      icon: <CalendarDays className="w-4 h-4" />,
+      path: "/season",
+    },
+    {
+      key: "leaderboard",
+      label: "Leaderboard",
       icon: <Trophy className="w-4 h-4" />,
-      path: "/referrals",
+      path: "/leaderboard",
     },
     {
       key: "faucet",
@@ -72,12 +86,24 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
       icon: <Shield className="w-4 h-4" />,
       path: "/admin",
     }] : []),
+    {
+      key: "portal",
+      label: "Portal",
+      icon: <ExternalLink className="w-4 h-4" />,
+      path: "https://portal.helioschain.network/",
+      isExternal: true,
+    },
   ];
 
-  const handleNavClick = (view: string, path: string) => {
-    setCurrentView(view);
-    router.push(path);
-    setMobileMenuOpen(false);
+  const handleNavClick = (view: string, path: string, isExternal?: boolean) => {
+    if (isExternal) {
+      window.open(path, '_blank', 'noopener,noreferrer');
+      setMobileMenuOpen(false);
+    } else {
+      setCurrentView(view);
+      router.push(path);
+      setMobileMenuOpen(false);
+    }
   };
 
   // Function to refresh user data from the API
@@ -150,43 +176,88 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const hasDiscordLinked =
     user && (user.discordUsername || (user.discord && user.discord.username));
 
+  // Close referral menu on outside click
+  useEffect(() => {
+    if (!showReferralMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (referralRef.current && !referralRef.current.contains(e.target as Node)) {
+        setShowReferralMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showReferralMenu]);
+
+  // Close referral menu on logout/unauthenticated
+  useEffect(() => {
+    if (!address || !isAuthenticated) {
+      setShowReferralMenu(false);
+    }
+  }, [address, isAuthenticated]);
+
+  // Native balance on the currently connected chain (wagmi selects active chain)
+  const { data: nativeBalance } = useBalance({ address });
+
+  const formatTokenAmount = (formatted?: string) => {
+    if (!formatted) return null;
+    const [int, dec = ""] = formatted.split(".");
+    return dec ? `${int}.${dec.slice(0, 4)}` : int;
+  };
+  
+  const nativeSymbol = React.useMemo(() => {
+    const symbol = nativeBalance?.symbol;
+    if (!symbol) return "HLS";
+    return symbol.toLowerCase() === "helios" ? "HLS" : symbol;
+  }, [nativeBalance?.symbol]);
+
   return (
-    <header className="border-b border-[#D7E0FF] bg-white/90 py-3 px-4 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-row items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center">
-            <button
-              onClick={() => handleNavClick("dashboard", "/")}
-              className="flex items-center hover:opacity-90 transition-opacity"
-              aria-label="Go to home page"
-            >
-              <img
-                src="/images/Helios-Testnet-Logo.svg"
-                alt="Helios Testnet"
-                className="h-8 sm:h-10"
-              />
-            </button>
+    <header className="bg-white/88 py-5 px-6 md:px-10 sticky top-0 z-50">
+      <div className="w-full">
+        <div className="flex items-center justify-between w-full">
+          {/* Left: Logo + Navigation */}
+          <div className="flex items-center flex-1 min-w-0">
+            <div className="flex items-center w-40 sm:w-56 lg:w-64 flex-shrink-0">
+              <button
+                onClick={() => handleNavClick("dashboard", "/")}
+                className="flex items-center hover:opacity-90 transition-opacity"
+                aria-label="Go to home page"
+              >
+                <Image
+                  src="/images/helios_beta_mainnet.svg"
+                  alt="Helios Beta Mainnet"
+                  width={320}
+                  height={320}
+                  className="w-full h-auto"
+                  priority
+                />
+              </button>
+            </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-2 ml-6 justify-start">
+              {navItems.map((item) => {
+                const isActive = !item.isExternal && currentView === item.key;
+                const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-[12px] transition-colors border cursor-pointer ${
+                  isActive
+                    ? "bg-[#002DCB] text-white border-[#002DCB]"
+                    : "hover:bg-[#E2EBFF] text-[#060F32] border-transparent"
+                }`;
+                const iconWrapperClass = isActive ? "text-white" : "text-[#002DCB]";
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
+                    className={buttonClass}
+                  >
+                    <span className={`${iconWrapperClass} inline-flex`}>{item.icon}</span>
+                    <span className="text-sm font-semibold">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-2 mx-4 flex-1 justify-start">
-            {navItems.map((item) => (
-              <button
-                key={item.key}
-                onClick={() => handleNavClick(item.key, item.path)}
-                className={`flex items-center space-x-1 px-3 py-1.5 rounded-full transition-colors ${
-                  currentView === item.key
-                    ? "bg-[#002DCB] text-white"
-                    : "hover:bg-[#E2EBFF] text-[#060F32]"
-                }`}
-              >
-                {item.icon}
-                <span className="text-base font-medium">{item.label}</span>
-              </button>
-            ))}
-          </nav>
-          <div className="flex items-center space-x-2">
+          {/* Right: Controls (mobile menu, referral, balance, network, wallet) */}
+          <div className="flex items-center space-x-2 flex-shrink-0 relative" ref={referralRef}>
             {/* Mobile Menu Button */}
             <button
               className="lg:hidden p-2 rounded-md text-[#060F32] hover:bg-[#E2EBFF] justify-self-end"
@@ -200,20 +271,61 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               )}
             </button>
 
-            {/* Discord Link and InviteCodeDisplay */}
-            <div className="hidden lg:flex items-center space-x-1 xl:space-x-1 min-h-[40px]">
-              {!isUserLoading && !hasDiscordLinked && (
-                <button
-                  onClick={handleLinkDiscord}
-                  className="bg-[#5865F2] discord-link-btn text-white rounded-full px-3 py-1.5 flex items-center hover:bg-[#4752c4] transition-colors shadow-sm text-base font-medium"
-                >
-                  <DiscordIcon />
-                  <span className="ml-1 hide-text">Link Discord</span>
-                </button>
-              )}
-              <InviteCodeDisplay />
+            {/* Referral quick menu (desktop + mobile) */}
+            {address && isAuthenticated && (
+              <button
+                onClick={() => setShowReferralMenu((v) => !v)}
+                className="hidden md:inline-flex items-center px-3 py-2 rounded-md border border-[#E2EBFF] text-[#060F32] hover:bg-[#E2EBFF] text-sm font-semibold"
+              >
+                Referral & Discord
+              </button>
+            )}
+            {address && isAuthenticated && showReferralMenu && (
+              <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl border border-[#E2EBFF] shadow-lg p-3 z-50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-semibold text-[#060F32]">Referral</div>
+                  <button
+                    onClick={() => setShowReferralMenu(false)}
+                    className="text-[#828DB3] hover:text-[#060F32]"
+                    aria-label="Close referral menu"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {/* Invite code */}
+                  <div className="rounded-lg border border-[#E2EBFF] p-2 bg-[#F9FAFF]">
+                    <InviteCodeDisplay compact />
+                  </div>
+                  {/* Link Discord (if not linked) */}
+                  {!isUserLoading && !hasDiscordLinked && (
+                    <button
+                      onClick={() => { setShowReferralMenu(false); handleLinkDiscord(); }}
+                      className="w-full bg-[#5865F2] text-white rounded-md px-3 py-2 flex items-center justify-center hover:bg-[#4752c4] transition-colors text-sm font-medium"
+                    >
+                      <DiscordIcon />
+                      <span className="ml-2">Link Discord</span>
+                    </button>
+                  )}
+                  {/* Referrals page link */}
+                  <button
+                    onClick={() => { setShowReferralMenu(false); router.push('/referrals'); }}
+                    className="w-full px-3 py-2 rounded-md border border-[#E2EBFF] text-[#002DCB] hover:bg-[#E2EBFF] text-sm font-semibold"
+                  >
+                    Open Referrals
+                  </button>
+                </div>
+              </div>
+            )}
+            {nativeBalance && (
+              <div className="hidden md:flex items-center px-2.5 py-1.5 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[#060F32] text-sm font-semibold">
+                {formatTokenAmount(nativeBalance.formatted)} <span className="ml-1 text-[#002DCB]">{nativeSymbol}</span>
+              </div>
+            )}
+            <div className="hidden md:block">
+              <NetworkSwitcher />
             </div>
-            <div className="xl:ml-2">
+            <div>
               <Wallet />
             </div>
           </div>
@@ -237,9 +349,9 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
             {navItems.map((item) => (
               <button
                 key={item.key}
-                onClick={() => handleNavClick(item.key, item.path)}
+                onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  currentView === item.key
+                  !item.isExternal && currentView === item.key
                     ? "bg-[#002DCB] text-white"
                     : "hover:bg-[#E2EBFF] text-[#060F32]"
                 }`}
@@ -249,21 +361,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
               </button>
             ))}
 
-            {/* Discord Link option in mobile menu */}
-
-            {/* Mobile InviteCodeDisplay */}
-            <div className="flex flex-row pt-2 border-t border-[#D7E0FF] space-x-2.5">
-              {!isUserLoading && !hasDiscordLinked && (
-                <button
-                  onClick={handleLinkDiscord}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-full transition-colors bg-[#5865F2] text-white  hover:bg-[#4752c4]"
-                >
-                  <DiscordIcon />
-                  <span className="text-base font-medium">Link Discord</span>
-                </button>
-              )}
-              <InviteCodeDisplay />
-            </div>
+            {/* Additional mobile controls moved out of header to reduce crowding */}
           </div>
         </div>
       </div>

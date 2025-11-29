@@ -1,28 +1,28 @@
-# Helios Testnet App
+# Helios Beta Mainnet App
 
-A Next.js application for interacting with the Helios blockchain testnet. This application provides essential tools for builders to test the Helios testnet, including a faucet for claiming test tokens and a referral system to track engagement.
+A Next.js application for interacting with the Helios blockchain Beta Mainnet. This application provides essential tools for builders to interact with the Helios Beta Mainnet, including asset bridging, staking, and earning HLS rewards.
 
 ## Features
 
-### Test Token Faucet
-- Request testnet HLS tokens and other supported tokens
-- View claim history and eligibility status
-- Cooldown periods to prevent abuse
+### Asset Bridging
+- Bridge assets from Ethereum, BNB Chain, Polygon, and other supported chains
+- Seamless cross-chain asset transfers
+- Real-time transaction tracking
 
-### Referral System
-- Generate unique invite codes
-- Track referrals through a leaderboard
-- Earn rewards for successful referrals
+### Staking & Rewards
+- Stake assets to earn HLS rewards
+- View staking history and rewards
+- Participate in the Helios ecosystem
 
 ### Web3 Integration
 - Connect with popular Web3 wallets 
-- Interact directly with the Helios testnet blockchain
+- Interact directly with the Helios Beta Mainnet blockchain
 - View transaction status and history
 
-## Helios Testnet Information
+## Helios Beta Mainnet Information
 
 - **Chain ID**: 42000
-- **Network Name**: Helios Testnet
+- **Network Name**: Helios Beta Mainnet
 - **RPC URL**: https://testnet1.helioschainlabs.org/
 - **Explorer**: https://explorer.helioschainlabs.org/
 - **Native Currency**: 
@@ -61,13 +61,13 @@ yarn dev
 
 4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-## Connecting to Helios Testnet
+## Connecting to Helios Beta Mainnet
 
-To connect your wallet to the Helios testnet:
+To connect your wallet to the Helios Beta Mainnet:
 
 1. Open your wallet (MetaMask, etc.)
 2. Add a custom network with the following details:
-   - Network Name: Helios Testnet
+   - Network Name: Helios Beta Mainnet
    - RPC URL: https://testnet1.helioschainlabs.org/
    - Chain ID: 42000
    - Currency Symbol: HLS
