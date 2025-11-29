@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Home, Trophy, Droplet, Menu, X, Shield, CalendarDays, ExternalLink } from "lucide-react";
+import { Home, Trophy, Droplet, Menu, X, Shield, CalendarDays, ExternalLink, Link2 } from "lucide-react";
 import { ViewContext } from "./LayoutClientWrapper";
 import InviteCodeDisplay from "./InviteCodeDisplay";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import { useAccount, useBalance } from "wagmi";
 import { heliosTestnet } from "../wagmiConfig/config";
 import Image from "next/image";
 import NetworkSwitcher from "./NetworkSwitcher";
+import KucoinUidModal from "./KucoinUidModal";
 
 interface HeaderProps {
   currentView: string;
@@ -35,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const isUserLoading = useStore((state) => state.isUserLoading);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showReferralMenu, setShowReferralMenu] = useState(false);
+  const [showKucoinModal, setShowKucoinModal] = useState(false);
   const referralRef = React.useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const [isPollingForDiscord, setIsPollingForDiscord] = useState(false);
@@ -211,161 +213,189 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   }, [nativeBalance?.symbol]);
 
   return (
-    <header className="bg-white/88 py-5 px-6 md:px-10 sticky top-0 z-50">
-      <div className="w-full">
-        <div className="flex items-center justify-between w-full">
-          {/* Left: Logo + Navigation */}
-          <div className="flex items-center flex-1 min-w-0">
-            <div className="flex items-center w-40 sm:w-56 lg:w-64 flex-shrink-0">
-              <button
-                onClick={() => handleNavClick("dashboard", "/")}
-                className="flex items-center hover:opacity-90 transition-opacity"
-                aria-label="Go to home page"
-              >
-                <Image
-                  src="/images/helios_beta_mainnet.svg"
-                  alt="Helios Beta Mainnet"
-                  width={320}
-                  height={320}
-                  className="w-full h-auto"
-                  priority
-                />
-              </button>
-            </div>
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-2 ml-6 justify-start">
-              {navItems.map((item) => {
-                const isActive = !item.isExternal && currentView === item.key;
-                const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-[12px] transition-colors border cursor-pointer ${
-                  isActive
-                    ? "bg-[#002DCB] text-white border-[#002DCB]"
-                    : "hover:bg-[#E2EBFF] text-[#060F32] border-transparent"
-                }`;
-                const iconWrapperClass = isActive ? "text-white" : "text-[#002DCB]";
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
-                    className={buttonClass}
-                  >
-                    <span className={`${iconWrapperClass} inline-flex`}>{item.icon}</span>
-                    <span className="text-sm font-semibold">{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Right: Controls (mobile menu, referral, balance, network, wallet) */}
-          <div className="flex items-center space-x-2 flex-shrink-0 relative" ref={referralRef}>
-            {/* Mobile Menu Button */}
-            <button
-              className="lg:hidden p-2 rounded-md text-[#060F32] hover:bg-[#E2EBFF] justify-self-end"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
-            </button>
-
-            {/* Referral quick menu (desktop + mobile) */}
-            {address && isAuthenticated && (
-              <button
-                onClick={() => setShowReferralMenu((v) => !v)}
-                className="hidden md:inline-flex items-center px-3 py-2 rounded-md border border-[#E2EBFF] text-[#060F32] hover:bg-[#E2EBFF] text-sm font-semibold"
-              >
-                Referral & Discord
-              </button>
-            )}
-            {address && isAuthenticated && showReferralMenu && (
-              <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl border border-[#E2EBFF] shadow-lg p-3 z-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold text-[#060F32]">Referral</div>
-                  <button
-                    onClick={() => setShowReferralMenu(false)}
-                    className="text-[#828DB3] hover:text-[#060F32]"
-                    aria-label="Close referral menu"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {/* Invite code */}
-                  <div className="rounded-lg border border-[#E2EBFF] p-2 bg-[#F9FAFF]">
-                    <InviteCodeDisplay compact />
-                  </div>
-                  {/* Link Discord (if not linked) */}
-                  {!isUserLoading && !hasDiscordLinked && (
+    <>
+      <header className="bg-white/88 py-5 px-6 md:px-10 sticky top-0 z-50">
+        <div className="w-full">
+          <div className="flex items-center justify-between w-full">
+            {/* Left: Logo + Navigation */}
+            <div className="flex items-center flex-1 min-w-0">
+              <div className="flex items-center w-40 sm:w-56 lg:w-64 flex-shrink-0">
+                <button
+                  onClick={() => handleNavClick("dashboard", "/")}
+                  className="flex items-center hover:opacity-90 transition-opacity"
+                  aria-label="Go to home page"
+                >
+                  <Image
+                    src="/images/helios_beta_mainnet.svg"
+                    alt="Helios Beta Mainnet"
+                    width={320}
+                    height={320}
+                    className="w-full h-auto"
+                    priority
+                  />
+                </button>
+              </div>
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center space-x-2 ml-6 justify-start">
+                {navItems.map((item) => {
+                  const isActive = !item.isExternal && currentView === item.key;
+                  const buttonClass = `flex items-center space-x-2 px-3 py-2 rounded-[12px] transition-colors border cursor-pointer ${
+                    isActive
+                      ? "bg-[#002DCB] text-white border-[#002DCB]"
+                      : "hover:bg-[#E2EBFF] text-[#060F32] border-transparent"
+                  }`;
+                  const iconWrapperClass = isActive ? "text-white" : "text-[#002DCB]";
+                  return (
                     <button
-                      onClick={() => { setShowReferralMenu(false); handleLinkDiscord(); }}
-                      className="w-full bg-[#5865F2] text-white rounded-md px-3 py-2 flex items-center justify-center hover:bg-[#4752c4] transition-colors text-sm font-medium"
+                      key={item.key}
+                      onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
+                      className={buttonClass}
                     >
-                      <DiscordIcon />
-                      <span className="ml-2">Link Discord</span>
+                      <span className={`${iconWrapperClass} inline-flex`}>{item.icon}</span>
+                      <span className="text-sm font-semibold">{item.label}</span>
                     </button>
-                  )}
-                  {/* Referrals page link */}
-                  <button
-                    onClick={() => { setShowReferralMenu(false); router.push('/referrals'); }}
-                    className="w-full px-3 py-2 rounded-md border border-[#E2EBFF] text-[#002DCB] hover:bg-[#E2EBFF] text-sm font-semibold"
-                  >
-                    Open Referrals
-                  </button>
-                </div>
-              </div>
-            )}
-            {nativeBalance && (
-              <div className="hidden md:flex items-center px-2.5 py-1.5 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[#060F32] text-sm font-semibold">
-                {formatTokenAmount(nativeBalance.formatted)} <span className="ml-1 text-[#002DCB]">{nativeSymbol}</span>
-              </div>
-            )}
-            <div className="hidden md:block">
-              <NetworkSwitcher />
+                  );
+                })}
+              </nav>
             </div>
-            <div>
-              <Wallet />
-            </div>
-          </div>
-        </div>
 
-        {/* Mobile Menu Panel with CSS transition */}
-        <div
-          className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            mobileMenuOpen
-              ? "max-h-96 opacity-100 mt-3"
-              : "max-h-0 opacity-0 mt-0"
-          }`}
-          style={{
-            visibility: mobileMenuOpen ? "visible" : "hidden",
-            borderTop: mobileMenuOpen ? "1px solid #D7E0FF" : "none",
-            paddingTop: mobileMenuOpen ? "0.75rem" : "0",
-            paddingBottom: mobileMenuOpen ? "0.75rem" : "0",
-          }}
-        >
-          <div className="flex flex-col space-y-2">
-            {navItems.map((item) => (
+            {/* Right: Controls (mobile menu, referral, balance, network, wallet) */}
+            <div className="flex items-center space-x-2 flex-shrink-0 relative" ref={referralRef}>
+              {/* Mobile Menu Button */}
               <button
-                key={item.key}
-                onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  !item.isExternal && currentView === item.key
-                    ? "bg-[#002DCB] text-white"
-                    : "hover:bg-[#E2EBFF] text-[#060F32]"
-                }`}
+                className="lg:hidden p-2 rounded-md text-[#060F32] hover:bg-[#E2EBFF] justify-self-end"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
               >
-                {item.icon}
-                <span className="text-base font-medium">{item.label}</span>
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
               </button>
-            ))}
 
-            {/* Additional mobile controls moved out of header to reduce crowding */}
+              {/* Referral quick menu (desktop + mobile) */}
+              {address && isAuthenticated && (
+                <button
+                  onClick={() => setShowReferralMenu((v) => !v)}
+                  className="hidden md:inline-flex items-center px-3 py-2 rounded-md border border-[#E2EBFF] text-[#060F32] hover:bg-[#E2EBFF] text-sm font-semibold"
+                >
+                  Referral & Discord
+                </button>
+              )}
+              {address && isAuthenticated && (
+                <button
+                  onClick={() => setShowKucoinModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#E2EBFF] bg-[#F8FAFF] px-2.5 py-1.5 text-xs font-semibold text-[#0C1F67] hover:bg-[#EEF2FF] focus:outline-none focus:ring-2 focus:ring-[#C4D0FF]"
+                  aria-label="Manage KuCoin UID"
+                >
+                  <Link2 className="h-4 w-4 text-[#002DCB]" />
+                  <span className="hidden sm:inline">KuCoin UID</span>
+                  <span
+                    className={`${
+                      user?.kucoinUID ? "text-[#1FA971]" : "text-[#A962F7]"
+                    } hidden sm:inline text-[11px] font-medium`}
+                  >
+                    {user?.kucoinUID ? "Linked" : "Not Linked"}
+                  </span>
+                </button>
+              )}
+              {address && isAuthenticated && showReferralMenu && (
+                <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl border border-[#E2EBFF] shadow-lg p-3 z-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-semibold text-[#060F32]">Referral</div>
+                    <button
+                      onClick={() => setShowReferralMenu(false)}
+                      className="text-[#828DB3] hover:text-[#060F32]"
+                      aria-label="Close referral menu"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {/* Invite code */}
+                    <div className="rounded-lg border border-[#E2EBFF] p-2 bg-[#F9FAFF]">
+                      <InviteCodeDisplay compact />
+                    </div>
+                    {/* Link Discord (if not linked) */}
+                    {!isUserLoading && !hasDiscordLinked && (
+                      <button
+                        onClick={() => { setShowReferralMenu(false); handleLinkDiscord(); }}
+                        className="w-full bg-[#5865F2] text-white rounded-md px-3 py-2 flex items-center justify-center hover:bg-[#4752c4] transition-colors text-sm font-medium"
+                      >
+                        <DiscordIcon />
+                        <span className="ml-2">Link Discord</span>
+                      </button>
+                    )}
+                    {/* Referrals page link */}
+                    <button
+                      onClick={() => { setShowReferralMenu(false); router.push('/referrals'); }}
+                      className="w-full px-3 py-2 rounded-md border border-[#E2EBFF] text-[#002DCB] hover:bg-[#E2EBFF] text-sm font-semibold"
+                    >
+                      Open Referrals
+                    </button>
+                  </div>
+                </div>
+              )}
+              {nativeBalance && (
+                <div className="hidden md:flex items-center px-2.5 py-1.5 rounded-full bg-[#F5F7FF] border border-[#E2EBFF] text-[#060F32] text-sm font-semibold">
+                  {formatTokenAmount(nativeBalance.formatted)} <span className="ml-1 text-[#002DCB]">{nativeSymbol}</span>
+                </div>
+              )}
+              <div className="hidden md:block">
+                <NetworkSwitcher />
+              </div>
+              <div>
+                <Wallet />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Menu Panel with CSS transition */}
+          <div
+            className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+              mobileMenuOpen
+                ? "max-h-96 opacity-100 mt-3"
+                : "max-h-0 opacity-0 mt-0"
+            }`}
+            style={{
+              visibility: mobileMenuOpen ? "visible" : "hidden",
+              borderTop: mobileMenuOpen ? "1px solid #D7E0FF" : "none",
+              paddingTop: mobileMenuOpen ? "0.75rem" : "0",
+              paddingBottom: mobileMenuOpen ? "0.75rem" : "0",
+            }}
+          >
+            <div className="flex flex-col space-y-2">
+              {navItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => handleNavClick(item.key, item.path, item.isExternal)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                    !item.isExternal && currentView === item.key
+                      ? "bg-[#002DCB] text-white"
+                      : "hover:bg-[#E2EBFF] text-[#060F32]"
+                  }`}
+                >
+                  {item.icon}
+                  <span className="text-base font-medium">{item.label}</span>
+                </button>
+              ))}
+
+              {address && isAuthenticated && (
+                <button
+                  onClick={() => setShowKucoinModal(true)}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-[#E2EBFF] bg-white px-3 py-2 text-sm font-semibold text-[#0C1F67] hover:bg-[#EEF2FF]"
+                >
+                  <Link2 className="h-4 w-4 text-[#002DCB]" />
+                  Manage KuCoin UID
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+      <KucoinUidModal open={showKucoinModal} onClose={() => setShowKucoinModal(false)} />
+    </>
   );
 };
 
