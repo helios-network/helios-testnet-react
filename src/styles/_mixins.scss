@@ -125,7 +125,11 @@ $responsiveMobile: 1280px;
 
 @mixin auto-alpha($alpha) {
   opacity: $alpha;
-  visibility: if($alpha == 0, hidden, visible);
+  @if $alpha == 0 {
+    visibility: hidden;
+  } @else {
+    visibility: visible;
+  }
 }
 
 @mixin user-select($value: none) {

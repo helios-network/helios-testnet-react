@@ -25,7 +25,7 @@
     "framer-motion": "^12.6.3",
     "hcaptcha": "^0.2.0",
     "lucide-react": "^0.487.0",
-    "next": "15.2.4",
+    "next": "15.2.8",
     "nextjs-toploader": "^3.8.16",
     "pino-pretty": "^13.0.0",
     "react": "^19.0.0",
