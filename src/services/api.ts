@@ -16,6 +16,7 @@ export interface User {
   completedSteps: string[];
   referralCode?: string;
   tags?: string[];
+  kucoinUID?: string;
   discordUsername?: string;
   discord?: {
     username: string;
@@ -807,6 +808,34 @@ class ApiClient {
     } catch (error: any) {
       if (error.name === 'AbortError' || error instanceof TypeError) {
         throw new NetworkError("A network error occurred while fetching user profile.");
+      }
+      throw error;
+    }
+  }
+
+  async linkKucoinUID(kucoinUID: string): Promise<{ success: boolean; message?: string; kucoinUID?: string }> {
+    try {
+      const response = await fetch(`${API_URL}/users/kucoin-uid`, {
+        method: "POST",
+        headers: this.getHeaders(),
+        body: JSON.stringify({ kucoinUID }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const message =
+          data?.message ||
+          (response.status === 409
+            ? "KuCoin UID already linked to another wallet"
+            : "Failed to link KuCoin UID");
+        throw new Error(message);
+      }
+
+      return data;
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new NetworkError("A network error occurred while linking KuCoin UID.");
       }
       throw error;
     }
