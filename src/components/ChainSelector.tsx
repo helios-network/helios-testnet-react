@@ -231,6 +231,11 @@ const ChainSelector: React.FC<ChainSelectorProps> = ({ onChainSelect, selectedCh
     const symbolForKey = normalizedSymbol || fallbackSymbol || '';
     const sym = symbolForKey.toUpperCase();
     const lowerKey = symbolForKey.toLowerCase();
+
+    // Override for HLS token
+    if (sym === 'HLS') {
+      return '/images/logo.png';
+    }
     
     // Prefer local icon overrides when available
     if (sym && LOCAL_TOKEN_ICON_OVERRIDES[sym]) {

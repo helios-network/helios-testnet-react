@@ -129,6 +129,11 @@ const StakedSummaryBar: React.FC = () => {
   
   const getTokenIconUrl = (symbol: string): string => {
     const sym = (symbol || '').toUpperCase();
+
+    // Override for HLS token
+    if (sym === 'HLS') {
+      return '/images/logo.png'; // Assuming this is the correct path for HLS logo
+    }
     
     // Check local overrides first
     if (LOCAL_TOKEN_ICON_OVERRIDES[sym]) {
