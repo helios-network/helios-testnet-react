@@ -23,13 +23,13 @@ const QUICK_STEPS = [
 
 const HELPER_TIPS = [
   "We never request API keys or passwords - only the UID.",
-  "Updating or removing your UID can be done anytime from your Helios profile.",
-  "Leave the field empty and save to unlink your KuCoin UID.",
+  "You can update your UID anytime from your Helios profile.",
 ];
 
 const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
   const user = useStore((state) => state.user);
   const setUser = useStore((state) => state.setUser);
+  const fetchUser = useStore((state) => state.fetchUser);
   const [uid, setUid] = useState(user?.kucoinUID || "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +43,9 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
 
   const handleUidChange = (value: string) => {
     const digitsOnly = value.replace(/\D/g, "").slice(0, 20);
+    if (user?.kucoinUID && digitsOnly.length === 0) {
+      return;
+    }
     setUid(digitsOnly);
     if (error) {
       setError(null);
@@ -53,9 +56,12 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
     e.preventDefault();
     const trimmedUid = uid.trim();
 
-    const isClearing = trimmedUid.length === 0;
+    if (trimmedUid.length === 0) {
+      setError("KuCoin UID cannot be empty.");
+      return;
+    }
 
-    if (!isClearing && !KUCOIN_UID_REGEX.test(trimmedUid)) {
+    if (!KUCOIN_UID_REGEX.test(trimmedUid)) {
       setError("Enter a valid KuCoin UID (6 to 20 digits).");
       return;
     }
@@ -66,20 +72,15 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
     try {
       const result = await api.linkKucoinUID(trimmedUid);
       toast.success(
-        result?.message ||
-          (isClearing ? "KuCoin UID removed successfully." : "KuCoin UID linked successfully.")
+        result?.message || "KuCoin UID linked successfully."
       );
 
       if (user?.wallet) {
         try {
-          const refreshedUser = await api.getUserProfile(user.wallet);
-          console.log("Refreshed user after KuCoin UID link:", refreshedUser);
-          // Prioritize refreshedUser if it contains the updated kucoinUID, otherwise use the one from linkKucoinUID response or trimmedUid
-          setUser({ ...refreshedUser, kucoinUID: refreshedUser.kucoinUID || result.kucoinUID || (isClearing ? undefined : trimmedUid) });
+          await fetchUser();
         } catch (refreshError) {
           console.error("Failed to refresh user after linking KuCoin UID:", refreshError);
-          // Fallback: Update global state with UID from linkKucoinUID response or trimmedUid if API refresh fails
-          setUser({ ...user, kucoinUID: isClearing ? undefined : (result.kucoinUID || trimmedUid) });
+          setUser({ ...user, kucoinUID: trimmedUid });
         }
       }
       // Ensure the modal closes even if profile refresh fails
@@ -195,10 +196,10 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
           <Button
             variant="primary"
             hovering
-            disabled={submitting}
+            disabled={submitting || uid.trim().length === 0}
             className="w-full sm:w-auto"
           >
-            {submitting ? "Saving..." : "Link my UID"}
+            {submitting ? "Saving..." : user?.kucoinUID ? "Update my UID" : "Link my UID"}
           </Button>
         </div>
       </form>
