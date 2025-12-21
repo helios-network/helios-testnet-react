@@ -37,14 +37,19 @@ export const useStore = create<OnboardingState>((set, get) => ({
   
   fetchUser: async () => {
     const { user } = get();
-    if (!user?.wallet) return; // Only fetch if we have a wallet address
+    if (!user?.wallet) return;
     set({ isUserLoading: true });
     try {
       const updatedUser = await api.getUserProfile(user.wallet);
-      set({ user: updatedUser });
+      set({ 
+        user: {
+          ...user,
+          ...updatedUser,
+          kucoinUID: updatedUser.kucoinUID !== undefined ? updatedUser.kucoinUID : user.kucoinUID,
+        }
+      });
     } catch (error) {
       console.error("Failed to fetch user:", error);
-      // Don't clear user data on error, might be a temporary issue
     } finally {
       set({ isUserLoading: false });
     }

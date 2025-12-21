@@ -33,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   const { setCurrentView } = React.useContext(ViewContext);
   const user = useStore((state) => state.user);
   const setUser = useStore((state) => state.setUser);
+  const fetchUser = useStore((state) => state.fetchUser);
   const isUserLoading = useStore((state) => state.isUserLoading);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showReferralMenu, setShowReferralMenu] = useState(false);
@@ -113,13 +114,11 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
     if (!user?.wallet) return;
 
     try {
-      const updatedUserData = await api.getUserProfile(user.wallet);
-      console.log("Refreshed user data:", updatedUserData);
-      setUser(updatedUserData);
+      await fetchUser();
     } catch (error) {
       console.error("Error refreshing user data:", error);
     }
-  }, [user?.wallet, setUser]);
+  }, [user?.wallet, fetchUser]);
 
   // Poll for user data updates after Discord link is opened
   useEffect(() => {
