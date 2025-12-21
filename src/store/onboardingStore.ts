@@ -41,6 +41,7 @@ export const useStore = create<OnboardingState>((set, get) => ({
     set({ isUserLoading: true });
     try {
       const updatedUser = await api.getUserProfile(user.wallet);
+      console.log("User data from API in fetchUser:", updatedUser);
       set({ user: updatedUser });
     } catch (error) {
       console.error("Failed to fetch user:", error);

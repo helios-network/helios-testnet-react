@@ -159,8 +159,7 @@ function AppContent() {
           return;
         }
 
-        useStore.getState().setUser(loginResponse.user);
-        await useStore.getState().initialize(loginResponse.user);
+        await useStore.getState().initialize();
       } catch (err) {
         console.error('Home auto-auth failed:', err);
         // let the user click Continue manually; don't loop

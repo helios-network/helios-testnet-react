@@ -73,13 +73,16 @@ const KucoinUidModal: React.FC<KucoinUidModalProps> = ({ open, onClose }) => {
       if (user?.wallet) {
         try {
           const refreshedUser = await api.getUserProfile(user.wallet);
-          setUser(refreshedUser);
+          console.log("Refreshed user after KuCoin UID link:", refreshedUser);
+          // Prioritize refreshedUser if it contains the updated kucoinUID, otherwise use the one from linkKucoinUID response or trimmedUid
+          setUser({ ...refreshedUser, kucoinUID: refreshedUser.kucoinUID || result.kucoinUID || (isClearing ? undefined : trimmedUid) });
         } catch (refreshError) {
           console.error("Failed to refresh user after linking KuCoin UID:", refreshError);
-          setUser({ ...user, kucoinUID: isClearing ? undefined : trimmedUid });
+          // Fallback: Update global state with UID from linkKucoinUID response or trimmedUid if API refresh fails
+          setUser({ ...user, kucoinUID: isClearing ? undefined : (result.kucoinUID || trimmedUid) });
         }
       }
-
+      // Ensure the modal closes even if profile refresh fails
       onClose();
     } catch (err: any) {
       const message = err?.message || "Could not link this KuCoin UID.";

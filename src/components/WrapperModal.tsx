@@ -75,14 +75,15 @@ const WrapperModal: React.FC<WrapperModalProps> = ({ isOpen, onClose, defaultCha
     const fetchBalances = async () => {
       try {
         const provider = new ethers.BrowserProvider((window as any).ethereum);
+        const checksumAddress = ethers.getAddress(address);
         
         // Native balance
-        const nativeBal = await provider.getBalance(address);
+        const nativeBal = await provider.getBalance(checksumAddress);
         setNativeBalance(ethers.formatEther(nativeBal));
 
         // Wrapped balance
         const contract = new ethers.Contract(wrapperConfig.address, WRAPPER_ABI, provider);
-        const wrappedBal = await contract.balanceOf(address);
+        const wrappedBal = await contract.balanceOf(checksumAddress);
         setWrappedBalance(ethers.formatEther(wrappedBal));
       } catch (err) {
         console.error("Failed to fetch balances", err);
