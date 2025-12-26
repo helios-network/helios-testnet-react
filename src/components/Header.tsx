@@ -282,7 +282,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
                   Referral & Discord
                 </button>
               )}
-              {address && isAuthenticated && (
+              {/* {address && isAuthenticated && (
                 <button
                   onClick={() => setShowKucoinModal(true)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-[#E2EBFF] bg-[#F8FAFF] px-2.5 py-1.5 text-xs font-semibold text-[#0C1F67] hover:bg-[#EEF2FF] focus:outline-none focus:ring-2 focus:ring-[#C4D0FF]"
@@ -298,7 +298,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
                     {user?.kucoinUID ? "Linked" : "Not Linked"}
                   </span>
                 </button>
-              )}
+              )} */}
               {address && isAuthenticated && showReferralMenu && (
                 <div className="absolute right-0 top-full mt-2 w-[320px] bg-white rounded-xl border border-[#E2EBFF] shadow-lg p-3 z-50">
                   <div className="flex items-center justify-between mb-2">
